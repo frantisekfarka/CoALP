@@ -46,13 +46,15 @@ actLoad st = do
   (cs, gs, ms) <- parseItemsFile fileName
   let pr = Pr cs
       m = unionModeAssoc ms
-  if guarded pr
-    then
-    do putStrLn $ "\n" ++ show cs ++ "\n" ++ show gs ++ "\n" ++ show m
-       return $ st {iProg = pr, iGoals = gs, iModes = m, iNext = 0}
-    else
-    do putStrLn $ "The given program is unguarded\n"
-       return st
+  --if guarded pr
+  --  then
+  --  do putStrLn $ "\n" ++ show cs ++ "\n" ++ show gs ++ "\n" ++ show m
+  --     return $ st {iProg = pr, iGoals = gs, iModes = m, iNext = 0}
+  --  else
+  --  do putStrLn $ "The given program is unguarded\n"
+  --     return st
+  putStrLn $ "The given program is unguarded\n"
+  return st
     -- FIXME: 1) Retrieve the next variable from the parser state or disallow
     -- separate changes to the program or goals. The latter is more preferable.
     -- 2) Allow for multiple goals in the interpreter state.
@@ -62,13 +64,15 @@ actLoadFromTerminal st fileName = do
   (cs, gs, ms) <- parseItemsFile fileName
   let pr = Pr cs
       m = unionModeAssoc ms
-  if guarded pr
-    then
-    do putStrLn $ "\n" ++ show cs ++ "\n" ++ show gs ++ "\n" ++ show m
-       return $ st {iProg = pr, iGoals = gs, iModes = m, iNext = 0}
-    else
-    do putStrLn $ "The given program is unguarded\n"
-       return st
+  --if guarded pr
+  --  then
+  --  do putStrLn $ "\n" ++ show cs ++ "\n" ++ show gs ++ "\n" ++ show m
+  --     return $ st {iProg = pr, iGoals = gs, iModes = m, iNext = 0}
+  --  else
+  -- do putStrLn $ "The given program is unguarded\n"
+  --     return st
+  putStrLn $ "The given program is unguarded\n"
+  return st
 
 actProgram :: IState -> IO IState
 actProgram st = do
@@ -81,12 +85,14 @@ actProgram st = do
       Left e  -> print e >> return (iProg st, tps0)
       Right r -> return r
   putStrLn $ "\n" ++ show pr
-  if guarded pr
-    then
-    do return $ st {iProg = pr, iNext = tpsNext tps}
-    else
-    do putStrLn $ "\nThe given program is unguarded\n"
-       return st
+  --if guarded pr
+  --  then
+  --  do return $ st {iProg = pr, iNext = tpsNext tps}
+  --  else
+  --  do putStrLn $ "\nThe given program is unguarded\n"
+  --     return st
+  putStrLn $ "\nThe given program is unguarded\n"
+  return st
 
 actGoal :: IState -> IO IState
 actGoal st = do
@@ -249,7 +255,7 @@ nonInteractive op = do
       st           = iState0 {iProg = pr, iGoals = gs, iModes = m}
       (grdLevel, grdCont) = (abs &&& (>= 0)) $ optGuards op
       grd = all (\f -> f pr) $
-            take grdLevel [guardedClauses, guardedMatches, guardedMgus]
+            take grdLevel [guardedClauses, guardedMatches] --, guardedMgus]
   when (grdLevel /= 0 && optVerbose op > 0) $
     putStrLn $ "Level " ++ show grdLevel ++ " guardedness check " ++
                if grd then "PASSED." else "FAILED."

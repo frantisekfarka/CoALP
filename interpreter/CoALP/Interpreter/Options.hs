@@ -9,6 +9,8 @@ module CoALP.Interpreter.Options
 
 import Options.Applicative
 
+import Options.Applicative.Types ( Parser(NilP) )
+
 data CmdOptions = CmdOptions
   {
     optStdin    :: Bool
@@ -46,14 +48,15 @@ parseCmdOption = CmdOptions
         <> value "final"
         <> help ("Which of the results to save as pictures: either \"all\" " ++
                  "or \"final\" (default). Requires Graphviz.") )
-    <*> option
+
+    <*> option (readerError "failed to parse guards")
          ( long "guards"
         <> short 'a'
         <> value 2
         <> help ("Guardedness check level: 0 (no check), 1 (clause), " ++
                  "2 (program), 3 (derivation). Add the minus sign to run " ++
                  "guardedness checks alone, without a following derivation.") )
-    <*> option
+    <*> option (readerError "failedToParse verbose")
          ( long "verbose"
         <> short 'v'
         <> value 1

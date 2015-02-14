@@ -85,7 +85,7 @@ executable CoALPi
                     deepseq,
                     process              >= 1.1,
                     unordered-containers >= 0.2.3,
-                    optparse-applicative >= 0.7
+                    optparse-applicative >= 0.7 
 
   default-extensions: BangPatterns
 

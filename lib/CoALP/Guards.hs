@@ -5,8 +5,8 @@ module CoALP.Guards
        (
          guardedClauses
        , guardedMatches
---       , guardedMgus
---       , guarded
+       --, guardedMgus
+       --, guarded
        )
        where
 

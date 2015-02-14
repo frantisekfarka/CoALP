@@ -59,18 +59,18 @@ class KleisliC (cat :: (* -> *) -> * -> * -> *)  where
   type KleisliC1 a = ()
 
   type KleisliC2 m a b c :: Constraint
-  type KleisliC2 m a b c = ()
+  --type KleisliC2 m a b c = ()
 
   idc   :: KleisliC1 a       => cat m a a
-  compc :: KleisliC2 m a b c => cat m b c -> cat m a b -> cat m a c
+--  compc :: KleisliC2 m a b c => cat m b c -> cat m a b -> cat m a c
 
 instance KleisliC Subst where
   type KleisliC1 a = (Eq a, Hashable a)
-  type KleisliC2 m a b c =
-    (Monad m, Eq a, Hashable a, Eq b, Hashable b, Hashable c,
-     Injectable b c, Injectable b a)
+  --type KleisliC2 m a b c =
+  --  (Monad m, Eq a, Hashable a, Eq b, Hashable b, Hashable c,
+  --   Injectable b c, Injectable b a)
   idc   = identity
-  compc = flip compose
+--  compc = flip compose
 
 -- | The canonical representation of the identity substitution.
 identity :: (Eq a, Hashable a) => Subst m a a

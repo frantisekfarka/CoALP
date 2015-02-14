@@ -12,6 +12,7 @@ import CoALP.UI.Printer ()  -- import only the type class instances
 import Control.DeepSeq
 import Control.Monad ( void )
 import Text.Parsec
+import Text.Parsec.Prim (runP)
 import Data.Functor.Identity
 import Control.Applicative ( (<$>), (<*) )
 import qualified Data.HashSet as HashSet
