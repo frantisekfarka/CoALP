@@ -89,6 +89,16 @@ executable CoALPi
 
   default-extensions: BangPatterns
 
+executable CoALPj
+  hs-source-dirs:   ref-int
+  main-is:          Main.hs
+  other-modules:    CoALPj.CmdOpts
+
+  build-depends:    base                 >= 4.7,
+                    transformers         >= 0.4,
+                    optparse-applicative >= 0.11,
+                    text                 >= 1.2,
+                    ansi-wl-pprint       >= 0.6.7
 
 executable CoALP-benchmark-fibs
   hs-source-dirs:   benchmarks
