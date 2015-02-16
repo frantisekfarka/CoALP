@@ -14,6 +14,9 @@ import Options.Applicative
 import Options.Applicative.Arrows
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
+
+import CoALPj.REPL
+
 -- | Argument parser for command line options
 --runArgParser :: IO [Opt]
 runArgParser :: IO CmdOpts
@@ -72,11 +75,5 @@ parseOptions = CmdOpts  <$> --many $
 parseVersion :: Parser (a -> a)
 parseVersion = infoOption ver (short 'V' <> long "version" <> help "Print version information")
 
-
--- 
--- TPDO refactor
---
-
-ver = "TODO version here"
 
 

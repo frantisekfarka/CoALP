@@ -11,7 +11,7 @@ maintainer:    Vladimir Komendantskiy <komendantsky@gmail.com>
 category:      CoALP
 synopsis:      Coalgebraic logic programming library
 stability:     experimental
-build-type:    Simple
+build-type:    Custom
 cabal-version: >= 1.16
 
 source-repository master
@@ -93,6 +93,8 @@ executable CoALPj
   hs-source-dirs:   ref-int
   main-is:          Main.hs
   other-modules:    CoALPj.CmdOpts
+
+  default-language: Haskell2010
 
   build-depends:    base                 >= 4.7,
                     transformers         >= 0.4,
