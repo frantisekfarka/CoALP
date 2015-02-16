@@ -1,38 +1,21 @@
 module Main where
 
 --import Prelude () 
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
-import Control.Monad.Trans.State (StateT, execStateT)
 
 
-import CoALPj.CmdOpts (Opt, runArgParser)
+import CoALPj.CmdOpts (CmdOpts, runArgParser)
+import CoALPj.REPL (runMain, CoALP)
 
 main :: IO ()
 main = do 
 	opts <- runArgParser
-	print opts
-	return ()
-
-
-
-
-	--runMain (runCoALPj opts)
+	runMain (runCoALPj opts)
 
 
 
 
 
---
--- TODO refactor
---
-runMain :: Idris () -> IO ()
-runMain prog = do
-	res <- runExceptT $ execStateT prog coalpInit
-	case res of
-		Left err -> putStrLn $ "Uncaught error: " ++ show err
-		Right _ -> return ()
-
-runCoALPj :: [Opt] -> Idris ()
+runCoALPj :: CmdOpts -> CoALP ()
 runCoALPj opts = do
 	--when (ShowIncs `elem` opts) $ runIO showIncs
 	--case opt getClient opts of
@@ -44,11 +27,7 @@ runCoALPj opts = do
 	--		runIO $ exitWith ExitSuccess
 	undefined
 
-coalpInit = undefined
 
-type Idris = StateT IState (ExceptT Err IO)
-data IState = IState
-data Err = Err
-	deriving Show
+
 
 

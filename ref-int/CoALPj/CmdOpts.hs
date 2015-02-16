@@ -4,44 +4,57 @@
 module CoALPj.CmdOpts (
 	
 	  runArgParser
-	, Opt
+	, CmdOpts
 ) where
 
 import Control.Applicative
 import Data.Text
 
 import Options.Applicative 
-import Options.Applicative.Arrows ()
+import Options.Applicative.Arrows
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 -- | Argument parser for command line options
 --runArgParser :: IO [Opt]
 runArgParser :: IO CmdOpts
-runArgParser = execParser $ info parseOptions fullDesc
+runArgParser = execParser ( info parser (fullDesc
+		<> headerDoc   (Just caHeader)
+		<> progDescDoc (Just caProgDesc)
+		<> footerDoc   (Just caFooter)
+	))
+	where
+		caHeader   = PP.hsep [
+		 	  PP.text "CoALPj version"
+			, PP.text ver, PP.text ", (C) 2015"
+			]
+		caProgDesc = PP.vsep [
+		 	  PP.empty
+			, PP.text "TODO some nice description here"
+			]
+		caFooter    = PP.vsep [
+			  PP.text "See the GitHub repo"
+			, PP.indent 4 $ PP.text "https://github.com/frantisekfarka"
+			]
 
--- | Program options datatype
---
--- ??
-data Opt = OptVerbose	-- ^ some option 1
-	| OptVersion	-- ^ some option 2
-	| OptDummy1 Int
-	| OptDummy2 String
-	deriving (Show)
+
 
 -- | Command line optins
---
--- ??
 data CmdOpts = CmdOpts {
 	  optVerbose :: Bool
-	, optVersion :: Bool
+	--, optVersion :: Bool
 	, optDummy1 :: Int
 	, optDummy2 :: String
 	}
 	deriving (Show)
 
 
--- | Parser description
---parseOptions :: Parser [Opt]
+parser :: Parser CmdOpts
+parser = runA $ proc () -> do
+	opts <- asA parseOptions -< ()
+	-- files <- asA (many $ argument (fmap Filename str) (metavar "FILES")) -< ()
+	A parseVersion >>> A helper -< (opts)
+
+-- | Command line options parser
 parseOptions :: Parser CmdOpts
 parseOptions = CmdOpts  <$> --many $
 	switch (
@@ -50,10 +63,20 @@ parseOptions = CmdOpts  <$> --many $
 		<> help "Verbose output" 
 		<> helpDoc (Just (PP.text "hello PP.text world"))
 		)
-	<*> switch	(short 'V' <>	long "version" <> help "Show version")
+	-- <*> switch	(short 'V' <>	long "version" <> help "Show version")
 	<*> option auto	(long "dummy2" <> help "Dummy Int" <> value 7)
 	<*> strOption	(long "dummy1" <> help "Dummy String" <> value "FooBar")
 
+-- | Version info option parser
+--
+parseVersion :: Parser (a -> a)
+parseVersion = infoOption ver (short 'V' <> long "version" <> help "Print version information")
 
+
+-- 
+-- TPDO refactor
+--
+
+ver = "TODO version here"
 
 
