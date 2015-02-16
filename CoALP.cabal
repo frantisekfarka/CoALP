@@ -14,9 +14,10 @@ stability:     experimental
 build-type:    Custom
 cabal-version: >= 1.16
 
-source-repository master
+source-repository head
   type:     git
-  location: https://github.com/vkomenda/CoALP.git
+  location: https://github.com/frantisekfarka/CoALP.git
+  branch:   master
 
 -- Event logs conflict with profiling. Hence a special flag to turn event logs
 -- on and to turn profiling off.
@@ -44,9 +45,9 @@ library
                     CoALP.UI.Printer
 
   if flag(eventlog)
-    ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
+    ghc-options:    -O2 -Wall -rtsopts -eventlog
   else
-    ghc-options:    -O2 -Wall -rtsopts -threaded -auto-all -caf-all
+    ghc-options:    -O2 -Wall -rtsopts -auto-all -caf-all
 
   build-depends:    base                 >= 4.6,
                     containers           >= 0.5,

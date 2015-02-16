@@ -73,7 +73,9 @@ parseOptions = CmdOpts  <$> --many $
 -- | Version info option parser
 --
 parseVersion :: Parser (a -> a)
-parseVersion = infoOption ver (short 'V' <> long "version" <> help "Print version information")
+parseVersion = infoOption v (short 'V' <> long "version" <> help "Print version information")
+	where
+		v = "CoALPj version " ++ ver 
 
 
 
