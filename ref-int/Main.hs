@@ -1,10 +1,11 @@
 module Main where
 
 --import Prelude () 
+import System.Exit (exitWith, ExitCode(ExitSuccess))
 
+import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1)
+import CoALPj.REPL (runMain, CoALP, runIO, caMain)
 
-import CoALPj.CmdOpts (CmdOpts, runArgParser)
-import CoALPj.REPL (runMain, CoALP)
 
 main :: IO ()
 main = do 
@@ -14,7 +15,8 @@ main = do
 
 
 
-
+-- | runCoALPj enables to process parameters or run different actions insted of
+-- manin REPL loop (e. g. some package processing?)
 runCoALPj :: CmdOpts -> CoALP ()
 runCoALPj opts = do
 	--when (ShowIncs `elem` opts) $ runIO showIncs
@@ -25,7 +27,12 @@ runCoALPj opts = do
 	--		setQuiet True
 	--		runIO $ runClient (getPort opts) c
 	--		runIO $ exitWith ExitSuccess
-	undefined
+	case optDummy1 opts of
+		0          -> do
+			runIO $ putStrLn "Dummy Bye Bye ..."
+			runIO $ exitWith ExitSuccess
+		otherwise  -> return ()
+	caMain opts
 
 
 

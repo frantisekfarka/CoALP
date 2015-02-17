@@ -5,17 +5,21 @@ module CoALPj.CmdOpts (
 	
 	  runArgParser
 	, CmdOpts
+	, optDummy1
 ) where
 
 import Control.Applicative
 import Data.Text
+import Data.Version (showVersion)
 
 import Options.Applicative 
 import Options.Applicative.Arrows
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
+import Paths_CoALP
+import Version_CoALP
 
-import CoALPj.REPL
+--import CoALPj.REPL
 
 -- | Argument parser for command line options
 --runArgParser :: IO [Opt]
@@ -78,4 +82,5 @@ parseVersion = infoOption v (short 'V' <> long "version" <> help "Print version 
 		v = "CoALPj version " ++ ver 
 
 
+ver = showVersion version ++ gitHash
 
