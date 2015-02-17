@@ -2,14 +2,14 @@
 
 -- | Command line option parser
 module CoALPj.CmdOpts (
-	
 	  runArgParser
 	, CmdOpts
+	, optVerbose
+	, optVVerbose
 	, optDummy1
 ) where
 
 import Control.Applicative
-import Data.Text
 import Data.Version (showVersion)
 
 import Options.Applicative 
@@ -19,7 +19,6 @@ import qualified Text.PrettyPrint.ANSI.Leijen as PP
 import Paths_CoALP
 import Version_CoALP
 
---import CoALPj.REPL
 
 -- | Argument parser for command line options
 --runArgParser :: IO [Opt]
@@ -47,10 +46,10 @@ runArgParser = execParser ( info parser (fullDesc
 
 -- | Command line optins
 data CmdOpts = CmdOpts {
-	  optVerbose :: Bool
+	  optVerbose :: Bool    -- | verbose
+	, optVVerbose :: Bool   -- | very verbose
 	--, optVersion :: Bool
 	, optDummy1 :: Int
-	, optDummy2 :: String
 	}
 	deriving (Show)
 
@@ -68,11 +67,14 @@ parseOptions = CmdOpts  <$> --many $
 		short 'v' 
 		<> long "verbose"
 		<> help "Verbose output" 
-		<> helpDoc (Just (PP.text "hello PP.text world"))
+		-- <> helpDoc (Just (PP.text "hello PP.text world"))
+		)
+	<*> switch (
+		long "vverbose"
+		<> help "Very verbose output" 
 		)
 	-- <*> switch	(short 'V' <>	long "version" <> help "Show version")
-	<*> option auto	(long "dummy2" <> help "Dummy Int" <> value 7)
-	<*> strOption	(long "dummy1" <> help "Dummy String" <> value "FooBar")
+	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)
 
 -- | Version info option parser
 --
@@ -82,5 +84,8 @@ parseVersion = infoOption v (short 'V' <> long "version" <> help "Print version 
 		v = "CoALPj version " ++ ver 
 
 
+-- | Version of CoALPj 
+-- contains git hash in development 
+ver :: String
 ver = showVersion version ++ gitHash
 

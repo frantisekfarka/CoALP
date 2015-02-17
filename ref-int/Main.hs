@@ -3,9 +3,9 @@ module Main where
 --import Prelude () 
 import System.Exit (exitWith, ExitCode(ExitSuccess))
 
-import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1)
+import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1, optVerbose, optVVerbose)
 import CoALPj.REPL (runMain, CoALP, runIO, caMain)
-
+import CoALPj.InternalState (defaultCoALPOptions, optVerbosity, Verbosity(..))
 
 main :: IO ()
 main = do 
@@ -28,11 +28,21 @@ runCoALPj opts = do
 	--		runIO $ runClient (getPort opts) c
 	--		runIO $ exitWith ExitSuccess
 	case optDummy1 opts of
-		0          -> do
+		0  -> do
 			runIO $ putStrLn "Dummy Bye Bye ..."
 			runIO $ exitWith ExitSuccess
-		otherwise  -> return ()
-	caMain opts
+		_  -> return ()
+	caMain caOpts
+	where
+		caOpts = defaultCoALPOptions {
+			  optVerbosity = verb
+			}
+		-- TODO reafactor!!
+		verb = if optVVerbose opts
+			then VVerbose
+			else if optVerbose opts
+				then Verbose
+				else Quiet
 
 
 
