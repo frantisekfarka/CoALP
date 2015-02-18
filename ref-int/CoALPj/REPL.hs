@@ -2,13 +2,12 @@
 module CoALPj.REPL where
 
 import Control.Exception (SomeException)
-import Control.Monad --(when, liftM)
---import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
---import Control.Monad.IO.Class --(MonadIO, liftIO)
+import Control.Monad (when)
 import Control.Monad.Trans --(MonadTrans, lift)
 --import Control.Monad.Trans.Except --(ExceptT (ExceptT), runExceptT, throwE)
 -- | TODO possibly change ErrorT to ExceptT ?
 import Control.Monad.Trans.Error
+--import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
 --import Control.Monad.Trans.Except
 --import Control.Monad.Trans.State --(StateT, execStateT)
 import qualified Control.Monad.Trans.Class as Trans --(lift)

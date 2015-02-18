@@ -6,6 +6,7 @@ module CoALPj.CmdOpts (
 	, CmdOpts
 	, optVerbose
 	, optVVerbose
+	, optQuiet
 	, optDummy1
 ) where
 
@@ -48,6 +49,7 @@ runArgParser = execParser ( info parser (fullDesc
 data CmdOpts = CmdOpts {
 	  optVerbose :: Bool    -- | verbose
 	, optVVerbose :: Bool   -- | very verbose
+	, optQuiet :: Bool	-- | quiet
 	--, optVersion :: Bool
 	, optDummy1 :: Int
 	}
@@ -72,6 +74,11 @@ parseOptions = CmdOpts  <$> --many $
 	<*> switch (
 		long "vverbose"
 		<> help "Very verbose output" 
+		)
+	<*> switch (
+		short 'q'
+		<> long "quiet"
+		<> help "Suppres most of the output"
 		)
 	-- <*> switch	(short 'V' <>	long "version" <> help "Show version")
 	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)

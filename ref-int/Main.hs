@@ -3,7 +3,7 @@ module Main where
 --import Prelude () 
 import System.Exit (exitWith, ExitCode(ExitSuccess))
 
-import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1, optVerbose, optVVerbose)
+import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1, optVerbose, optVVerbose, optQuiet)
 import CoALPj.REPL (runMain, CoALP, runIO, caMain)
 import CoALPj.InternalState (defaultCoALPOptions, optVerbosity, Verbosity(..))
 
@@ -11,9 +11,6 @@ main :: IO ()
 main = do 
 	opts <- runArgParser
 	runMain (runCoALPj opts)
-
-
-
 
 -- | runCoALPj enables to process parameters or run different actions insted of
 -- manin REPL loop (e. g. some package processing?)
@@ -38,13 +35,10 @@ runCoALPj opts = do
 			  optVerbosity = verb
 			}
 		-- TODO reafactor!!
-		verb = if optVVerbose opts
-			then VVerbose
-			else if optVerbose opts
-				then Verbose
-				else Quiet
-
-
-
+		verb = case (optVVerbose opts, optVerbose opts, optQuiet opts) of
+			(True  , _    , _   ) -> VVerbose
+			(False , True , _   ) -> Verbose
+			(False , False, True) -> Quiet
+			_                     -> Default
 
 
