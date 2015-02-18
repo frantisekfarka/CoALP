@@ -24,6 +24,7 @@ import System.Console.Haskeline as H (
 	--, RunIO (RunIO )
 	)
 --import System.Console.Haskeline.MonadException
+import System.Console.Haskeline.Completion
 import System.IO ( BufferMode(LineBuffering), stdout, hSetBuffering)
 import System.IO.Error (tryIOError)
 
@@ -122,8 +123,18 @@ repl orig efile = do
 			act -- repl orig mods
 
 -- | Complete REPL commands and defined identifiers
+-- TODO proper implemnetation
 replCompletion :: CompletionFunc CoALP
-replCompletion = error "completion is not implemented"
+replCompletion (prev, next) = return ( "", fmap compl [
+		  " -- TODO implement completion"
+		, " -- you can always try other comletions ..."
+		])
+	where
+		compl x = Completion {
+			  replacement = x
+			, display = "try " ++ x
+			, isFinished = False
+			}
 
 iputStrLn :: String -> CoALP ()
 iputStrLn s = runIO $ putStrLn s
