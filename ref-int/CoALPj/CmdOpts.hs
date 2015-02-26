@@ -8,6 +8,8 @@ module CoALPj.CmdOpts (
 	, optVVerbose
 	, optQuiet
 	, optDummy1
+	, optDdumpLexer
+	, optDdumpParser
 ) where
 
 import Control.Applicative
@@ -47,11 +49,13 @@ runArgParser = execParser ( info parser (fullDesc
 
 -- | Command line optins
 data CmdOpts = CmdOpts {
-	  optVerbose :: Bool    -- | verbose
-	, optVVerbose :: Bool   -- | very verbose
-	, optQuiet :: Bool	-- | quiet
+	  optVerbose :: Bool   		-- | verbose
+	, optVVerbose :: Bool  		-- | very verbose
+	, optQuiet :: Bool		-- | quiet
 	--, optVersion :: Bool
 	, optDummy1 :: Int
+	, optDdumpLexer :: Bool	-- | parser debugging output
+	, optDdumpParser :: Bool	-- | parser debugging output
 	}
 	deriving (Show)
 
@@ -82,6 +86,14 @@ parseOptions = CmdOpts  <$> --many $
 		)
 	-- <*> switch	(short 'V' <>	long "version" <> help "Show version")
 	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)
+	<*> switch (
+		long "ddump-lexer"
+		<> help "Lexer debugging output"
+		)
+	<*> switch (
+		long "ddump-parser"
+		<> help "Parser debugging output"
+		)
 
 -- | Version info option parser
 --

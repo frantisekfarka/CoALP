@@ -13,7 +13,7 @@ main = do
 	runMain (runCoALPj opts)
 
 -- | runCoALPj enables to process parameters or run different actions insted of
--- manin REPL loop (e. g. some package processing?)
+-- main REPL loop (e. g. some package processing?)
 runCoALPj :: CmdOpts -> CoALP ()
 runCoALPj opts = do
 	--when (ShowIncs `elem` opts) $ runIO showIncs

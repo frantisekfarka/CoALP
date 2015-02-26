@@ -18,3 +18,6 @@ cabal.config
 
 #vim 
 *.sw?
+
+#CoALPj
+.history_file
