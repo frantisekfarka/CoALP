@@ -42,11 +42,11 @@ import CoALPj.InternalState(
 --instance MonadException CoALP
 
 -- | Main CoALPj method
--- It's sepeared for main in order to allow different revocation modes
+-- It's sepeared from main in order to allow different revocation modes
 --
 runMain :: CoALP () -> IO ()
 runMain prog = do
-	--res <- runEsceptT $ execStateT prog coalpInit
+	--res <- runExceptT $ execStateT prog coalpInit
 	res <- runErrorT $ prog 
 	case res of
 		Left err -> putStrLn $ "Uncaught error: " ++ show err
@@ -55,7 +55,7 @@ runMain prog = do
 
 
 
--- | 
+-- | CoALPj main loop initialization
 --
 caMain :: CoALPOptions -> CoALP ()
 caMain opts = do
@@ -99,10 +99,12 @@ replSettings hFile = setComplete replCompletion $ defaultSettings {
 	historyFile = hFile 
 	}
 
---repl orig efile = do
+-- | Read -- Eval -- Print Loop
+--   from initial state
 repl :: REPLState -> String -> InputT CoALP ()
-repl orig efile = do
-	let verbosity = optVerbosity $ caOptions orig
+repl origState efile = do
+	let verbosity = optVerbosity $ caOptions origState
+	-- TODO use prompt from state
 	let prompt = "$> "
 
 	x <- H.catch (getInputLine prompt)
@@ -111,11 +113,14 @@ repl orig efile = do
 	when (verbosity >= VVerbose) $ lift . iputStrLn $ show x
 	case x of
 		Nothing -> do
+			-- TODO refactor string to some other place
 			lift $ when (verbosity >= Default) (iputStrLn "Bye bye")
 			return ()
 		Just input -> do
-			-- | TODO implement
-			repl orig efile
+			-- | TODO catch process errors
+			--
+			lift $ processInput input origState
+			repl origState efile
 	where 
 		ctrlC :: InputT CoALP a -> SomeException -> InputT CoALP a
 		ctrlC act e = do
@@ -141,3 +146,13 @@ iputStrLn s = runIO $ putStrLn s
 
 --instance (MonadIO m) => MonadIO (ExceptT Err m) where
 --    liftIO = lift . liftIO
+--
+
+-- | Process REPL command line input
+processInput :: String -> REPLState -> CoALP ()
+processInput cmd origState = do
+	-- some initialization?
+	case () of
+		()	-> do
+			iputStrLn $ "doing some action: " ++ cmd
+			return ()
