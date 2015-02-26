@@ -11,6 +11,7 @@ import Control.Monad.Trans.Error
 --import Control.Monad.Trans.Except
 --import Control.Monad.Trans.State --(StateT, execStateT)
 import qualified Control.Monad.Trans.Class as Trans --(lift)
+
 import System.Console.Haskeline as H (
 	  runInputT
 	, catch
@@ -35,6 +36,9 @@ import CoALPj.InternalState(
 	, caOptions
 	, optVerbosity
 	, Verbosity (..)
+	)
+import CoALPj.REPL.Parser(
+	  parseCmd
 	)
 
 
@@ -152,7 +156,10 @@ iputStrLn s = runIO $ putStrLn s
 processInput :: String -> REPLState -> CoALP ()
 processInput cmd origState = do
 	-- some initialization?
-	case () of
-		()	-> do
-			iputStrLn $ "doing some action: " ++ cmd
+	case parseCmd cmd of
+		Left err 	-> do
+			iputStrLn $ show err
+			return ()
+		Right a 	-> do
+			iputStrLn $ "doing some action: " ++ (show a)
 			return ()

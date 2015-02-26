@@ -107,7 +107,8 @@ executable CoALPj
                     text                 >= 1.2,
                     ansi-wl-pprint       >= 0.6.7,
                     mtl                  >= 2.2.1,
-                    haskeline            >= 0.7.1
+                    haskeline            >= 0.7.1,
+                    parsec               >= 3.1.7
 
 executable CoALP-benchmark-fibs
   hs-source-dirs:   benchmarks
