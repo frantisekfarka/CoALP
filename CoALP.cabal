@@ -34,6 +34,7 @@ library
   exposed-modules:  CoALP
                     CoALP.UI
                     CoALP.Parser.Lexer
+                    CoALP.Parser.PrettyPrint
 
   other-modules:    CoALP.Tree
                     CoALP.Subst
