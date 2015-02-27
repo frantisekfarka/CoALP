@@ -37,10 +37,15 @@ import CoALPj.InternalState(
 	, optVerbosity
 	, Verbosity (..)
 	)
+import CoALPj.REPL.Commands(
+	  Command(..)
+	)
 import CoALPj.REPL.Parser(
 	  parseCmd
 	)
 
+-- TODO refactor
+import CoALP.Parser.Lexer
 
 --instance MonadException m => MonadException (ExceptT Err m) 
 --instance MonadException CoALP
@@ -160,6 +165,17 @@ processInput cmd origState = do
 		Left err 	-> do
 			iputStrLn $ show err
 			return ()
+		Right (Load f)	-> do
+			loadFile f
 		Right a 	-> do
 			iputStrLn $ "doing some action: " ++ (show a)
 			return ()
+
+-- | load and parse file
+-- TODO happy alex
+loadFile :: FilePath -> CoALP ()
+loadFile file = do
+	cnt <- lift $ readFile file
+	runIO $ print $ scanTokens cnt
+	return ()
+
