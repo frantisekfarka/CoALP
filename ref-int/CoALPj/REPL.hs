@@ -39,6 +39,7 @@ import CoALPj.REPL.Parser(
 
 -- TODO refactor
 import CoALP.Parser.Lexer
+import CoALP.Parser.Parser
 
 import CoALP.Parser.PrettyPrint (ppLexer)
 
@@ -171,6 +172,8 @@ processInput cmd origState = do
 loadFile :: FilePath -> CoALP ()
 loadFile file = do
 	cnt <- lift $ readFile file
-	iputStrLn $ ppLexer $ scanTokens cnt
+	--iputStrLn $ ppLexer $ scanTokens cnt
+
+	lift $ test cnt
 	return ()
 

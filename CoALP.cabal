@@ -34,6 +34,7 @@ library
   exposed-modules:  CoALP
                     CoALP.UI
                     CoALP.Parser.Lexer
+                    CoALP.Parser.Parser
                     CoALP.Parser.PrettyPrint
 
   other-modules:    CoALP.Tree
@@ -64,7 +65,7 @@ library
 		    -- my dependencies
                     array                >= 0.5
 
-  build-tools:      alex
+  build-tools:      alex, happy
 
 executable CoALPi
   hs-source-dirs:   interpreter

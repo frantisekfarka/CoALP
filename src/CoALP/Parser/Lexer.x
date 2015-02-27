@@ -15,14 +15,14 @@ $newline = [\n\r]		-- newline
 
 tokens :-
 
-  $whitenonl+ [\n]		;
+  $whitenonl+ 			;
   $newline+			{ \a s -> Newline (line a)}
   "%".*				{ \a s -> Comment s}
---  let				{ \s -> Let }
---  in				{ \s -> In }
---  $digit+			{ \s -> Int (read s) }
---  [\=\+\-\*\/\(\)]		{ \s -> Sym (head s) }
---  $alpha [$alpha $digit \_ \']*	{ \s -> Var s }
+  let				{ \a s -> Let }
+  in				{ \a s -> In }
+  $digit+			{ \a s -> Int (read s) }
+  [\=\+\-\*\/\(\)]		{ \a s -> Sym (head s) }
+  $alpha [$alpha $digit \_ \']*	{ \a s -> Var s }
 
 
 {
@@ -32,9 +32,9 @@ tokens :-
 data Token =
 	Let 		|
 	In  		|
-	Sym Char	|
-	Var String	|
 	Int Int         |
+	Var String	|
+	Sym Char	|
 	Newline Int	|
 	Comment String
 	deriving (Eq,Show)
