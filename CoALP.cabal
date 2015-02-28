@@ -33,6 +33,7 @@ library
 
   exposed-modules:  CoALP
                     CoALP.UI
+                    CoALP.Error
                     CoALP.Parser.Lexer
                     CoALP.Parser.Parser
                     CoALP.Parser.PrettyPrint

@@ -1,12 +1,17 @@
 {
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
-module CoALP.Parser.Lexer (
+module CoALP.Parser.Lexer {-(
 	  scanTokens
 	, Token (..)
-	) where
+	) -} where
+
+import Control.Monad.Trans.Except (Except, throwE)
+
+import CoALP.Error (Err(ParserErr))
+
 }
 
-%wrapper "posn"
+%wrapper "monad"
 
 $digit = 0-9			-- digits
 $alpha = [a-zA-Z]		-- alphabetic characters
@@ -16,13 +21,17 @@ $newline = [\n\r]		-- newline
 tokens :-
 
   $whitenonl+ 			;
-  $newline+			{ \a s -> Newline (line a)}
-  "%".*				{ \a s -> Comment s}
-  let				{ \a s -> Let }
-  in				{ \a s -> In }
-  $digit+			{ \a s -> Int (read s) }
-  [\=\+\-\*\/\(\)]		{ \a s -> Sym (head s) }
-  $alpha [$alpha $digit \_ \']*	{ \a s -> Var s }
+  $newline+			{ \a _ -> return (Newline (line a))  }
+  "%".*				{ \a len -> return $ Comment $ tokenStr a len
+				}
+  			
+  let				{ \_ _ -> return Let }
+  in				{ \_ _ -> return In }
+  $digit+			{ \a len -> return $ Int (read $ tokenStr a len) }
+  [\=\+\-\*\/\(\)]		{ \a len -> return $ Sym (head $ tokenStr a len) }
+  $alpha [$alpha $digit \_ \']*	{ \a len -> return $ Var (tokenStr a len) }
+
+--  eof				{ \a s -> return Eof}
 
 
 {
@@ -36,14 +45,25 @@ data Token =
 	Var String	|
 	Sym Char	|
 	Newline Int	|
-	Comment String
+	Comment String	|
+	Eof
 	deriving (Eq,Show)
 
 -- | Line extraction helper
-line :: AlexPosn -> Int
-line (AlexPn _ l _) = l
+line :: AlexInput -> Int
+line ((AlexPn _ l _), _, _, _) = l
 
-scanTokens :: String -> [Token]
-scanTokens = alexScanTokens
+-- | Token extraction helper
+tokenStr :: AlexInput -> Int -> String
+tokenStr (_, _, _, s) len = take len s
+
+--scanTokens' :: String -> [Token]
+--scanTokens' = \s -> alexScanTokens s ++ [Eof]
+
+scanTokens :: (Token -> Alex a) -> Alex a
+scanTokens = (alexMonadScan >>=)
+
+alexEOF = return Eof
+
 
 }

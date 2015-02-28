@@ -4,8 +4,9 @@ module CoALPj.REPL where
 import Control.Exception (SomeException)
 import Control.Monad (when)
 import Control.Monad.Trans (lift, liftIO)
-import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, mapExceptT, throwE)
 --import Control.Monad.Trans.State --(StateT, execStateT)
+import Data.Functor.Identity (runIdentity)
 
 import System.Console.Haskeline as H (
 	  runInputT
@@ -36,6 +37,8 @@ import CoALPj.REPL.Commands(
 import CoALPj.REPL.Parser(
 	  parseCmd
 	)
+
+import CoALP.Error (Err(..))
 
 -- TODO refactor
 import CoALP.Parser.Lexer
@@ -83,15 +86,6 @@ caMain opts = do
 --type CoALP = StateT IState (ErrorT IO)
 --type CoALP = ErrorT Err IO
 type CoALP = ExceptT Err IO
-data Err = EmptyMsg
-	 | Msg String
-         | InternalMsg String
-	 | NotImplementedYet String
-	deriving Show
-
---instance Error Err where
---	noMsg  = EmptyMsg
---	strMsg = Msg
 
 
 
@@ -99,9 +93,6 @@ data Err = EmptyMsg
 -- TODO is the use of ExceptT neccessary?
 runIO :: IO a -> CoALP a
 runIO x = liftIO (tryIOError x) >>= either (throwE . Msg . show) return
-
--- :: Err -> CoALP a
---throwError = lift . throwE
 
 replSettings :: Maybe FilePath -> Settings CoALP
 replSettings hFile = setComplete replCompletion $ defaultSettings {
@@ -126,15 +117,22 @@ repl origState efile = do
 			lift $ when (verbosity >= Default) (iputStrLn "Bye bye")
 			return ()
 		Just input -> do
-			-- | TODO catch process errors
-			--
-			lift $ processInput input origState
+			-- | TODO catch process errors properly
+			-- refactor this hack
+			res <- lift . lift $ runExceptT (processInput input origState) 
+			case res of 
+				Right m		-> lift . lift $ return m
+				Left err	-> lift $ iputStrLn $ show err
 			repl origState efile
 	where 
 		ctrlC :: InputT CoALP a -> SomeException -> InputT CoALP a
 		ctrlC act e = do
 			lift $ iputStrLn (show e)
 			act -- repl orig mods
+		inputExcept :: SomeException -> InputT CoALP ()
+		inputExcept e = do
+			lift $ iputStrLn (show e)
+			return ()
 
 -- | Complete REPL commands and defined identifiers
 -- TODO proper implemnetation
@@ -162,6 +160,7 @@ processInput cmd origState = do
 			iputStrLn $ show err
 			return ()
 		Right (Load f)	-> do
+			
 			loadFile f
 		Right a 	-> do
 			iputStrLn $ "doing some action: " ++ (show a)
@@ -173,7 +172,11 @@ loadFile :: FilePath -> CoALP ()
 loadFile file = do
 	cnt <- lift $ readFile file
 	--iputStrLn $ ppLexer $ scanTokens cnt
-
-	lift $ test cnt
-	return ()
+	--TODO refactor parser monad (stack)
+	case test cnt of
+		Left err	-> do
+			throwE . Msg $ err
+		Right prg	-> do
+			iputStrLn "Parsed:"
+			iputStrLn . show $ prg
 
