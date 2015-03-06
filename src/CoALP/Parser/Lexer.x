@@ -31,8 +31,6 @@ tokens :-
   [\=\+\-\*\/\(\)]		{ \a len -> return $ Sym (head $ tokenStr a len) }
   $alpha [$alpha $digit \_ \']*	{ \a len -> return $ Var (tokenStr a len) }
 
---  eof				{ \a s -> return Eof}
-
 
 {
 -- Each action has type :: String -> Token
