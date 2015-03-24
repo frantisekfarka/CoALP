@@ -15,7 +15,7 @@ import System.Console.Haskeline as H (
 	, setComplete
 	, defaultSettings
 	, getInputLine
-	, InputT (InputT)
+	, InputT 
 	)
 import System.Console.Haskeline.Completion (Completion(..), CompletionFunc)
 import System.Console.Haskeline.MonadException (MonadException (controlIO), RunIO (RunIO))
