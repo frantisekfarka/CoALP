@@ -5,7 +5,7 @@ import Control.Exception (SomeException)
 import Control.Monad (when)
 import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, mapExceptT, throwE)
---import Control.Monad.Trans.State --(StateT, execStateT)
+import Control.Monad.Trans.State --(StateT, execStateT)
 import Data.Functor.Identity (runIdentity)
 
 import System.Console.Haskeline as H (
@@ -28,6 +28,7 @@ import CoALPj.InternalState(
 	, CoALPOptions
 	, replInit
 	, caOptions
+	, program
 	, optVerbosity
 	, Verbosity (..)
 	)
@@ -42,7 +43,7 @@ import CoALP.Error (Err(..))
 
 -- TODO refactor
 import CoALP.Parser.Lexer
-import CoALP.Parser.Parser
+import CoALP.Parser.Parser (parse)
 
 import CoALP.Parser.PrettyPrint (ppProgram)
 
@@ -54,15 +55,18 @@ instance (MonadException m) => MonadException (ExceptT e m) where
 		run' = RunIO (fmap ExceptT . run . runExceptT)
 		in fmap runExceptT $ f run'
 
+instance MonadException m => MonadException (StateT s m) where
+	controlIO f = StateT $ \s -> controlIO $ \(RunIO run) -> let
+		run' = RunIO (fmap (StateT . const) . run . flip runStateT s)
+		in fmap (flip runStateT s) $ f run'
 
 
 -- | Main CoALPj method
--- It's sepeared from main in order to allow different revocation modes
+	-- It's sepeared from main in order to allow different revocation modes
 --
 runMain :: CoALP () -> IO ()
 runMain prog = do
-	--res <- runExceptT $ execStateT prog coalpInit
-	res <- runExceptT $ prog 
+	res <- runExceptT $ execStateT prog replInit
 	case res of
 		Left err -> putStrLn $ "Uncaught error: " ++ show err
 		Right _ -> return ()
@@ -71,12 +75,14 @@ runMain prog = do
 --
 caMain :: CoALPOptions -> CoALP ()
 caMain opts = do
+	s <- get
+	put $ s { caOptions = opts }
 	-- | TODO
 	runIO $ hSetBuffering stdout LineBuffering
 	let runrepl = True
 	let histFile = ".history_file"
 	let efile = ""
-	let orig = replInit opts
+	let orig = replInit 
 	when runrepl $ do
 		runInputT (replSettings (Just histFile))  $ repl orig efile
 
@@ -85,14 +91,14 @@ caMain opts = do
 -- 
 --type CoALP = StateT IState (ErrorT IO)
 --type CoALP = ErrorT Err IO
-type CoALP = ExceptT Err IO
+type CoALP = StateT REPLState (ExceptT Err IO)
 
 
 
 -- | A version of liftIO that puts errors into the error type of the CoALPj monad
 -- TODO is the use of ExceptT neccessary?
 runIO :: IO a -> CoALP a
-runIO x = liftIO (tryIOError x) >>= either (throwE . Msg . show) return
+runIO x = lift $ liftIO (tryIOError x) >>= (either (throwE . Msg . show) return)
 
 replSettings :: Maybe FilePath -> Settings CoALP
 replSettings hFile = setComplete replCompletion $ defaultSettings {
@@ -102,8 +108,8 @@ replSettings hFile = setComplete replCompletion $ defaultSettings {
 -- | Read -- Eval -- Print Loop
 --   from initial state
 repl :: REPLState -> String -> InputT CoALP ()
-repl origState efile = do
-	let verbosity = optVerbosity $ caOptions origState
+repl initState efile = do
+	let verbosity = optVerbosity $ caOptions initState
 	-- TODO use prompt from state
 	let prompt = "$> "
 
@@ -119,11 +125,14 @@ repl origState efile = do
 		Just input -> do
 			-- | TODO catch process errors properly
 			-- refactor this hack
-			res <- lift . lift $ runExceptT (processInput input origState) 
-			case res of 
-				Right m		-> lift . lift $ return m
-				Left err	-> lift $ iputStrLn $ show err
-			repl origState efile
+			--lift $ processInput input initState
+			catch (lift $ processInput input initState)
+                                (ctrlC (return ()))
+			--res <- lift $ processInput input initState
+			--case res of 
+			--	Right m		-> lift $ return m
+			--	Left err	-> lift $ iputStrLn $ show err
+			repl initState efile
 	where 
 		ctrlC :: InputT CoALP a -> SomeException -> InputT CoALP a
 		ctrlC act e = do
@@ -159,24 +168,35 @@ processInput cmd origState = do
 		Left err 	-> do
 			iputStrLn $ show err
 			return ()
+
 		Right (Load f)	-> do
-			
 			loadFile f
+
+		Right (Print)	-> do
+			printProgram
+
 		Right a 	-> do
 			iputStrLn $ "doing some action: " ++ (show a)
 			return ()
 
 -- | load and parse file
--- TODO happy alex
 loadFile :: FilePath -> CoALP ()
 loadFile file = do
-	cnt <- lift $ readFile file
+	cnt <- lift . lift $ readFile file
 	--iputStrLn $ ppLexer $ scanTokens cnt
 	--TODO refactor parser monad (stack)
-	case test cnt of
+	case parse cnt of
 		Left err	-> do
-			throwE . Msg $ err
+			iputStrLn err
+			return ()
 		Right prg	-> do
-			iputStrLn "Parsed:"
-			iputStrLn . ppProgram $ prg
+			iputStrLn $ "Program " ++ file ++ " loaded."
+			--iputStrLn . ppProgram $ prg
+			s <- get
+			put $ s { program = prg }
+			
+-- | print program
+printProgram :: CoALP ()
+printProgram = get >>= iputStrLn . ppProgram . program 
+			
 

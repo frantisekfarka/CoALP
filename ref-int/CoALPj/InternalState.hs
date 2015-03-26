@@ -8,11 +8,16 @@ module CoALPj.InternalState (
 	  CoALPOptions
 	, defaultCoALPOptions
 	, caOptions
+	, program
 	, optVerbosity
 	, REPLState
 	, replInit
 	, Verbosity(..)
 ) where
+
+import Data.Monoid (mempty)
+
+import CoALP.Program (Program)
 
 
 -- | General CoALPj options that affect all code
@@ -28,13 +33,16 @@ defaultCoALPOptions = CoALPOptions {
 
 -- | Read-Eval-Print loop state
 data REPLState = REPLState {
-	  caOptions :: CoALPOptions
+	  caOptions 	:: CoALPOptions
+	, program 	:: Program
 	}
 
 -- | Create initial state from general CoALPj options
-replInit :: CoALPOptions -> REPLState
-replInit caopts = REPLState {
-	  caOptions = caopts
+replInit :: REPLState
+--replInit caopts = REPLState {
+replInit = REPLState {
+	  caOptions = defaultCoALPOptions
+	, program = mempty
 	}
 
 -- | Verbosity levels

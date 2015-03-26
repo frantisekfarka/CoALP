@@ -9,7 +9,7 @@ import Data.List (intersperse)
 import CoALP.Parser.Lexer (Token(..))
 
 -- TODO refactor program data types out of parser
-import CoALP.Parser.Parser (Program, Clause(..), Term(..))
+import CoALP.Program (Program, Clause(..), Term(..))
 
 
 -- | Lexer output pretty printer

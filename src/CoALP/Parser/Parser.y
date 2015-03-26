@@ -8,6 +8,7 @@ import CoALP.Error (Err(ParserErr))
 
 --TODO refactor
 import CoALP.Parser.Lexer
+import CoALP.Program
 
 import Data.Char
 
@@ -36,12 +37,8 @@ import Data.Char
 
 %%
 
-Program :: { [ Clause ] }
-Program : Clauses			{ $1 }
-
 Clauses :: { [ Clause ] }
 Clauses	: Clauses Clause		{ $2 : $1 }
-     	| Clauses 			{ $1 }
 	| {- empty -}			{ [ ] }
 
 Clause :: { Clause }
@@ -58,6 +55,7 @@ Term :: { Term }
 Term	: funId '(' Terms ')'		{ Fun $1 $3 }
 	| funId				{ Fun $1 [] }
 	| varId				{ Var $1 }
+	| int				{ Const $1 }
 
 --lineno :: { LineNumber }
 --	: {- empty -}      {% getLineNo }
@@ -71,22 +69,9 @@ Term	: funId '(' Terms ')'		{ Fun $1 $3 }
 parseError :: Token -> Alex a
 parseError t = alexSynError t
 
-type LineNumber = Int
 
-type Program = [Clause]
-
-data Clause = Clause Term [Term] 
-	deriving Show
-
-data Term
-	= Var String
-	| Fun String [Term]
-	| Const Int
-	deriving Show
-
-
-test :: String -> Either String Program
-test s = runAlex s main
+parse :: String -> Either String Program
+parse s = runAlex s main
 
 
 

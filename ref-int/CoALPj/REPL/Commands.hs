@@ -7,6 +7,7 @@ module CoALPj.REPL.Commands (
 data Command
 	= Load FilePath
 	| Reload
+	| Print
 	| Quit
 	| Other String
 	deriving Show

@@ -34,6 +34,7 @@ library
   exposed-modules:  CoALP
                     CoALP.UI
                     CoALP.Error
+                    CoALP.Program
                     CoALP.Parser.Lexer
                     CoALP.Parser.Parser
                     CoALP.Parser.PrettyPrint

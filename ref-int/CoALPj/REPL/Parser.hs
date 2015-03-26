@@ -31,6 +31,7 @@ pCmd = spaces *> (
 		pCommand = char ':' *> (
 			pLoad
 			<|> pReload
+			<|> pPrint
 			)
 		pLoad = Load <$> (
 			string "l"
@@ -41,6 +42,11 @@ pCmd = spaces *> (
 		pReload = const Reload <$> (
 			string "r"
 			*> optional (string "eload")
+			*> spaces
+			)
+		pPrint = const Print <$> (
+			string "p"
+			*> optional (string "rint")
 			*> spaces
 			)
 		pOther = Other <$> (
