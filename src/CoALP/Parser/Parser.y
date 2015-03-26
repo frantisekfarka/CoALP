@@ -15,25 +15,24 @@ import Data.Char
 
 %name main
 %tokentype { Token }
-%monad { Alex }
+%monad { Alex } { >>= } { return }
 %error { parseError }
-%lexer { scanTokens } { Eof }
+%lexer { scanTokens } { TEof }
 
 %token 
-	fun             { Fun $$ }
-	var             { Var $$ }
-	int             { Int $$ }
-	':-'		{ Sep }
-	'.'		{ ClauseTer }
-	','		{ TermSep }
+	funId           { TFunId $$ }
+	varId           { TVarId $$ }
+	int             { TInt $$ }
+	':-'		{ THBSep }
+	'.'		{ TClauseTer }
+	','		{ TTermSep }
 --	'='             { Sym '=' }
 --	'+'             { Sym '+' }
 --	'-'             { Sym '-' }
 --	'*'             { Sym '*' }
 --	'/'             { Sym '/' } 
-	'('             { Sym '(' }
-	')'		{ Sym ')' }
-	nl		{ Newline $$ }
+	'('             { TLBrace }
+	')'		{ TRBrace }
 
 %%
 
@@ -41,9 +40,8 @@ Program :: { [ Clause ] }
 Program : Clauses			{ $1 }
 
 Clauses :: { [ Clause ] }
-Clauses	: Clauses nl Clause		{ $3 : $1 }
-     	| Clauses nl			{ $1 }
-	| Clause			{ [ $1] }
+Clauses	: Clauses Clause		{ $2 : $1 }
+     	| Clauses 			{ $1 }
 	| {- empty -}			{ [ ] }
 
 Clause :: { Clause }
@@ -57,16 +55,23 @@ Terms	: Terms ',' Term		{ $3 : $1 }
 	  {- we do not allow empty body of the clause -}
 
 Term :: { Term }
-Term	: fun '(' Terms ')'		{ TFun $1 $3 }
-	| fun				{ TFun $1 [] }
-	| var				{ TVar $1 }
+Term	: funId '(' Terms ')'		{ Fun $1 $3 }
+	| funId				{ Fun $1 [] }
+	| varId				{ Var $1 }
+
+--lineno :: { LineNumber }
+--	: {- empty -}      {% getLineNo }
 
 {
 
-parseError :: Token -> Alex a
+--parseError :: Token -> Alex a
 --parseError t = throwE $ ParserErr $ show t
-parseError t = alexError $ "Parser error: " ++ show t --  fail $ "Happy error: " ++ show t
+--parseError t = alexError $ "syntactic error: " ++ show t --  fail $ "Happy error: " ++ show t
 
+parseError :: Token -> Alex a
+parseError t = alexSynError t
+
+type LineNumber = Int
 
 type Program = [Clause]
 
@@ -74,9 +79,9 @@ data Clause = Clause Term [Term]
 	deriving Show
 
 data Term
-	= TVar String
-	| TFun String [Term]
-	| TConst Int
+	= Var String
+	| Fun String [Term]
+	| Const Int
 	deriving Show
 
 

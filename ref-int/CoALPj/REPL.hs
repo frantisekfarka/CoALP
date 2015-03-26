@@ -44,7 +44,7 @@ import CoALP.Error (Err(..))
 import CoALP.Parser.Lexer
 import CoALP.Parser.Parser
 
-import CoALP.Parser.PrettyPrint (ppLexer)
+import CoALP.Parser.PrettyPrint (ppProgram)
 
 -- | MonadException instance for ExceptT
 -- this is only a substitution for missing instance in haskeline-1.7.3
@@ -178,5 +178,5 @@ loadFile file = do
 			throwE . Msg $ err
 		Right prg	-> do
 			iputStrLn "Parsed:"
-			iputStrLn . show $ prg
+			iputStrLn . ppProgram $ prg
 

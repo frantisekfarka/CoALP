@@ -9,6 +9,8 @@ import Control.Monad.Trans.Except (Except, throwE)
 
 import CoALP.Error (Err(ParserErr))
 
+import Debug.Trace
+
 }
 
 %wrapper "monad"
@@ -18,7 +20,7 @@ $alpha 		= [a-zA-Z]		-- alphabetic characters
 $alphanum	= [$alpha $digit]	-- alphabetic characters
 $lower		= [a-z]			-- lowercase characters
 $upper		= [A-Z]			-- uppercase characters
-$symbol		= [\=\+\-\*\/\(\)]	-- symbol
+$symbol		= [\=\+\-\*\/]	-- symbol
 
 $whitenonl = [\ \t\f\v]		-- whitespace no newline
 $newline = [\n\r]		-- newline
@@ -26,70 +28,106 @@ $newline = [\n\r]		-- newline
 tokens :-
 
   -- ignore all whitespace
-  $whitenonl+ 			;
+  $white+ 			;
+  --$whitenonl+ 			;
 
-  -- we need to count newlines (TODO for pretty printing of input, error msgs?)
-  $newline+			{ \a _ -> return (Newline (line a))  }
+  -- we need to count newlines (for pretty printing of input, error msgs)
+  -- $newline+			{ \a _ -> return (TNl (line a))  }
 
-  -- we want to be able to pretty print comments in output
-  "%" .*			{ \a len -> return $ Comment $ tokenStr a len
-				}
+  -- we skip comments
+  "%" .*			; --{ \a len -> return $ TComment $ tokenStr a len}
 
   -- clause head - body separator
-  ":-"				{ \_ _ -> return Sep }
+  ":-"				{ \_ _ -> return THBSep }
 
   -- term separator
-  ","				{ \_ _ -> return TermSep }
+  ","				{ \_ _ -> return TTermSep }
 
   -- clause terminator
-  "."				{ \_ _ -> return ClauseTer }
+  "."				{ \_ _ -> return TClauseTer }
 
   -- read numeric constant
-  $digit+			{ \a len -> return $ Int (read $ tokenStr a len) }
+  $digit+			{ \a len -> return $ TInt (read $ tokenStr a len) }
 
   -- read variable name
-  $upper [$alphanum \_ \' ]*	{ \a len -> return $ Var (tokenStr a len) }
+  $upper [$alphanum \_ \' ]*	{ \a len -> return $ TVarId (tokenStr a len) }
 
   -- read function name
-  [$lower $symbol] # [\)\(] [$alphanum \_ \' ]*	{ \a len -> return $ Fun (tokenStr a len) }
+  [$lower $symbol] # [\)\(] [$alphanum \_ \' ]*	{ \a len -> return $ TFunId (tokenStr a len) }
 
   -- read symbol
-  $symbol			{ \a len -> return $ Sym (head $ tokenStr a len) }
+  -- $symbol			{ \a len -> return $ TSym (head $ tokenStr a len) }
+
+  -- opening brace
+  "("				{ \_ _ -> return TLBrace }
+
+  -- closing brace
+  ")"				{ \_ _ -> return TRBrace }
 
 
 
 {
--- Each action has type :: String -> Token
 
+-- Lexer actions
+
+-- -----------------------------------------------------------------------------
 -- | The token type:
 data Token =
-	Fun String	|
-	Int Int         |
-	Var String	|
-	Newline Int	|
-	Sym Char	|
-	Comment String	|
-	Sep		|
-	TermSep		|
-	ClauseTer	|
-	Eof
+	TFunId String	|
+	TInt Int        |
+	TVarId String	|
+--	TNl Int		|
+	TLBrace		|
+	TRBrace		|
+--	Sym Char	|
+--	TComment String	|
+	THBSep		|
+	TTermSep	|
+	TClauseTer	|
+	TEof
 	deriving (Eq,Show)
 
--- | Line extraction helper
-line :: AlexInput -> Int
-line ((AlexPn _ l _), _, _, _) = l
+
+
+-- | Position extraction helper
+alexGetPos :: Alex (Int, Int)
+alexGetPos = do
+	((AlexPn _ l c), _, _, _) <- alexGetInput
+	return (l, c)
 
 -- | Token extraction helper
 tokenStr :: AlexInput -> Int -> String
 tokenStr (_, _, _, s) len = take len s
 
---scanTokens' :: String -> [Token]
---scanTokens' = \s -> alexScanTokens s ++ [Eof]
-
 scanTokens :: (Token -> Alex a) -> Alex a
 scanTokens = (alexMonadScan >>=)
 
-alexEOF = return Eof
+alexEOF :: Alex Token
+alexEOF = return TEof
+
+-- | Sybtactioc error (unexpected token)
+alexSynError :: Token -> Alex a
+alexSynError tok = do
+	(l, c) <- alexGetPos
+	alexError $
+		"syntactic error at line " ++ show l 
+		++ ", column " ++ show (c - (len tok))
+		++ ": unexpected " ++ ppTok tok
+	where
+		ppTok (TVarId s) = "variable " ++ s
+		ppTok (TFunId s) = "function identifier '" ++ s ++ "'"
+		ppTok (TInt i) = "constant " ++ show i
+		ppTok TLBrace = "opening (" 
+		ppTok TRBrace = "closing )"
+		ppTok t = "token " ++ show t
+
+		len (TVarId s) = length s
+		len (TFunId s) = length s
+		len (TInt i) = length . show $ i
+		len TLBrace = 1
+		len TRBrace = 1
+		len t = length . show $ t
+
 
 
 }
