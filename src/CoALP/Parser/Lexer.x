@@ -13,23 +13,49 @@ import CoALP.Error (Err(ParserErr))
 
 %wrapper "monad"
 
-$digit = 0-9			-- digits
-$alpha = [a-zA-Z]		-- alphabetic characters
-$whitenonl = [\ \t\f\v]		-- whitespace nonewline
+$digit 		= [0-9]			-- digits
+$alpha 		= [a-zA-Z]		-- alphabetic characters
+$alphanum	= [$alpha $digit]	-- alphabetic characters
+$lower		= [a-z]			-- lowercase characters
+$upper		= [A-Z]			-- uppercase characters
+$symbol		= [\=\+\-\*\/\(\)]	-- symbol
+
+$whitenonl = [\ \t\f\v]		-- whitespace no newline
 $newline = [\n\r]		-- newline
 
 tokens :-
 
+  -- ignore all whitespace
   $whitenonl+ 			;
+
+  -- we need to count newlines (TODO for pretty printing of input, error msgs?)
   $newline+			{ \a _ -> return (Newline (line a))  }
-  "%".*				{ \a len -> return $ Comment $ tokenStr a len
+
+  -- we want to be able to pretty print comments in output
+  "%" .*			{ \a len -> return $ Comment $ tokenStr a len
 				}
-  			
-  let				{ \_ _ -> return Let }
-  in				{ \_ _ -> return In }
+
+  -- clause head - body separator
+  ":-"				{ \_ _ -> return Sep }
+
+  -- term separator
+  ","				{ \_ _ -> return TermSep }
+
+  -- clause terminator
+  "."				{ \_ _ -> return ClauseTer }
+
+  -- read numeric constant
   $digit+			{ \a len -> return $ Int (read $ tokenStr a len) }
-  [\=\+\-\*\/\(\)]		{ \a len -> return $ Sym (head $ tokenStr a len) }
-  $alpha [$alpha $digit \_ \']*	{ \a len -> return $ Var (tokenStr a len) }
+
+  -- read variable name
+  $upper [$alphanum \_ \' ]*	{ \a len -> return $ Var (tokenStr a len) }
+
+  -- read function name
+  [$lower $symbol] # [\)\(] [$alphanum \_ \' ]*	{ \a len -> return $ Fun (tokenStr a len) }
+
+  -- read symbol
+  $symbol			{ \a len -> return $ Sym (head $ tokenStr a len) }
+
 
 
 {
@@ -37,13 +63,15 @@ tokens :-
 
 -- | The token type:
 data Token =
-	Let 		|
-	In  		|
+	Fun String	|
 	Int Int         |
 	Var String	|
-	Sym Char	|
 	Newline Int	|
+	Sym Char	|
 	Comment String	|
+	Sep		|
+	TermSep		|
+	ClauseTer	|
 	Eof
 	deriving (Eq,Show)
 
