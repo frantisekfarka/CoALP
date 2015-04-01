@@ -11,6 +11,7 @@ import CoALP.Parser.Lexer
 import CoALP.Program
 
 import Data.Char
+import Data.Map(empty,findWithDefault,insert)
 
 }
 
@@ -27,38 +28,30 @@ import Data.Char
 	':-'		{ THBSep }
 	'.'		{ TClauseTer }
 	','		{ TTermSep }
---	'='             { Sym '=' }
---	'+'             { Sym '+' }
---	'-'             { Sym '-' }
---	'*'             { Sym '*' }
---	'/'             { Sym '/' } 
-	'('             { TLBrace }
-	')'		{ TRBrace }
+	'('             { TLPar }
+	')'		{ TRPar }
 
 %%
 
-Clauses :: { [ Clause ] }
-Clauses	: Clauses Clause		{ $2 : $1 }
+Clauses :: { Program1 }
+Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
 	| {- empty -}			{ [ ] }
 
-Clause :: { Clause }
+Clause :: { Clause1 }
 Clause	: Term ':-' Terms '.'		{ Clause $1 $3 }
 	| Term '.'			{ Clause $1 [] }
 
 
-Terms :: { [ Term ] }
+Terms :: { [ Term1 ] }
 Terms	: Terms ',' Term		{ $3 : $1 }
 	| Term				{ [$1] }
 	  {- we do not allow empty body of the clause -}
 
-Term :: { Term }
+Term :: { Term1 }
 Term	: funId '(' Terms ')'		{ Fun $1 $3 }
-	| funId				{ Fun $1 [] }
-	| varId				{ Var $1 }
+	| funId				{ Fun $1 [] } 
+	| varId				{% getVar $1 >>= return . Var }
 	| int				{ Const $1 }
-
---lineno :: { LineNumber }
---	: {- empty -}      {% getLineNo }
 
 {
 
@@ -70,7 +63,7 @@ parseError :: Token -> Alex a
 parseError t = alexSynError t
 
 
-parse :: String -> Either String Program
+parse :: String -> Either String Program1
 parse s = runAlex s main
 
 

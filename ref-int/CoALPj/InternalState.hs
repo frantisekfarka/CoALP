@@ -17,7 +17,7 @@ module CoALPj.InternalState (
 
 import Data.Monoid (mempty)
 
-import CoALP.Program (Program)
+import CoALP.Program (Program1)
 
 
 -- | General CoALPj options that affect all code
@@ -34,7 +34,7 @@ defaultCoALPOptions = CoALPOptions {
 -- | Read-Eval-Print loop state
 data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
-	, program 	:: Program
+	, program 	:: Program1
 	}
 
 -- | Create initial state from general CoALPj options

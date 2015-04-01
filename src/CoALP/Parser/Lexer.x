@@ -6,14 +6,15 @@ module CoALP.Parser.Lexer {-(
 	) -} where
 
 import Control.Monad.Trans.Except (Except, throwE)
+import Data.Map as M (Map,empty,insert, lookup) 
 
 import CoALP.Error (Err(ParserErr))
+import CoALP.Program (Ident,Constant,Variable)
 
-import Debug.Trace
 
 }
 
-%wrapper "monad"
+%wrapper "monadUserState"
 
 $digit 		= [0-9]			-- digits
 $alpha 		= [a-zA-Z]		-- alphabetic characters
@@ -59,28 +60,51 @@ tokens :-
   -- $symbol			{ \a len -> return $ TSym (head $ tokenStr a len) }
 
   -- opening brace
-  "("				{ \_ _ -> return TLBrace }
+  "("				{ \_ _ -> return TLPar }
 
   -- closing brace
-  ")"				{ \_ _ -> return TRBrace }
+  ")"				{ \_ _ -> return TRPar }
 
 
 
 {
 
--- Lexer actions
+-- -----------------------------------------------------------------------------
+-- | The User State type:
+data AlexUserState = AlexUserState {
+	  counter :: Variable
+	, vars :: Map Ident Variable
+	}
+
+alexInitUserState :: AlexUserState
+alexInitUserState = AlexUserState {
+	  counter = 0
+	, vars = empty
+	}
+
+getVar :: Ident -> Alex Variable
+getVar ident = Alex $ \s@AlexState{alex_ust=ust} 
+	-> case (ident `M.lookup` (vars ust)) of
+		Just i  -> Right (s, i)
+		Nothing -> Right (s{alex_ust=(alex_ust s){
+			  counter=(counter ust + 1)
+			, vars=(insert ident (counter ust + 1) (vars ust))
+			}}, counter ust + 1)
+			
+clearVars :: Alex ()
+clearVars = Alex $ \s@AlexState{alex_ust=ust}
+	-> Right (s{alex_ust=ust{vars=empty}}, ())
+
+
 
 -- -----------------------------------------------------------------------------
 -- | The token type:
 data Token =
-	TFunId String	|
-	TInt Int        |
-	TVarId String	|
---	TNl Int		|
-	TLBrace		|
-	TRBrace		|
---	Sym Char	|
---	TComment String	|
+	TFunId Ident    |
+	TInt Constant   |
+	TVarId Ident    |
+	TLPar           |
+	TRPar           |
 	THBSep		|
 	TTermSep	|
 	TClauseTer	|
@@ -117,15 +141,15 @@ alexSynError tok = do
 		ppTok (TVarId s) = "variable " ++ s
 		ppTok (TFunId s) = "function identifier '" ++ s ++ "'"
 		ppTok (TInt i) = "constant " ++ show i
-		ppTok TLBrace = "opening (" 
-		ppTok TRBrace = "closing )"
+		ppTok TLPar = "opening (" 
+		ppTok TRPar = "closing )"
 		ppTok t = "token " ++ show t
 
 		len (TVarId s) = length s
 		len (TFunId s) = length s
 		len (TInt i) = length . show $ i
-		len TLBrace = 1
-		len TRBrace = 1
+		len TLPar = 1
+		len TRPar = 1
 		len t = length . show $ t
 
 

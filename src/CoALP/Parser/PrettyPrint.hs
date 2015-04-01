@@ -22,19 +22,19 @@ ppLexer t = concat $ foldr f [] t
 			| otherwise		= (show tok):(", "):res
 
 
-ppProgram :: Program -> String
+ppProgram :: (Show a, Show b, Show c) => Program a b c -> String
 ppProgram = concat . intersperse "\n" . map ppClause 
 
-ppClause :: Clause -> String
+ppClause :: (Show a, Show b, Show c) => Clause a b c -> String
 ppClause (Clause h (bs@(_:_))) = ppTerm h ++ " :- " ++ ppTerms bs ++ "."
 ppClause (Clause h (_)) = ppTerm h ++ "."
 
-ppTerms :: [Term] -> String
+ppTerms :: (Show a, Show b, Show c) =>  [Term a b c] -> String
 ppTerms ts = concat . intersperse ", " . map ppTerm $ ts
 
-ppTerm :: Term -> String
-ppTerm (Var x) = x
-ppTerm (Fun f ts) = f ++ "(" ++ ppTerms ts ++ ")"
+ppTerm :: (Show a, Show b, Show c) => Term a b c -> String
+ppTerm (Var x) = "_v" ++ show x
+ppTerm (Fun f ts) = show f ++ "(" ++ ppTerms ts ++ ")"
 ppTerm (Const i) = show i
 
 
