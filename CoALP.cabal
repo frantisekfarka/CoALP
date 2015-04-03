@@ -38,6 +38,7 @@ library
                     CoALP.Parser.Lexer
                     CoALP.Parser.Parser
                     CoALP.Parser.PrettyPrint
+                    CoALP.Render
 
   other-modules:    CoALP.Tree
                     CoALP.Subst
@@ -50,9 +51,9 @@ library
                     CoALP.UI.Printer
 
   if flag(eventlog)
-    ghc-options:    -O2 -Wall -rtsopts -eventlog
+    ghc-options:    -Wall -rtsopts -eventlog
   else
-    ghc-options:    -O2 -Wall -rtsopts -auto-all -caf-all
+    ghc-options:    -Wall -rtsopts -auto-all -caf-all
 
   build-depends:    base                 >= 4.6,
                     containers           >= 0.5,

@@ -34,7 +34,7 @@ defaultCoALPOptions = CoALPOptions {
 -- | Read-Eval-Print loop state
 data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
-	, program 	:: Program1
+	, program 	:: Maybe Program1
 	}
 
 -- | Create initial state from general CoALPj options

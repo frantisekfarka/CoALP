@@ -17,7 +17,6 @@ import System.Console.Haskeline as H (
 	, getInputLine
 	, InputT 
 	)
-import System.Console.Haskeline.Completion (Completion(..), CompletionFunc)
 import System.Console.Haskeline.MonadException (MonadException (controlIO), RunIO (RunIO))
 
 import System.IO ( BufferMode(LineBuffering), stdout, hSetBuffering)
@@ -36,16 +35,21 @@ import CoALPj.REPL.Commands(
 	  Command(..)
 	)
 import CoALPj.REPL.Parser(
-	  parseCmd
+	    parseCmd
+	  , replCompletion
 	)
 
 import CoALP.Error (Err(..))
+
+import CoALP.Render (render)
+
 
 -- TODO refactor
 import CoALP.Parser.Lexer
 import CoALP.Parser.Parser (parse)
 
 import CoALP.Parser.PrettyPrint (ppProgram)
+import CoALP.Program (Clause(..))
 
 -- | MonadException instance for ExceptT
 -- this is only a substitution for missing instance in haskeline-1.7.3
@@ -143,20 +147,6 @@ repl initState efile = do
 			lift $ iputStrLn (show e)
 			return ()
 
--- | Complete REPL commands and defined identifiers
--- TODO proper implemnetation
-replCompletion :: CompletionFunc CoALP
-replCompletion (prev, next) = return ( "", fmap compl [
-		  " -- TODO implement completion"
-		, " -- you can always try other comletions ..."
-		])
-	where
-		compl x = Completion {
-			  replacement = x
-			, display = "try " ++ x
-			, isFinished = False
-			}
-
 iputStrLn :: String -> CoALP ()
 iputStrLn s = runIO $ putStrLn s
 
@@ -193,10 +183,23 @@ loadFile file = do
 			iputStrLn $ "Program " ++ file ++ " loaded."
 			--iputStrLn . ppProgram $ prg
 			s <- get
-			put $ s { program = prg }
+			put $ s { program = Just prg }
 			
 -- | print program
 printProgram :: CoALP ()
-printProgram = get >>= iputStrLn . ppProgram . program 
+--printProgram = get >>= iputStrLn . ppProgram . program 
+printProgram = do
+	mp <- get 
+	case program mp of
+		Just p	-> do
+			--iputStrLn . ppProgram . program $ p
+			--iputStrLn $ (concatMap (\s -> '\n':s))(map f $ program p)
+			iputStrLn "Romanii ite domus"
+		Nothing	-> iputStrLn "There is nothing to see here. Go away."
+
+	where
+		f (Clause h _) = render h
+		
+			
 			
 
