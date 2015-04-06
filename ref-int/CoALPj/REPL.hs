@@ -41,7 +41,7 @@ import CoALPj.REPL.Parser(
 
 import CoALP.Error (Err(..))
 
-import CoALP.Render (render)
+import CoALP.Render (renderProgram,displayProgram)
 
 
 -- TODO refactor
@@ -192,13 +192,11 @@ printProgram = do
 	mp <- get 
 	case program mp of
 		Just p	-> do
-			--iputStrLn . ppProgram . program $ p
+			iputStrLn . ppProgram $ p
 			--iputStrLn $ (concatMap (\s -> '\n':s))(map f $ program p)
-			iputStrLn "Romanii ite domus"
+			liftIO $ displayProgram p
 		Nothing	-> iputStrLn "There is nothing to see here. Go away."
 
-	where
-		f (Clause h _) = render h
 		
 			
 			
