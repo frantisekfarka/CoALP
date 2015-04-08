@@ -35,7 +35,9 @@ pCmd = spaces
 			*> (
 				pLoad
 				<|> pReload
-				<|> pPrintPray
+				<|> pPrint
+				<|> pGC1
+				<|> pQuit
 			)
 		pLoad = string "l"
 			*> optional (string "oad")
@@ -47,26 +49,18 @@ pCmd = spaces
 		pReload = string "r"
 			*> optional (string "eload")
 			*> pure Reload 
-		pPrintPray = string "pr" *> 
-			(
-			pPrint
-			<|> pPray
-			)
-		pPrint = string "i"
-			*> optional (string "nt")
+		pPrint = string "p"
+			*> optional (string "rint")
 			*> pure Print 
-		pPray = string "a"
-			*> optional (string "y")
-			*> spaces1
-			*> (
-				Pray
-				<$> (
-					char '"'
-					*> anyChar `manyTill` (char '"')
-				)
-			)
+		pQuit = string "q"
+			*> optional (string "uit")
+			*> pure Quit
+		pGC1 = string "g"
+			*> optional (string "c1")
+			*> pure GC1
 
-
+-- | Command Decription Trie
+-- use Data - trie
 data CommandDescr = Sep String [CommandDescr] | Cmd String String
 	deriving Show	
 
@@ -79,18 +73,18 @@ myCmds = Sep ":" [
 	, Sep "r" [
 		Cmd "eload" "we reload!"
 	]
-	-- | Print or Pray
-	, Sep "pr" [
-		-- | Pr{a}y
-		  Sep "a" [
-		  	Cmd "y" "Should pray"
-		]
-		-- | Pr{i}nt
-		, Sep "i" [
-			Cmd "nt" "Could print"
-		]
+	-- | Quit
+	, Sep "q" [
+		Cmd "uit" "do quit!"
 	]
+	-- | GC1
+	, Sep "g" [
+		Cmd "c1" "check guard 1!"
 	]
+	-- | Print 
+	, Sep "p" [
+		Cmd "nt" "Could print"
+	]]
 
 
 -- | Complete REPL commands and defined identifiers

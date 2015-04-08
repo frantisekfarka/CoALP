@@ -39,6 +39,7 @@ library
                     CoALP.Parser.Parser
                     CoALP.Parser.PrettyPrint
                     CoALP.Render
+                    CoALP.Guards2
 
   other-modules:    CoALP.Tree
                     CoALP.Subst

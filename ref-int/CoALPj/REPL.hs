@@ -42,6 +42,7 @@ import CoALPj.REPL.Parser(
 import CoALP.Error (Err(..))
 
 import CoALP.Render (renderProgram,displayProgram)
+import CoALP.Guards2 (gc1)
 
 
 -- TODO refactor
@@ -165,9 +166,12 @@ processInput cmd origState = do
 		Right (Print)	-> do
 			printProgram
 
-		Right a 	-> do
-			iputStrLn $ "doing some action: " ++ (show a)
-			return ()
+		Right (Quit) 	-> do
+			-- iputStrLn $ "doing some action: " ++ (show a)
+			-- return ()
+			undefined
+		Right (GC1)	-> do
+			checkGuard1
 
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
@@ -198,6 +202,12 @@ printProgram = do
 		Nothing	-> iputStrLn "There is nothing to see here. Go away."
 
 		
+checkGuard1 :: CoALP ()
+checkGuard1 = do
+	mp <- get
+	case program mp of
+		Just p -> iputStrLn . show . gc1 $ p
+		Nothing -> iputStrLn "No program loaded"
 			
 			
 

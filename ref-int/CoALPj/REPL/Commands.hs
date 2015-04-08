@@ -9,7 +9,7 @@ data Command
 	| Reload
 	| Print
 	| Quit
-	| Pray String
+	| GC1
 	deriving Show
 
 {-
