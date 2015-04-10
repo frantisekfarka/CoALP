@@ -2,9 +2,13 @@
 --
 module CoALP.Guards2 (
 	gc1 -- ^ guardenes on vlauses
+
+	-- debug
+	, guardedTerm
+	, guardedClause
 ) where
 
-import CoALP.Program (Program, Clause)
+import CoALP.Program (Program, Clause(..), Term(..))
 
 
 
@@ -47,5 +51,27 @@ gc1 = all guardedClause
 --
 -- C(i) is a reduct of C(ε)
 --
+-- TODO heads to tree lanگ projections?
 guardedClause :: Clause a b c -> Bool
-guardedClause = undefined
+guardedClause (Clause h b) = all (guardedTerm h) $ filter (sameHead h) b
+	where
+		sameHead (Fun p1 _) (Fun p2 _) 	= p1 == p2
+		sameHead (Var v1) (Var v2)	= v1 == v2
+		sameHead _ _			= False
+
+-- | reflects definitoon 4.3
+--
+-- we ensure 2) by recursion on Term
+guardedTerm :: Term a b c -> Term a b c -> Bool
+guardedTerm (Fun p1 s1) (Fun p2 s2)	= p1 == p2 && -- should hold from recursive hypothesis
+	any (uncurry guardedTerm) [
+		(t1,t2) | t1 <- s1, t2 <- s2
+	] 
+guardedTerm (Fun _ []) (Var _)		= False
+guardedTerm (Fun _ _) (Var _)		= True	-- ^ this is the constructor guarding productivity
+guardedTerm _ _				= False
+
+
+
+
+

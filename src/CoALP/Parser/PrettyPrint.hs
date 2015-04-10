@@ -35,7 +35,7 @@ ppTerms ts = concat . intersperse ", " . map ppTerm $ ts
 ppTerm :: (Show a, Show b, Show c) => Term a b c -> String
 ppTerm (Var x) = "_v" ++ show x
 ppTerm (Fun f ts) = (filter (/= '"') $ show f) ++ "(" ++ ppTerms ts ++ ")"
-ppTerm (Const i) = show i
+--ppTerm (Const i) = show i
 
 
 

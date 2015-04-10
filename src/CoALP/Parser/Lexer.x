@@ -48,7 +48,7 @@ tokens :-
   "."				{ \_ _ -> return TClauseTer }
 
   -- read numeric constant
-  $digit+			{ \a len -> return $ TInt (read $ tokenStr a len) }
+--  $digit+			{ \a len -> return $ TInt (read $ tokenStr a len) }
 
   -- read variable name
   $upper [$alphanum \_ \' ]*	{ \a len -> return $ TVarId (tokenStr a len) }
@@ -101,7 +101,7 @@ clearVars = Alex $ \s@AlexState{alex_ust=ust}
 -- | The token type:
 data Token =
 	TFunId Ident    |
-	TInt Constant   |
+--	TInt Constant   | -- lets keep it out for now
 	TVarId Ident    |
 	TLPar           |
 	TRPar           |
@@ -140,14 +140,14 @@ alexSynError tok = do
 	where
 		ppTok (TVarId s) = "variable " ++ s
 		ppTok (TFunId s) = "function identifier '" ++ s ++ "'"
-		ppTok (TInt i) = "constant " ++ show i
+--		ppTok (TInt i) = "constant " ++ show i
 		ppTok TLPar = "opening (" 
 		ppTok TRPar = "closing )"
 		ppTok t = "token " ++ show t
 
 		len (TVarId s) = length s
 		len (TFunId s) = length s
-		len (TInt i) = length . show $ i
+--		len (TInt i) = length . show $ i
 		len TLPar = 1
 		len TRPar = 1
 		len t = length . show $ t

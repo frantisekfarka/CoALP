@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -- | 
 -- * Basic program datatypes
 --
@@ -5,6 +7,8 @@ module CoALP.Program (
 	  Program
 	, Clause(..)
 	, Term(..)
+	, Subst
+	, Rew
 	, Program1
 	, Clause1
 	, Term1
@@ -15,14 +19,16 @@ module CoALP.Program (
 
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
-data Term a b c
-	= Var b              -- ^ a variable
-	| Const c            -- ^ a integral constant
-	| Fun a [Term a b c]   -- ^ a function
-	deriving (Eq, Ord)
+data Term a b c where
+	Var :: Eq b => b -> Term a b c              -- ^ a variable
+	Fun :: Eq a => a -> [Term a b c] -> Term a b c   -- ^ a function
+--	| Const c            -- ^ a integral constant -- keep out for now
+
+--	deriving (Eq, Ord)
 
 -- | Type of clause
-data Clause a b c = Clause (Term a b c) [Term a b c]
+data Clause a b c where
+	Clause :: Term a b c -> [Term a b c] -> Clause a b c
 
 -- | Type of Program
 type Program a b c = [Clause a b c]
@@ -67,3 +73,25 @@ type Clause1 = Clause Ident Variable Constant
 -- | Type of program of first-order term.
 --
 type Program1 = Program Ident Variable Constant
+
+
+-- | @AndNode a its@ is an atom with a possibly partial mapping from clauses to
+-- or-subtrees. Each of those or-subtrees corresponds to some clause number @i@
+-- such that the head of that clause has been unified with @a@ and its unified
+-- body atoms label the roots of the and-subtrees of the @i@-th 'OrNode'.
+data AndNode a = AndNode a [OrNode a]
+	deriving (Eq)
+
+-- | @ONode ts@ is the or-subtree corresponding to unification against a clause
+-- in the logic program where @ts@ are the trees built by matching against the
+-- body terms of that clause.
+--
+-- A separate case is the topmost 'ONode' which contains the list of _goals_ to
+-- be unified against a logic program.
+data OrNode a = ONode [AndNode a]
+	deriving (Eq)
+
+
+data Subst = Subst Subst
+
+data Rew = Rew Rew

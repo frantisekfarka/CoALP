@@ -24,7 +24,7 @@ import Data.Map(empty,findWithDefault,insert)
 %token 
 	funId           { TFunId $$ }
 	varId           { TVarId $$ }
-	int             { TInt $$ }
+--	int             { TInt $$ }
 	':-'		{ THBSep }
 	'.'		{ TClauseTer }
 	','		{ TTermSep }
@@ -51,7 +51,7 @@ Term :: { Term1 }
 Term	: funId '(' Terms ')'		{ Fun $1 $3 }
 	| funId				{ Fun $1 [] } 
 	| varId				{% getVar $1 >>= return . Var }
-	| int				{ Const $1 }
+--	| int				{ Const $1 }
 
 {
 

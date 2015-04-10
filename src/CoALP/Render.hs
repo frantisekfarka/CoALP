@@ -60,16 +60,16 @@ renderTerm n t0 = (node n t0) ++ (edge n t0)
 	node n (Var i) =
 		"\t" ++ show n
 		++ "[color=white,label=\"_v" ++ show i ++ "\"];\n"
-	node n (Const i) =
-		"\t" ++ show n
-		++ "[color=white,label=\"" ++ show i ++ "\"];\n"
+--	node n (Const i) =
+--		"\t" ++ show n
+--		++ "[color=white,label=\"" ++ show i ++ "\"];\n"
 	node n (Fun f t) =
 		"\t" ++ show n ++
 		"[shape=box,color=white,width=.2,label=\"" ++ f ++ "\",fixedsize=false];\n" ++
 		concat (zipWith node [10*n + i  | i <- [1..]] t)
 	edge :: Int -> Term1 -> String
 	edge n (Var _) = ""
-	edge n (Const _) = ""
+--	edge n (Const _) = ""
 	edge n (Fun f t) = 
 		concat (zipWith (\m _ -> "\t" ++ show n ++ " -> " ++ show m ++ ";\n") [10*n + i  | i <- [1..]] t) ++
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
