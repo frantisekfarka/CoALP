@@ -17,6 +17,8 @@ module CoALP.Program (
 	, Ident
 	, Variable
 	, Constant
+	, AndNode(..)
+	, OrNode(..)
 ) where
 
 -- | Type of term for any type of functional symbol and any type of variable.
@@ -82,7 +84,8 @@ type Program1 = Program Ident Variable Constant
 -- or-subtrees. Each of those or-subtrees corresponds to some clause number @i@
 -- such that the head of that clause has been unified with @a@ and its unified
 -- body atoms label the roots of the and-subtrees of the @i@-th 'OrNode'.
-data AndNode a = AndNode a [OrNode a]
+data AndNode a b
+	= AndNode a [OrNode b a]
 	deriving (Eq)
 
 -- | @ONode ts@ is the or-subtree corresponding to unification against a clause
@@ -91,7 +94,9 @@ data AndNode a = AndNode a [OrNode a]
 --
 -- A separate case is the topmost 'ONode' which contains the list of _goals_ to
 -- be unified against a logic program.
-data OrNode a = OrNode [AndNode a]
+data OrNode a b 
+	= OrNode a [AndNode b a]
+	| OrNodeEmpty
 	deriving (Eq)
 
 
@@ -99,9 +104,12 @@ data OrNode a = OrNode [AndNode a]
 type Subst a b c = [(b, Term a b c)]
 type Subst1 = Subst Ident Variable Constant
 
-type RewTree a b c = AndNode (Term a b c)
-
+data RewTree a b c = RT (Clause a b c) (Subst a b c) [AndNode (Term a b c) (Clause a b c)]
 type RewTree1 = RewTree Ident Variable Constant
+
+--AndNode (Term a b c)
+
+--type RewTree1 = RewTree Ident Variable Constant
 
 
 

@@ -8,7 +8,8 @@ module CoALP.Render (
 --import Data.Foldable
 import System.Process
 
-import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1)
+import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
+	AndNode(..),OrNode(..))
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause)
 
 
@@ -20,7 +21,11 @@ displayProgram p = do
 	return ()
 
 displayRewTree :: RewTree1 -> IO ()
-displayRewTree _ = undefined
+displayRewTree rt = do
+	putStrLn (renderRewT rt)
+	writeFile "/tmp/test.dot" (renderRewT rt)
+	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+	return ()
 	
 	
 saveProgram :: Program1 -> FilePath -> IO ()
@@ -86,24 +91,38 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
 	
+renderRewT :: RewTree1 -> String
+renderRewT rt@(RT c s os) = 
+	"digraph G {\n" ++ 
+	"\tnode [fontname=\"Monospace\"];\n" ++
+	"\troot[shape=box,color=blue,width=" ++ lh (ppClause c) ++ ",label=\"" ++ ppClause c ++ "\",fixedsize=false];\n" ++
+	concat (zipWith renderRewAnd [i  | i <- [1..]] os) ++
+	concatMap (\o -> "\troot -> " ++ show o ++ ";\n") [i  | i <- [1..(length os)]] ++
+	"}\n"
 
-{-
-    go (ONode []) start =
-      (start + 1, show start ++
-                  "[shape=square,width=.2,label=\"\",fixedsize=true];\n")
-    go (ONode ts) start =
-      let (next, dot) = connect goA ts (start + 1) start in
-      (next, show start ++ " [shape=point];\n" ++ dot)
-    goA (ANode occ its) start =
-      let (next, dot) = connect go (snd <$> Map.toList its) (start + 1) start in
-      (next, show start ++ " [shape=none,label=\"" ++
-             show (oTerm occ) ++ "\"];\n" ++ dot)
 
---    connect :: [ONode Occ] -> Int -> Int -> (Int, String)
-    connect fstep ts start parent =
-      foldl' (\(start_t, dot) t ->
-               let (next, dot_t) = fstep t start_t in
-               (next, dot ++ dot_t ++ show parent ++ " -> " ++ show start_t ++
-                      "[arrowhead=none];\n"))
-             (start, "") ts
--}
+renderRewAnd :: Int -> AndNode Term1 Clause1 -> String
+renderRewAnd n (AndNode t ors) = 
+	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
+	ppTerm t ++ "\",fixedsize=true];\n" ++
+	concat (zipWith renderRewOr [10*n + i | i <- [1..]] ors) ++
+	concat (zipWith
+		(\o p -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n")
+		[10*n + i  | i <- [1..]] 
+		ors
+	) ++ ""
+
+
+renderRewOr :: Int -> OrNode Clause1 Term1 -> String
+renderRewOr n OrNodeEmpty =
+	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
+	"X_?" ++ "\",fixedsize=true];\n" ++
+	""
+renderRewOr n (OrNode c@(Clause h b) ands) = 
+	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ "label=\"" ++ 
+	ppClause c ++ "\",fixedsize=true];\n" ++
+	""
+
+
+lh :: String -> String
+lh s = show ( fromIntegral (length s) * 0.15 )

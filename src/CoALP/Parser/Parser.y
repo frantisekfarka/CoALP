@@ -39,7 +39,7 @@ Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
 	| {- empty -}			{ [ ] }
 
 Clause :: { Clause1 }
-Clause	: Term ':-' Terms '.'		{ Clause $1 $3 }
+Clause	: Term ':-' Terms '.'		{ Clause $1 (reverse $3) }
 	| '?' ':-' Terms '.'		{ QueryClause $3 }
 	| Term '.'			{ Clause $1 [] }
 
@@ -50,7 +50,7 @@ Terms	: Terms ',' Term		{ $3 : $1 }
 	  {- we do not allow empty body of the clause -}
 
 Term :: { Term1 }
-Term	: funId '(' Terms ')'		{ Fun $1 $3 }
+Term	: funId '(' Terms ')'		{ Fun $1 (reverse $3) }
 	| funId				{ Fun $1 [] } 
 	| varId				{% getVar $1 >>= return . Var }
 --	| int				{ Const $1 }
