@@ -5,11 +5,15 @@ module CoALP.Parser.Lexer {-(
 	, Token (..)
 	) -} where
 
-import Control.Monad.Trans.Except (Except, throwE)
+--import Control.Monad.Trans.Except (Except, throwE)
 import Data.Map as M (Map,empty,insert, lookup) 
 
-import CoALP.Error (Err(ParserErr))
-import CoALP.Program (Ident,Constant,Variable)
+--import CoALP.Error (Err(ParserErr))
+import CoALP.Program (
+	  Ident
+	-- , Constant
+	, Variable
+	)
 
 
 }
@@ -46,6 +50,9 @@ tokens :-
 
   -- clause terminator
   "."				{ \_ _ -> return TClauseTer }
+
+  -- query clause head
+  "?"				{ \_ _ -> return TQuery }
 
   -- read numeric constant
 --  $digit+			{ \a len -> return $ TInt (read $ tokenStr a len) }
@@ -108,6 +115,7 @@ data Token =
 	THBSep		|
 	TTermSep	|
 	TClauseTer	|
+	TQuery		|
 	TEof
 	deriving (Eq,Show)
 
@@ -141,6 +149,7 @@ alexSynError tok = do
 		ppTok (TVarId s) = "variable " ++ s
 		ppTok (TFunId s) = "function identifier '" ++ s ++ "'"
 --		ppTok (TInt i) = "constant " ++ show i
+		ppTok TQuery = "token '?'" 
 		ppTok TLPar = "opening (" 
 		ppTok TRPar = "closing )"
 		ppTok t = "token " ++ show t
@@ -148,6 +157,7 @@ alexSynError tok = do
 		len (TVarId s) = length s
 		len (TFunId s) = length s
 --		len (TInt i) = length . show $ i
+		len TQuery = 1
 		len TLPar = 1
 		len TRPar = 1
 		len t = length . show $ t

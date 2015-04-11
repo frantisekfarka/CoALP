@@ -30,6 +30,7 @@ import Data.Map(empty,findWithDefault,insert)
 	','		{ TTermSep }
 	'('             { TLPar }
 	')'		{ TRPar }
+	'?'		{ TQuery }
 
 %%
 
@@ -39,6 +40,7 @@ Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
 
 Clause :: { Clause1 }
 Clause	: Term ':-' Terms '.'		{ Clause $1 $3 }
+	| '?' ':-' Terms '.'		{ QueryClause $3 }
 	| Term '.'			{ Clause $1 [] }
 
 

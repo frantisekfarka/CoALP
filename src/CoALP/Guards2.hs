@@ -1,7 +1,8 @@
 -- | This module provides guardednes checks
 --
 module CoALP.Guards2 (
-	gc1 -- ^ guardenes on vlauses
+	  gc1 -- ^ guardenes on clauses
+	, gc2 -- ^ guardenes on rew trees
 
 	-- debug
 	, guardedTerm
@@ -58,6 +59,7 @@ guardedClause (Clause h b) = all (guardedTerm h) $ filter (sameHead h) b
 		sameHead (Fun p1 _) (Fun p2 _) 	= p1 == p2
 		sameHead (Var v1) (Var v2)	= v1 == v2
 		sameHead _ _			= False
+quardedClause (QueryClause _) = True -- ^ TODO filter out query clauses?
 
 -- | reflects definitoon 4.3
 --
@@ -74,4 +76,5 @@ guardedTerm _ _				= False
 
 
 
-
+gc2 :: Program a b c -> Bool
+gc2 p = undefined

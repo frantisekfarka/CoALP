@@ -23,11 +23,14 @@ ppLexer t = concat $ foldr f [] t
 
 
 ppProgram :: (Show a, Show b, Show c) => Program a b c -> String
-ppProgram = concat . intersperse "\n" . map ppClause 
+ppProgram = concat . intersperse "\n" . ppLines . (map ppClause) 
+	where
+	ppLines = zipWith (\x y -> show x ++ ":\t" ++ y) [1..]
 
 ppClause :: (Show a, Show b, Show c) => Clause a b c -> String
 ppClause (Clause h (bs@(_:_))) = ppTerm h ++ " :- " ++ ppTerms bs ++ "."
-ppClause (Clause h (_)) = ppTerm h ++ "."
+ppClause (Clause h []) = ppTerm h ++ "."
+ppClause (QueryClause bs) = "? :- " ++ ppTerms bs ++ "."
 
 ppTerms :: (Show a, Show b, Show c) =>  [Term a b c] -> String
 ppTerms ts = concat . intersperse ", " . map ppTerm $ ts

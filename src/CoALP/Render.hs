@@ -1,22 +1,26 @@
 -- | Render some trees
 module CoALP.Render (
-	renderProgram,
-	displayProgram
+	  renderProgram
+	, displayProgram
+	, displayRewTree
 ) where
 
 --import Data.Foldable
 import System.Process
 
-import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..))
-import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppTerms)
+import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1)
+import CoALP.Parser.PrettyPrint (ppTerm,ppClause)
 
 
 -- | TODO refactor! -- use tree language!
 displayProgram :: Program1 -> IO ()
 displayProgram p = do
 	saveProgram p "/tmp/test.dot"
-	spawnCommand "dot -T svg /tmp/test.dot |  display"
+	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
+
+displayRewTree :: RewTree1 -> IO ()
+displayRewTree _ = undefined
 	
 	
 saveProgram :: Program1 -> FilePath -> IO ()
@@ -30,6 +34,13 @@ renderProgram cl =
 	"}\n"
 
 renderClause :: Int ->  Clause1 -> String
+renderClause n (c@(QueryClause b)) =
+	"subgraph cluster" ++ show n ++ "{\n" ++
+	"\tcolor=grey;label=\"? :- ...\";\n" ++
+	"\t" ++ show n ++ "[color=red,shape=record,fixedsize=false,label=\" ? | :- | <f2> _ \"];\n" ++
+	concat (zipWith renderTerm [20*n + i  | i <- [1..]] b) ++
+	concat (zipWith (\m _ -> "\t" ++ show n ++ ":f2 -> " ++ show m ++ ";\n") [20*n + i  | i <- [1..]] b) ++ "\n" ++
+	"}\n"
 renderClause n (c@(Clause h b)) =
 	"subgraph cluster" ++ show n ++ "{\n" ++
 	"\tcolor=grey;label=\"" ++ helper  ++ "\";\n" ++
@@ -53,7 +64,7 @@ renderClause n (c@(Clause h b)) =
 -- TODO refactor
 -- render :: ONode Occ -> String
 renderTerm :: Int -> Term1 -> String
-renderTerm n t0 = (node n t0) ++ (edge n t0)
+renderTerm m t0 = (node m t0) ++ (edge m t0)
 	where
 	--go :: ONode Occ -> Int -> (Int, String)
 	node :: Int -> Term1 -> String
@@ -71,7 +82,7 @@ renderTerm n t0 = (node n t0) ++ (edge n t0)
 	edge n (Var _) = ""
 --	edge n (Const _) = ""
 	edge n (Fun f t) = 
-		concat (zipWith (\m _ -> "\t" ++ show n ++ " -> " ++ show m ++ ";\n") [10*n + i  | i <- [1..]] t) ++
+		concat (zipWith (\o _ -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..]] t) ++
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
 	

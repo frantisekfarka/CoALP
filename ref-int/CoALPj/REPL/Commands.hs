@@ -10,6 +10,9 @@ data Command
 	| Print
 	| Quit
 	| GC1
+	| DrawProgram
+	| GC2 
+	| DrawRew Int
 	deriving Show
 
 {-

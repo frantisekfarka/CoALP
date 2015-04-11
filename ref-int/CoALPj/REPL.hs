@@ -1,12 +1,17 @@
+{-# LANGUAGE FlexibleContexts #-}
 -- | Read-Eval-Print loop
 module CoALPj.REPL where
 
 import Control.Exception (SomeException)
-import Control.Monad (when)
+import Control.Monad (when, (=<<))
 import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, mapExceptT, throwE)
 import Control.Monad.Trans.State --(StateT, execStateT)
+import Control.Monad.State (MonadState)
+import Control.Monad.IO.Class(MonadIO)
+import Data.Functor ((<$>))
 import Data.Functor.Identity (runIdentity)
+import Data.Maybe (maybe)
 
 import System.Console.Haskeline as H (
 	  runInputT
@@ -28,6 +33,7 @@ import CoALPj.InternalState(
 	, replInit
 	, caOptions
 	, program
+	, programPath
 	, optVerbosity
 	, Verbosity (..)
 	)
@@ -41,8 +47,11 @@ import CoALPj.REPL.Parser(
 
 import CoALP.Error (Err(..))
 
-import CoALP.Render (renderProgram,displayProgram)
-import CoALP.Guards2 (gc1)
+import CoALP.Render (renderProgram,displayProgram,displayRewTree)
+import CoALP.Guards2 (gc1,gc2)
+import CoALP.Program (Program1)
+
+import CoALP.RewTree (rew)
 
 
 -- TODO refactor
@@ -159,19 +168,19 @@ processInput cmd origState = do
 		Left err 	-> do
 			iputStrLn $ show err
 			return ()
-
-		Right (Load f)	-> do
-			loadFile f
-
-		Right (Print)	-> do
-			printProgram
+		Right (Load f)	-> loadFile f
+		Right (Reload)	-> reloadFile 
+		Right (Print)	-> printProgram
 
 		Right (Quit) 	-> do
 			-- iputStrLn $ "doing some action: " ++ (show a)
 			-- return ()
 			undefined
-		Right (GC1)	-> do
-			checkGuard1
+		Right (GC1)	-> checkGuard1
+		Right (GC2)	-> checkGuard2 
+
+		Right (DrawProgram) -> drawProgram
+		Right (DrawRew i) -> drawRew i
 
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
@@ -187,27 +196,38 @@ loadFile file = do
 			iputStrLn $ "Program " ++ file ++ " loaded."
 			--iputStrLn . ppProgram $ prg
 			s <- get
-			put $ s { program = Just prg }
+			put $ s { program = Just prg, programPath = Just file }
+
+reloadFile :: CoALP ()
+reloadFile = maybe (iputStrLn "No program loaded yet") loadFile
+	=<< programPath <$> get
+	
 			
 -- | print program
 printProgram :: CoALP ()
 --printProgram = get >>= iputStrLn . ppProgram . program 
-printProgram = do
-	mp <- get 
-	case program mp of
-		Just p	-> do
-			iputStrLn . ppProgram $ p
-			--iputStrLn $ (concatMap (\s -> '\n':s))(map f $ program p)
-			liftIO $ displayProgram p
-		Nothing	-> iputStrLn "There is nothing to see here. Go away."
-
+printProgram = whenProgram (iputStrLn . ppProgram)
 		
 checkGuard1 :: CoALP ()
-checkGuard1 = do
-	mp <- get
-	case program mp of
-		Just p -> iputStrLn . show . gc1 $ p
-		Nothing -> iputStrLn "No program loaded"
+checkGuard1 = whenProgram (iputStrLn . show . gc1)
+			
+checkGuard2 :: CoALP ()
+checkGuard2 = whenProgram (iputStrLn . show . gc2)
 			
 			
+drawProgram :: CoALP ()
+drawProgram = whenProgram (liftIO . displayProgram)
+
+drawRew :: Int -> CoALP ()
+drawRew x = whenProgram (\p -> liftIO . displayRewTree 
+		-- | TODO !!
+		$ rew p (p !! x) []
+	)
+
+
+whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
+whenProgram f = maybe (iputStrLn "No program loaded") f
+	=<< program <$> get
+		
+
 

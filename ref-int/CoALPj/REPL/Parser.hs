@@ -8,7 +8,7 @@ module CoALPj.REPL.Parser (
 
 import Control.Applicative 
 import Control.Monad.IO.Class
-import Text.Parsec (parse,(<?>),many1)
+import Text.Parsec (parse,(<?>),many1,digit)
 import Text.Parsec.Char (char,space,spaces,anyChar,noneOf,string,endOfLine)
 import Text.Parsec.Combinator (eof,manyTill)
 import Text.Parsec.Error (ParseError)
@@ -31,13 +31,15 @@ pCmd = spaces
 	<* eof
 	where
 		spaces1 = many1 space
+		digits1 = many1 digit
 		pCommand = char ':' 
 			*> (
 				pLoad
 				<|> pReload
 				<|> pPrint
-				<|> pGC1
+				<|> pGC
 				<|> pQuit
+				<|> pDraw
 			)
 		pLoad = string "l"
 			*> optional (string "oad")
@@ -55,9 +57,20 @@ pCmd = spaces
 		pQuit = string "q"
 			*> optional (string "uit")
 			*> pure Quit
-		pGC1 = string "g"
-			*> optional (string "c1")
-			*> pure GC1
+		pGC = string "gc"
+			*> (
+				(string "1" *> pure GC1)
+				<|> (string "2" *> pure GC2)
+			)
+		pDraw = string "draw" 
+			*> (
+				(
+					string "T" *> optional (string "erm") *> pure DrawProgram
+				) <|> (
+					string "R" *> optional (string "ew") *> spaces
+				 	*> (DrawRew . read <$> digits1 )
+				)
+			)
 
 -- | Command Decription Trie
 -- use Data - trie
