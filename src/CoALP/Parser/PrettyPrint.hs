@@ -9,7 +9,7 @@ import Data.List (intersperse)
 import CoALP.Parser.Lexer (Token(..))
 
 -- TODO refactor program data types out of parser
-import CoALP.Program (Program, Clause(..), Term(..))
+import CoALP.Program (Program, Clause(..), Term(..),Query(..))
 
 
 -- | Lexer output pretty printer
@@ -30,7 +30,6 @@ ppProgram = concat . intersperse "\n" . ppLines . (map ppClause)
 ppClause :: (Show a, Show b, Show c) => Clause a b c -> String
 ppClause (Clause h (bs@(_:_))) = ppTerm h ++ " :- " ++ ppTerms bs ++ "."
 ppClause (Clause h []) = ppTerm h ++ "."
-ppClause (QueryClause bs) = "? :- " ++ ppTerms bs ++ "."
 
 ppTerms :: (Show a, Show b, Show c) =>  [Term a b c] -> String
 ppTerms ts = concat . intersperse ", " . map ppTerm $ ts
@@ -40,5 +39,6 @@ ppTerm (Var x) = "_v" ++ show x
 ppTerm (Fun f ts) = (filter (/= '"') $ show f) ++ "(" ++ ppTerms ts ++ ")"
 --ppTerm (Const i) = show i
 
-
+ppQuery :: (Show a, Show b, Show c) => Query a b c -> String
+ppQuery (Query ts) = "? :- " ++ ppTerms ts
 

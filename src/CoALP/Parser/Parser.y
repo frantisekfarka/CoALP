@@ -15,7 +15,8 @@ import Data.Map(empty,findWithDefault,insert)
 
 }
 
-%name main
+%name main Clauses
+%name query Query
 %tokentype { Token }
 %monad { Alex } { >>= } { return }
 %error { parseError }
@@ -40,9 +41,10 @@ Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
 
 Clause :: { Clause1 }
 Clause	: Term ':-' Terms '.'		{ Clause $1 (reverse $3) }
-	| '?' ':-' Terms '.'		{ QueryClause $3 }
 	| Term '.'			{ Clause $1 [] }
 
+Query :: { Query1 }
+Query	: '?' ':-' Terms '.'		{ Query $3 }
 
 Terms :: { [ Term1 ] }
 Terms	: Terms ',' Term		{ $3 : $1 }
@@ -67,6 +69,10 @@ parseError t = alexSynError t
 
 parse :: String -> Either String Program1
 parse s = runAlex s main
+
+
+parseQuery :: String -> Either String Query1
+parseQuery s = runAlex s query
 
 
 

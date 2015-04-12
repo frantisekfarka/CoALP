@@ -6,6 +6,7 @@
 module CoALP.Program (
 	  Program
 	, Clause(..)
+	, Query(..)
 	, Term(..)
 	, Subst
 	, Subst1
@@ -13,6 +14,7 @@ module CoALP.Program (
 	, RewTree1
 	, Program1
 	, Clause1
+	, Query1
 	, Term1
 	, Ident
 	, Variable
@@ -33,7 +35,10 @@ data Term a b c where
 -- | Type of clause
 data Clause a b c where
 	Clause :: Term a b c -> [Term a b c] -> Clause a b c
-	QueryClause :: [Term a b c] -> Clause a b c
+
+-- | Type of Query Clause
+data Query a b c 
+	= Query [Term a b c]
 
 -- | Type of Program
 type Program a b c = [Clause a b c]
@@ -75,6 +80,11 @@ type Term1 = Term Ident Variable Constant
 --
 type Clause1 = Clause Ident Variable Constant
 
+
+-- | Type of clause of first-order query
+--
+type Query1 = Query Ident Variable Constant
+
 -- | Type of program of first-order term.
 --
 type Program1 = Program Ident Variable Constant
@@ -104,7 +114,7 @@ data OrNode a b
 type Subst a b c = [(b, Term a b c)]
 type Subst1 = Subst Ident Variable Constant
 
-data RewTree a b c = RT (Clause a b c) (Subst a b c) [AndNode (Term a b c) (Clause a b c)]
+data RewTree a b c = RT (Query a b c) (Subst a b c) [AndNode (Term a b c) (Clause a b c)]
 type RewTree1 = RewTree Ident Variable Constant
 
 --AndNode (Term a b c)

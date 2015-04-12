@@ -9,8 +9,9 @@ module CoALP.Render (
 import System.Process
 
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
-	AndNode(..),OrNode(..))
-import CoALP.Parser.PrettyPrint (ppTerm,ppClause)
+	AndNode(..),OrNode(..),Query(..),Query1
+	)
+import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery)
 
 
 -- | TODO refactor! -- use tree language!
@@ -39,13 +40,6 @@ renderProgram cl =
 	"}\n"
 
 renderClause :: Int ->  Clause1 -> String
-renderClause n (c@(QueryClause b)) =
-	"subgraph cluster" ++ show n ++ "{\n" ++
-	"\tcolor=grey;label=\"? :- ...\";\n" ++
-	"\t" ++ show n ++ "[color=red,shape=record,fixedsize=false,label=\" ? | :- | <f2> _ \"];\n" ++
-	concat (zipWith renderTerm [20*n + i  | i <- [1..]] b) ++
-	concat (zipWith (\m _ -> "\t" ++ show n ++ ":f2 -> " ++ show m ++ ";\n") [20*n + i  | i <- [1..]] b) ++ "\n" ++
-	"}\n"
 renderClause n (c@(Clause h b)) =
 	"subgraph cluster" ++ show n ++ "{\n" ++
 	"\tcolor=grey;label=\"" ++ helper  ++ "\";\n" ++
@@ -92,10 +86,10 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 
 	
 renderRewT :: RewTree1 -> String
-renderRewT rt@(RT c s os) = 
+renderRewT rt@(RT q s os) = 
 	"digraph G {\n" ++ 
 	"\tnode [fontname=\"Monospace\"];\n" ++
-	"\troot[shape=box,color=blue,width=" ++ lh (ppClause c) ++ ",label=\"" ++ ppClause c ++ "\",fixedsize=false];\n" ++
+	"\troot[shape=box,color=blue,width=" ++ lh (ppQuery q) ++ ",label=\"" ++ ppQuery q ++ "\",fixedsize=false];\n" ++
 	concat (zipWith renderRewAnd [i  | i <- [1..]] os) ++
 	concatMap (\o -> "\troot -> " ++ show o ++ ";\n") [i  | i <- [1..(length os)]] ++
 	"}\n"

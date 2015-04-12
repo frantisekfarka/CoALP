@@ -31,7 +31,7 @@ pCmd = spaces
 	<* eof
 	where
 		spaces1 = many1 space
-		digits1 = many1 digit
+		--digits1 = many1 digit
 		pCommand = char ':' 
 			*> (
 				pLoad
@@ -68,7 +68,7 @@ pCmd = spaces
 					string "T" *> optional (string "erm") *> pure DrawProgram
 				) <|> (
 					string "R" *> optional (string "ew") *> spaces
-				 	*> (DrawRew . read <$> digits1 )
+				 	*> (DrawRew <$> many anyChar)
 				)
 			)
 

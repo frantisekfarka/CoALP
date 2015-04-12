@@ -12,7 +12,7 @@ data Command
 	| GC1
 	| DrawProgram
 	| GC2 
-	| DrawRew Int
+	| DrawRew String
 	deriving Show
 
 {-

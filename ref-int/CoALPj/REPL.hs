@@ -56,7 +56,7 @@ import CoALP.RewTree (rew)
 
 -- TODO refactor
 import CoALP.Parser.Lexer
-import CoALP.Parser.Parser (parse)
+import CoALP.Parser.Parser (parse,parseQuery)
 
 import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.Program (Clause(..))
@@ -218,10 +218,15 @@ checkGuard2 = whenProgram (iputStrLn . show . gc2)
 drawProgram :: CoALP ()
 drawProgram = whenProgram (liftIO . displayProgram)
 
-drawRew :: Int -> CoALP ()
-drawRew x = whenProgram (\p -> liftIO . displayRewTree 
-		-- | TODO !!
-		$ rew p (p !! x) []
+drawRew :: String -> CoALP ()
+drawRew q = whenProgram (
+	\p -> case parseQuery q of
+		Left err	-> do
+			iputStrLn err
+			return ()
+		Right r		-> do
+			iputStrLn $ "Query" ++ q ++ " loaded."
+			liftIO . displayRewTree $ rew p r []
 	)
 
 
