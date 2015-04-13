@@ -185,6 +185,7 @@ processInput cmd origState = do
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
 loadFile file = do
+	iputStrLn file
 	cnt <- lift . lift $ readFile file
 	--iputStrLn $ ppLexer $ scanTokens cnt
 	--TODO refactor parser monad (stack)
