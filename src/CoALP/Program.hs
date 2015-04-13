@@ -23,6 +23,8 @@ module CoALP.Program (
 	, OrNode(..)
 ) where
 
+import Data.List (intersperse)
+
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
 data Term a b c where
@@ -31,6 +33,10 @@ data Term a b c where
 --	| Const c            -- ^ a integral constant -- keep out for now
 
 --	deriving (Eq, Ord)
+--
+instance (Show a, Show b, Show c) => Show (Term a b c) where
+	show (Var x) = "_v" ++ show x
+	show (Fun f ts) = (filter (/= '"') $ show f) ++ "(" ++ (concat . intersperse ", " . map show $ ts) ++ ")"
 
 -- | Type of clause
 data Clause a b c where
