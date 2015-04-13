@@ -21,10 +21,10 @@ displayProgram p = do
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 
-displayRewTree :: RewTree1 -> IO ()
-displayRewTree rt = do
-	putStrLn (renderRewT rt)
-	writeFile "/tmp/test.dot" (renderRewT rt)
+displayRewTree :: Int -> RewTree1 -> IO ()
+displayRewTree depth rt = do
+	putStrLn (renderRewT depth rt)
+	writeFile "/tmp/test.dot" (renderRewT depth rt)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	
@@ -42,7 +42,7 @@ renderProgram cl =
 renderClause :: Int ->  Clause1 -> String
 renderClause n (c@(Clause h b)) =
 	"subgraph cluster" ++ show n ++ "{\n" ++
-	"\tcolor=grey;label=\"" ++ helper  ++ "\";\n" ++
+	"\tcolor=grey,label=\"" ++ helper  ++ "\";\n" ++
 	"\t" ++ show n ++ "[color=red,shape=record,fixedsize=false,label=\"<f1> _ | :- | <f2> _ \"];\n" ++
 	renderTerm (10*n) h ++
 	"\t" ++ show n  ++ ":f1 -> " ++ show (10*n) ++ ";\n" ++
@@ -85,21 +85,23 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
 	
-renderRewT :: RewTree1 -> String
-renderRewT rt@(RT q s os) = 
+renderRewT :: Int -> RewTree1 -> String
+renderRewT 0 _ = ""
+renderRewT depth rt@(RT q s os) = 
 	"digraph G {\n" ++ 
 	"\tnode [fontname=\"Monospace\"];\n" ++
 	"\troot[shape=box,color=blue,width=" ++ lh (ppQuery q) ++ ",label=\"" ++ ppQuery q ++ "\",fixedsize=false];\n" ++
-	concat (zipWith renderRewAnd [i  | i <- [1..]] os) ++
+	concat (zipWith (renderRewAnd (depth-1)) [i  | i <- [1..]] os) ++
 	concatMap (\o -> "\troot -> " ++ show o ++ ";\n") [i  | i <- [1..(length os)]] ++
 	"}\n"
 
 
-renderRewAnd :: Int -> AndNode Term1 Clause1 -> String
-renderRewAnd n (AndNode t ors) = 
+renderRewAnd :: Int -> Int -> AndNode Term1 Clause1 -> String
+renderRewAnd 0 _ _ = ""
+renderRewAnd depth n (AndNode t ors) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
 	ppTerm t ++ "\",fixedsize=true];\n" ++
-	concat (zipWith renderRewOr [10*n + i | i <- [1..]] ors) ++
+	concat (zipWith (renderRewOr (depth - 1)) [10*n + i | i <- [1..]] ors) ++
 	concat (zipWith
 		(\o p -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n")
 		[10*n + i  | i <- [1..]] 
@@ -107,14 +109,17 @@ renderRewAnd n (AndNode t ors) =
 	) ++ ""
 
 
-renderRewOr :: Int -> OrNode Clause1 Term1 -> String
-renderRewOr n OrNodeEmpty =
+renderRewOr :: Int -> Int -> OrNode Clause1 Term1 -> String
+renderRewOr 0 _ _ = ""
+renderRewOr depth n OrNodeEmpty =
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"X_?" ++ "\",fixedsize=true];\n" ++
 	""
-renderRewOr n (OrNode c@(Clause h b) ands) = 
-	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ "label=\"" ++ 
+renderRewOr depth n (OrNode c@(Clause h b) ands) = 
+	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
 	ppClause c ++ "\",fixedsize=true];\n" ++
+	concat (zipWith (renderRewAnd (depth - 1)) [10*n + i  | i <- [1..]] ands) ++
+	concatMap (\o -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n") [n*10 + i  | i <- [1..(length ands)]] ++
 	""
 
 

@@ -180,7 +180,7 @@ processInput cmd origState = do
 		Right (GC2)	-> checkGuard2 
 
 		Right (DrawProgram) -> drawProgram
-		Right (DrawRew i) -> drawRew i
+		Right (DrawRew d q) -> drawRew d q
 
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
@@ -196,7 +196,7 @@ loadFile file = do
 			iputStrLn $ "Program " ++ file ++ " loaded."
 			--iputStrLn . ppProgram $ prg
 			s <- get
-			put $ s { program = Just prg, programPath = Just file }
+			put $ s { program = Just (reverse prg), programPath = Just file }
 
 reloadFile :: CoALP ()
 reloadFile = maybe (iputStrLn "No program loaded yet") loadFile
@@ -218,15 +218,15 @@ checkGuard2 = whenProgram (iputStrLn . show . gc2)
 drawProgram :: CoALP ()
 drawProgram = whenProgram (liftIO . displayProgram)
 
-drawRew :: String -> CoALP ()
-drawRew q = whenProgram (
+drawRew :: Int -> String -> CoALP ()
+drawRew depth q = whenProgram (
 	\p -> case parseQuery q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query" ++ q ++ " loaded."
-			liftIO . displayRewTree $ rew p r []
+			liftIO . displayRewTree depth $ rew p r []
 	)
 
 

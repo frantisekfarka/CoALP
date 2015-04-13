@@ -23,7 +23,9 @@ mkOrNode p t c@(Clause h b)  = if h `match` t
 -- TODO proper matching¡
 match :: Term a b c -> Term a b c -> Bool	
 match (Var _) 		(Var _)		= True
-match (Fun id1 _)	(Fun id2 _)	= id1 == id2
+match (Fun id1 t1)	(Fun id2 t2)	= id1 == id2 && (all (== True) $ zipWith match t1 t2)
+match (Fun _ []) 	(Var _)		= True
+match (Var _) 		(Fun _ _)	= True
 match _ 		_		= False
 
 
