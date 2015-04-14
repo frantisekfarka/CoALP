@@ -7,9 +7,20 @@ module CoALP.Guards2 (
 	-- debug
 	, guardedTerm
 	, guardedClause
+	, loops'
 ) where
 
-import CoALP.Program (Program, Clause(..), Term(..))
+import Control.Arrow ((***))
+import Data.Functor ((<$>))
+import Data.Maybe (catMaybes)
+import Data.Traversable (sequenceA,traverse)
+
+import CoALP.Program (Program, Clause(..), Term(..),
+	AndNode(..),OrNode(..),RewTree(..),
+	Query(..)
+	)
+
+import CoALP.RewTree (rew)
 
 
 
@@ -75,5 +86,32 @@ guardedTerm _ _				= False
 
 
 
-gc2 :: Program a b c -> Bool
-gc2 p = undefined
+gc2 :: Query a b c -> Program a b c -> Bool
+gc2 q p = all (uncurry guardedTerm) $ loops (rew p q [])
+
+loops :: RewTree a b c -> [(Term a b c, Term a b c)]
+loops rt = snd (loops' rt)
+
+-- | recursively build loops
+loops' :: RewTree a b c -> ([(Term a b c,Int)],[(Term a b c, Term a b c)])
+loops' (RT _ _ ands) = (id *** concat.concat) $ sequenceA $ fmap f ands
+	where
+		f (AndNode _ ors) = sequenceA $ zipWith loopsO [1..] ors
+
+loopsA :: Int -> AndNode (Term a b c) (Clause a b c) -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
+loopsA pi (AndNode f@(Fun fid _) ors) = (id *** concat) $
+				sequenceA $ ([(f,pi)],newLoops) : boundLower
+	where
+		boundLower = zipWith loopsO [1..] ors
+		newLoops = [(f, f') | (f'@(Fun fid' _), pi')  <- concatMap fst boundLower,
+			fid == fid' && pi == pi'
+			]
+
+loopsA pi (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1..] ors
+
+loopsO :: Int -> OrNode (Clause a b c) (Term a b c) -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
+loopsO pi (OrNodeEmpty) = ([],[])
+loopsO pi (OrNode _  ands) = (id *** concat) $ traverse (loopsA pi) ands
+
+
+

@@ -11,7 +11,7 @@ data Command
 	| Quit
 	| GC1
 	| DrawProgram
-	| GC2 
+	| GC2 String
 	| DrawRew Int String
 	deriving Show
 

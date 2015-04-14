@@ -48,7 +48,7 @@ import CoALPj.REPL.Parser(
 import CoALP.Error (Err(..))
 
 import CoALP.Render (renderProgram,displayProgram,displayRewTree)
-import CoALP.Guards2 (gc1,gc2)
+import CoALP.Guards2 (gc1,gc2,loops')
 import CoALP.Program (Program1)
 
 import CoALP.RewTree (rew)
@@ -177,7 +177,7 @@ processInput cmd origState = do
 			-- return ()
 			undefined
 		Right (GC1)	-> checkGuard1
-		Right (GC2)	-> checkGuard2 
+		Right (GC2 q)	-> checkGuard2 q
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
@@ -185,7 +185,6 @@ processInput cmd origState = do
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
 loadFile file = do
-	iputStrLn file
 	cnt <- lift . lift $ readFile file
 	--iputStrLn $ ppLexer $ scanTokens cnt
 	--TODO refactor parser monad (stack)
@@ -212,8 +211,12 @@ printProgram = whenProgram (iputStrLn . ppProgram)
 checkGuard1 :: CoALP ()
 checkGuard1 = whenProgram (iputStrLn . show . gc1)
 			
-checkGuard2 :: CoALP ()
-checkGuard2 = whenProgram (iputStrLn . show . gc2)
+checkGuard2 :: String -> CoALP ()
+checkGuard2 q = whenProgram (
+	\p -> case parseQuery q of
+		Left err	-> iputStrLn err
+		Right r		-> iputStrLn . show $ (gc2 r p)
+	)
 			
 			
 drawProgram :: CoALP ()
@@ -227,7 +230,9 @@ drawRew depth q = whenProgram (
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query" ++ q ++ " loaded."
-			liftIO . displayRewTree depth $ rew p r []
+			let rt = rew p r []
+			liftIO . displayRewTree depth $ rt  --rew p r []
+			iputStrLn . show $ loops' rt
 	)
 
 

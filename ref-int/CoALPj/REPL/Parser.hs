@@ -35,7 +35,7 @@ dCmd = toCmdDescr [
 	, (":print",	pure Print)
 	, (":quit",	pure Quit)
 	, (":gc1",	pure GC1)
-	, (":gc2",	pure GC2)
+	, (":gc2",	spaces *> (GC2 <$> many anyChar))
 	, (":drawTerms",pure DrawProgram)
 	, (":drawRew",	spaces *> (DrawRew <$> (read <$> digits1 <* spaces1) <*> many anyChar))
 	]
