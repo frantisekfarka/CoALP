@@ -51,6 +51,7 @@ library
                     CoALP.UI.Dot
                     CoALP.UI.Parser
                     CoALP.UI.Printer
+		    CoALP.FreshVar
 
   if flag(eventlog)
     ghc-options:    -Wall -rtsopts -eventlog
