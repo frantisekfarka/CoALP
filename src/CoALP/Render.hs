@@ -9,7 +9,7 @@ module CoALP.Render (
 import System.Process
 
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
-	AndNode(..),OrNode(..),Query(..),Query1
+	AndNode(..),OrNode(..),Query(..),Query1,Vr(..),Vr1
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery)
 
@@ -96,7 +96,7 @@ renderRewT depth rt@(RT q s os) =
 	"}\n"
 
 
-renderRewAnd :: Int -> Int -> AndNode Term1 Clause1 -> String
+renderRewAnd :: Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
 renderRewAnd 0 _ _ = ""
 renderRewAnd depth n (AndNode t ors) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
@@ -109,11 +109,14 @@ renderRewAnd depth n (AndNode t ors) =
 	) ++ ""
 
 
-renderRewOr :: Int -> Int -> OrNode Clause1 Term1 -> String
-renderRewOr 0 _ _ = ""
-renderRewOr depth n OrNodeEmpty =
+renderRewOr :: Int -> Int -> OrNode Clause1 Term1 Vr1 -> String
+renderRewOr 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
-	"X_?" ++ "\",fixedsize=true];\n" ++
+	"_|_" ++ "\",fixedsize=true];\n" ++
+	""
+renderRewOr depth n (OrNodeEmpty x) =
+	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
+	show x ++ "\",fixedsize=true];\n" ++
 	""
 renderRewOr depth n (OrNode c@(Clause h b) ands) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
@@ -124,4 +127,4 @@ renderRewOr depth n (OrNode c@(Clause h b) ands) =
 
 
 lh :: String -> String
-lh s = show ( fromIntegral (length s) * 0.15 )
+lh s = show ( fromIntegral (length s) * (0.15 :: Float) )

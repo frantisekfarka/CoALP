@@ -21,6 +21,8 @@ module CoALP.Program (
 	, Constant
 	, AndNode(..)
 	, OrNode(..)
+	, Vr(..)
+	, Vr1
 ) where
 
 import Data.List (intersperse)
@@ -49,6 +51,13 @@ data Query a b c
 -- | Type of Program
 type Program a b c = [Clause a b c]
 
+
+-- | Type of Rew tree Variable
+newtype Vr a = Vr { unVr ::  a }
+
+instance Show a => Show (Vr a) where
+	show x = "Vr_" ++ (show . unVr) x
+
 -- | Type of identifier
 --
 -- Identifiers start with a lower-case Latin letter or a symbol drawn from a
@@ -70,6 +79,11 @@ type Ident = String
 -- starting from @X_@ followed by the number of that variable.
 --
 type Variable = Int
+
+-- | Type of Rew Tree Variable
+--
+-- most likely the same as 'Variable' (or with bigger width?)
+type VariableRew = Integer
 
 -- | Type of integral constant
 --
@@ -95,13 +109,18 @@ type Query1 = Query Ident Variable Constant
 --
 type Program1 = Program Ident Variable Constant
 
+-- | Type of program of first-order term.
+--
+type Vr1 = Vr VariableRew
+
+
 
 -- | @AndNode a its@ is an atom with a possibly partial mapping from clauses to
 -- or-subtrees. Each of those or-subtrees corresponds to some clause number @i@
 -- such that the head of that clause has been unified with @a@ and its unified
 -- body atoms label the roots of the and-subtrees of the @i@-th 'OrNode'.
-data AndNode a b
-	= AndNode a [OrNode b a]
+data AndNode a b c
+	= AndNode b [OrNode a b c]
 	deriving (Eq)
 
 -- | @ONode ts@ is the or-subtree corresponding to unification against a clause
@@ -110,9 +129,9 @@ data AndNode a b
 --
 -- A separate case is the topmost 'ONode' which contains the list of _goals_ to
 -- be unified against a logic program.
-data OrNode a b 
-	= OrNode a [AndNode b a]
-	| OrNodeEmpty
+data OrNode a b c
+	= OrNode a [AndNode a b c]
+	| OrNodeEmpty c
 	deriving (Eq)
 
 
@@ -120,8 +139,8 @@ data OrNode a b
 type Subst a b c = [(b, Term a b c)]
 type Subst1 = Subst Ident Variable Constant
 
-data RewTree a b c = RT (Query a b c) (Subst a b c) [AndNode (Term a b c) (Clause a b c)]
-type RewTree1 = RewTree Ident Variable Constant
+data RewTree a b c d = RT (Query a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
+type RewTree1 = RewTree Ident Variable Constant VariableRew
 
 --AndNode (Term a b c)
 

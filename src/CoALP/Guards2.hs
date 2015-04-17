@@ -20,6 +20,7 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	Query(..)
 	)
 
+import CoALP.FreshVar (Freshable)
 import CoALP.RewTree (rew)
 
 
@@ -89,16 +90,18 @@ guardedTerm _ _				= False
 gc2 :: Query a b c -> Program a b c -> Bool
 gc2 q p = all (uncurry guardedTerm) $ loops (rew p q [])
 
-loops :: RewTree a b c -> [(Term a b c, Term a b c)]
+-- TODO Freshable!
+--loops :: Freshable d => RewTree a b c d -> [(Term a b c, Term a b c)]
+loops :: RewTree a b c Integer -> [(Term a b c, Term a b c)]
 loops rt = snd (loops' rt)
 
 -- | recursively build loops
-loops' :: RewTree a b c -> ([(Term a b c,Int)],[(Term a b c, Term a b c)])
+loops' :: Freshable d => RewTree a b c d -> ([(Term a b c,Int)],[(Term a b c, Term a b c)])
 loops' (RT _ _ ands) = (id *** concat.concat) $ sequenceA $ fmap f ands
 	where
 		f (AndNode _ ors) = sequenceA $ zipWith loopsO [1..] ors
 
-loopsA :: Int -> AndNode (Term a b c) (Clause a b c) -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
+loopsA :: Int -> AndNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
 loopsA pi (AndNode f@(Fun fid _) ors) = (id *** concat) $
 				sequenceA $ ([(f,pi)],newLoops) : boundLower
 	where
@@ -109,8 +112,8 @@ loopsA pi (AndNode f@(Fun fid _) ors) = (id *** concat) $
 
 loopsA pi (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1..] ors
 
-loopsO :: Int -> OrNode (Clause a b c) (Term a b c) -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
-loopsO pi (OrNodeEmpty) = ([],[])
+loopsO :: Int -> OrNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
+loopsO pi (OrNodeEmpty _) = ([],[])
 loopsO pi (OrNode _  ands) = (id *** concat) $ traverse (loopsA pi) ands
 
 

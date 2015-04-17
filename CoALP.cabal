@@ -51,7 +51,7 @@ library
                     CoALP.UI.Dot
                     CoALP.UI.Parser
                     CoALP.UI.Printer
-		    CoALP.FreshVar
+                    CoALP.FreshVar
 
   if flag(eventlog)
     ghc-options:    -Wall -rtsopts -eventlog
@@ -68,7 +68,7 @@ library
                     process              >= 1.0,
                     transformers         >= 0.3,
                     unordered-containers >= 0.2.3,
-		    -- my dependencies
+                    -- my dependencies
                     array                >= 0.5
 
   build-tools:      alex, happy

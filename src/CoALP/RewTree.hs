@@ -4,24 +4,34 @@ module CoALP.RewTree (
 ) where
 
 import Data.Functor ((<$>))
+import Data.Traversable (sequenceA)
 
+import CoALP.FreshVar (FreshVar,getFresh,combine,evalFresh,Freshable,initFresh)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
-	AndNode(..),OrNode(..),Term(..),Query(..))
+	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..))
 
-rew :: {-(Show a, Show b, Show c) => -} Program a b c -> Query a b c -> Subst a b c -> RewTree a b c
-rew p c@(Query b) s = RT c s (fmap (mkAndNode p) b)
+-- TODO rew :: {-(Show a, Show b, Show c) => -} d ~ Integer => Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
+rew :: Freshable d => Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
+rew p c@(Query b) s = flip evalFresh initFresh $ do
+	ands <- sequenceA $ fmap (mkAndNode p) b
+	return $ RT c s ands
 
 --makeAnds :: Program a b c -> Term a b c -> [AndNode (Clause a b c)]
 
 -- | AndNode aka Term node
-mkAndNode ::{-(Show a, Show b, Show c) =>-}   Program a b c -> Term a b c -> AndNode (Term a b c) (Clause a b c)
-mkAndNode p t = AndNode t $ fmap (mkOrNode p t) p
+mkAndNode :: (Freshable d) => Program a b c -> Term a b c -> FreshVar d (AndNode (Clause a b c) (Term a b c) (Vr d))
+mkAndNode p t = do
+	ors <- sequenceA $ fmap (mkOrNode p t) p
+	return $ AndNode t ors
 
-mkOrNode :: {-(Show a, Show b, Show c) =>-}  Program a b c -> Term a b c -> Clause a b c -> OrNode (Clause a b c) (Term a b c)
-mkOrNode p t c@(Clause h b)  = case h `match` t of
-	Just s	->	let sb = (s `subst`) <$> b in OrNode (Clause t sb) ((mkAndNode p) <$> sb)
+mkOrNode :: (Freshable d) => Program a b c -> Term a b c -> Clause a b c -> FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
+mkOrNode p t (Clause h b)  = case h `match` t of
+	Just s	->	let sb = (s `subst`) <$> b
+			in do
+				ands <- sequenceA ((mkAndNode p) <$> sb)
+				return $ OrNode (Clause t sb) ands
 	--Just s	->	OrNode (Clause h (([] `subst`) <$> b)) (fmap (mkAndNode p) b)
-	Nothing	->	OrNodeEmpty
+	Nothing	->	getFresh >>= return . OrNodeEmpty . Vr
 
 
 -- TODO proper matching¡

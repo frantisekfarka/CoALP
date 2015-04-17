@@ -14,8 +14,10 @@ module CoALP.FreshVar (
 	, evalFresh
 	, getFresh
 	, combine
+	, Freshable
 ) where
 
+import Control.Applicative (Applicative, pure, (<*>))
 import Data.Bits (Bits, shiftL, setBit)
 
 ---------------------------------------------------------------------------
@@ -42,6 +44,18 @@ evalFresh :: FreshVar v a -- ^The fresh var to evaluate
 	-> a	-- ^The return value of the computation
 evalFresh m x = fst (runFresh m x)
 
+instance Functor (FreshVar v) where
+	fmap f a = FreshVar $ \v -> 
+		let (a', v') = runFresh a v
+		in (f a', v')
+
+
+instance Applicative (FreshVar v) where
+	pure a = FreshVar $ \v -> (a, v)
+	f <*> a = FreshVar $ \v -> 
+		let (pf, v') = runFresh f v
+		    (pa, v'') = runFresh a v'
+		in (pf pa, v'')
 
 instance Monad (FreshVar v) where
 	return a = FreshVar $ \v -> (a, v)
@@ -68,11 +82,16 @@ combine ma mb = FreshVar $ \v -> let
 	where
 		split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
 
--- | Just a name for initial 0
-initFresh :: Integer
-initFresh = 0
+
+-- | Class to force initial 0 to be polymorphic
+class (Bits a, Num a) => Freshable a where
+	initFresh :: a
+
+instance Freshable Integer where
+	initFresh = 0
 
 
+{-
 testFresh :: FreshVar Integer String
 testFresh = do
 	v <- getFresh
@@ -82,7 +101,6 @@ testFresh = do
 		" We also have vars " ++ showB v ++ " and " ++ showB v'
 
 
-{-
 subComp :: FreshVar Integer String
 subComp = do
 	v <- getFresh
