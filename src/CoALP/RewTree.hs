@@ -6,7 +6,7 @@ module CoALP.RewTree (
 import Data.Functor ((<$>))
 import Data.Traversable (sequenceA)
 
-import CoALP.FreshVar (FreshVar,getFresh,combine,evalFresh,Freshable,initFresh)
+import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable,initFresh)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..))
 

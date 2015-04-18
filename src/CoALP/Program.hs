@@ -26,6 +26,7 @@ module CoALP.Program (
 ) where
 
 import Data.List (intersperse)
+import Numeric (showHex)
 
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
@@ -55,8 +56,8 @@ type Program a b c = [Clause a b c]
 -- | Type of Rew tree Variable
 newtype Vr a = Vr { unVr ::  a }
 
-instance Show a => Show (Vr a) where
-	show x = "Vr_" ++ (show . unVr) x
+instance (Integral a, Show a) => Show (Vr a) where
+	show x = "Vr_0x" ++ showHex (unVr x) ""
 
 -- | Type of identifier
 --

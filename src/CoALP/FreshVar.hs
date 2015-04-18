@@ -13,11 +13,11 @@ module CoALP.FreshVar (
 	, runFresh
 	, evalFresh
 	, getFresh
-	, combine
 	, Freshable
 ) where
 
 import Control.Applicative (Applicative, pure, (<*>))
+import Control.Monad (foldM)
 import Data.Bits (Bits, shiftL, setBit)
 
 ---------------------------------------------------------------------------
@@ -50,12 +50,20 @@ instance Functor (FreshVar v) where
 		in (f a', v')
 
 
-instance Applicative (FreshVar v) where
+instance Freshable v => Applicative (FreshVar v) where
 	pure a = FreshVar $ \v -> (a, v)
-	f <*> a = FreshVar $ \v -> 
-		let (pf, v') = runFresh f v
-		    (pa, v'') = runFresh a v'
+	f <*> a = FreshVar $ \v -> let 
+			(v',v'') = split v
+			(vf, va) = split v''
+			(pf, _) = runFresh f vf
+			(pa, _) = runFresh a va
+		in (pf pa, v')
+	{-f <*> a = FreshVar $ \v -> let 
+			(pf, v') = runFresh f v
+			(pa, v'') = runFresh a v'
 		in (pf pa, v'')
+	-}
+
 
 instance Monad (FreshVar v) where
 	return a = FreshVar $ \v -> (a, v)
@@ -67,28 +75,14 @@ instance Monad (FreshVar v) where
 getFresh :: (Bits v, Num v) => FreshVar v v -- ^ TODO is Num for efficiency neccessary?
 getFresh = FreshVar $ \v -> (v, v + 1)
 
--- | Combine two computations with fresh variables into
--- sinle while spliting the source
-combine :: (Bits v) => 
-	(FreshVar v a)	-- ^ The first computation
-	-> (FreshVar v b)	-- ^ The second computation
-	-> FreshVar v (a, b)
-combine ma mb = FreshVar $ \v -> let
-		(v', v'') = split v
-		(va, vb) = split v''
-		(a, _) = runFresh ma va
-		(b, _) = runFresh mb vb
-		in ((a,b), v')
-	where
-		split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
-
-
 -- | Class to force initial 0 to be polymorphic
 class (Bits a, Num a) => Freshable a where
 	initFresh :: a
+	split :: a -> (a,a)
 
 instance Freshable Integer where
 	initFresh = 0
+	split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
 
 
 {-

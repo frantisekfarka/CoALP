@@ -6,6 +6,7 @@ module CoALP.Render (
 ) where
 
 --import Data.Foldable
+import Numeric (showHex)
 import System.Process
 
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
@@ -115,7 +116,7 @@ renderRewOr 0 n _ =
 	"_|_" ++ "\",fixedsize=true];\n" ++
 	""
 renderRewOr depth n (OrNodeEmpty x) =
-	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
+	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (show x) ++ ",label=\"" ++ 
 	show x ++ "\",fixedsize=true];\n" ++
 	""
 renderRewOr depth n (OrNode c@(Clause h b) ands) = 
