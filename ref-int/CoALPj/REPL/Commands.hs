@@ -13,22 +13,7 @@ data Command
 	| DrawProgram
 	| GC2 String
 	| DrawRew Int String
+	| DrawTrans Int Int String
 	deriving Show
 
-{-
-data CommandDescr = ...
-
-commandDescr :: CommandDescr 
-commandDescr = loadCmd filePath
-	<|> reloadCmd
-	<|> printCmd
-	<|> prayCmd string
-
-
-parserCmd :: CommandDescr -> Parser Command
-	--T--> transforms to parser
-
-completionCmd :: Monad m => CommandDescr CompletionFunc m
-	--T--> transfroms to completion func
--}
 

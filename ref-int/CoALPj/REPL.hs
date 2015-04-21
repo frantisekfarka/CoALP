@@ -181,6 +181,7 @@ processInput cmd origState = do
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
+		Right (DrawTrans d v q) -> drawRew d v q
 
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
@@ -232,8 +233,24 @@ drawRew depth q = whenProgram (
 			iputStrLn $ "Query" ++ q ++ " loaded."
 			let rt = rew p r []
 			liftIO . displayRewTree depth $ rt  --rew p r []
-			iputStrLn . show $ loops' rt
+			--iputStrLn . show . (head 20) $ loops' rt
 	)
+
+drawTrans :: Int -> Int -> String -> CoALP ()
+drawTrans depth var q = whenProgram (
+	\prog -> case parseQuery q of
+		Left err	-> do
+			iputStrLn err
+			return ()
+		Right r		-> do
+			iputStrLn $ "Query" ++ q ++ " loaded."
+			let rt = rew prog r []
+			let tt = trans prog rt var
+			liftIO . displayRewTree depth $ tt 
+			--iputStrLn . show . (head 20) $ loops' rt
+	)
+
+
 
 
 whenProgram :: (Program1 -> CoALP ()) -> CoALP ()

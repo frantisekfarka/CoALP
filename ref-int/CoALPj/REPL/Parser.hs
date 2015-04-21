@@ -38,6 +38,10 @@ dCmd = toCmdDescr [
 	, (":gc2",	spaces *> (GC2 <$> many anyChar))
 	, (":drawTerms",pure DrawProgram)
 	, (":drawRew",	spaces *> (DrawRew <$> (read <$> digits1 <* spaces1) <*> many anyChar))
+	, (":drawTrans",spaces *> (DrawTrans
+		<$> (read <$> digits1 <* spaces1) 
+		<*> (read <$> digits1 <* spaces1) 
+		<*> many anyChar))
 	]
 
 -- | Just a helpers

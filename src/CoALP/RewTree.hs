@@ -38,7 +38,8 @@ mkOrNode p t (Clause h b)  = case h `match` t of
 match :: {-(Show a, Show b, Show c) =>-} Term a b c -> Term a b c -> Maybe (Subst a b c)
 match (Var x1) 		(Var x2)	= Just $ (x1, Var x2):[] -- ? should be fresh?
 match (Fun id1 t1)	(Fun id2 t2)	= if id1 == id2
-	then concat <$> sequence (zipWith match t1 t2)
+	then concat <$> sequence (zipWith match t1 t2) -- ^ TODO it is neccessary to combine
+	-- the partial mathces properly, this is buggy
 	else Nothing
 -- Just $ id1 == id2 && (all (== True) $ zipWith match t1 t2)
 --match (Fun _ []) 	(Var _)		= Just True
@@ -46,6 +47,14 @@ match (Var x) 		(Fun id1 ts)	= Just $ (x, Fun id1 ts):[]
 match _ 		_		= Nothing
 
 
+
+-- | apply substitution to the term tree
 subst :: Subst a b c -> Term a b c -> Term a b c
 subst s (Var x)		= maybe (Var x) id (x `lookup` s)
 subst s (Fun id ts)	= Fun id (subst s <$> ts)
+
+-- | compute the rew tree transition
+trans :: Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
+trans 
+
+
