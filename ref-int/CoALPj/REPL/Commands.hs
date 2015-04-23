@@ -13,7 +13,7 @@ data Command
 	| DrawProgram
 	| GC2 String
 	| DrawRew Int String
-	| DrawTrans Int Int String
+	| DrawTrans Int Integer String
 	deriving Show
 
 
