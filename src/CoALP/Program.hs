@@ -23,10 +23,11 @@ module CoALP.Program (
 	, OrNode(..)
 	, Vr(..)
 	, Vr1
+	, mkVar
 ) where
 
 import Data.List (intersperse)
-import Numeric (showHex)
+import Numeric (showHex,showIntAtBase)
 
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
@@ -57,7 +58,12 @@ type Program a b c = [Clause a b c]
 newtype Vr a = Vr { unVr ::  a }
 
 instance (Integral a, Show a) => Show (Vr a) where
-	show x = "Vr_0x" ++ showHex (unVr x) ""
+	--show x = "Vr_b" ++ showIntAtBase 2 (head.show) (unVr x) ""
+	show x = "Vr_" ++ show (unVr x)
+	--show x = "Vr_0x" ++ showHex (unVr x) ""
+
+instance Eq a => Eq (Vr a) where
+	(Vr x) == (Vr y) = x == y
 
 -- | Type of identifier
 --
@@ -120,6 +126,9 @@ type Vr1 = Vr VariableRew
 -- or-subtrees. Each of those or-subtrees corresponds to some clause number @i@
 -- such that the head of that clause has been unified with @a@ and its unified
 -- body atoms label the roots of the and-subtrees of the @i@-th 'OrNode'.
+--
+-- aka ``Term tree''
+-- Or nodes in the list correspond to clauses in program
 data AndNode a b c
 	= AndNode b [OrNode a b c]
 	deriving (Eq)
@@ -130,6 +139,8 @@ data AndNode a b c
 --
 -- A separate case is the topmost 'ONode' which contains the list of _goals_ to
 -- be unified against a logic program.
+--
+-- aka ``Clause tree''
 data OrNode a b c
 	= OrNode a [AndNode a b c]
 	| OrNodeEmpty c
@@ -147,5 +158,8 @@ type RewTree1 = RewTree Ident Variable Constant VariableRew
 
 --type RewTree1 = RewTree Ident Variable Constant
 
-
+-- | Just Helper
+-- TOOD: remove
+mkVar :: VariableRew -> Vr VariableRew
+mkVar = Vr
 

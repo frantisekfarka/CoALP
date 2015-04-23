@@ -1,14 +1,18 @@
 -- | Module thtat constructs rewriting tree
 module CoALP.RewTree (
-	rew
+	  rew
+	, trans
+	, mkVar
 ) where
+
+import Control.Arrow (first)
 
 import Data.Functor ((<$>))
 import Data.Traversable (sequenceA)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable,initFresh)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
-	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..))
+	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar)
 
 -- TODO rew :: {-(Show a, Show b, Show c) => -} d ~ Integer => Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
 rew :: Freshable d => Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
@@ -54,7 +58,21 @@ subst s (Var x)		= maybe (Var x) id (x `lookup` s)
 subst s (Fun id ts)	= Fun id (subst s <$> ts)
 
 -- | compute the rew tree transition
-trans :: Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
-trans 
+-- TODO make sure this works for infinite tree
+trans :: (Eq d, Show d, Integral d) => Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
+trans p origT vr = findVar origT
+	where
+		findVar (RT _ _ ands) = error $ "Here: " ++ show (filter ((== vr).fst) $
+			concatMap processAnd ands)
+		
+		processAnd :: AndNode a b c -> [(c,Int)]
+		processAnd (AndNode _ ors) = (concat $ zipWith processOr ors [0..]) ++ 
+			concatMap continueOr ors
+		processOr (OrNode _ _) _ = []
+		processOr (OrNodeEmpty d) c = [(d, c)]
+		continueOr (OrNode _ ands) = concatMap processAnd ands
+		continueOr _ = []
+
+
 
 
