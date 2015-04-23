@@ -20,6 +20,17 @@ import Control.Applicative (Applicative, pure, (<*>))
 import Control.Monad (foldM)
 import Data.Bits (Bits, shiftL, setBit)
 
+
+import Numeric (showIntAtBase)
+import Debug.Trace
+showBin b = interspace $ replicate pad '0' ++ bin
+	where
+		bin = showIntAtBase 2 (head.show) b ""
+		pad = 4 - ((length bin) `mod` 4)
+		interspace [] = []
+		interspace xs = take 4 xs ++ " " ++ (interspace $ drop 4 xs)
+
+
 ---------------------------------------------------------------------------
 -- | /getFresh/ returns fresh variable from the internals of the monad.
 --
@@ -50,14 +61,20 @@ instance Functor (FreshVar v) where
 		in (f a', v')
 
 
-instance Freshable v => Applicative (FreshVar v) where
+instance (Freshable v) => Applicative (FreshVar v) where
 	pure a = FreshVar $ \v -> (a, v)
 	f <*> a = FreshVar $ \v -> let 
-			(v',v'') = split v
-			(vf, va) = split v''
+			v' = v
+			--(v',v'') = split v
+			(vf, va) = split v --''
 			(pf, _) = runFresh f vf
 			(pa, _) = runFresh a va
-		in (pf pa, v')
+		in trace ("\n\n\n\tTraceShow (" ++
+			"\n Comes in: " ++ showBin v' ++
+			"\n Vf: " ++ showBin vf ++
+			"\n Va: " ++ showBin va ++
+		
+		")\n\n\n"  ) (pf pa, v')
 	{-f <*> a = FreshVar $ \v -> let 
 			(pf, v') = runFresh f v
 			(pa, v'') = runFresh a v'
@@ -73,16 +90,18 @@ instance Monad (FreshVar v) where
 
 -- | Get next fresh variable
 getFresh :: (Bits v, Num v) => FreshVar v v -- ^ TODO is Num for efficiency neccessary?
-getFresh = FreshVar $ \v -> (v, v + 1)
+--getFresh = FreshVar $ \v -> (v, v + 1)
+getFresh = FreshVar $ \v -> let v' = shiftL v 1 in (v', setBit v' 0)
 
 -- | Class to force initial 0 to be polymorphic
-class (Bits a, Num a) => Freshable a where
+class (Bits a, Num a, Show a, Integral a) => Freshable a where
 	initFresh :: a
 	split :: a -> (a,a)
 
 instance Freshable Integer where
-	initFresh = 0
-	split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
+	initFresh = 1
+	--split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
+	split v = let v' = shiftL v 1 in (v', setBit v' 0)
 
 
 {-
