@@ -22,7 +22,7 @@ import Data.Bits (Bits, shiftL, setBit)
 
 
 import Numeric (showIntAtBase)
-import Debug.Trace
+
 showBin b = interspace $ replicate pad '0' ++ bin
 	where
 		bin = showIntAtBase 2 (head.show) b ""
@@ -65,16 +65,10 @@ instance (Freshable v) => Applicative (FreshVar v) where
 	pure a = FreshVar $ \v -> (a, v)
 	f <*> a = FreshVar $ \v -> let 
 			v' = v
-			--(v',v'') = split v
 			(vf, va) = split v --''
 			(pf, _) = runFresh f vf
 			(pa, _) = runFresh a va
-		in trace ("\n\n\n\tTraceShow (" ++
-			"\n Comes in: " ++ showBin v' ++
-			"\n Vf: " ++ showBin vf ++
-			"\n Va: " ++ showBin va ++
-		
-		")\n\n\n"  ) (pf pa, v')
+		in (pf pa, v')
 	{-f <*> a = FreshVar $ \v -> let 
 			(pf, v') = runFresh f v
 			(pa, v'') = runFresh a v'

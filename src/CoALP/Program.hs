@@ -40,11 +40,15 @@ data Term a b c where
 --
 instance (Show a, Show b, Show c) => Show (Term a b c) where
 	show (Var x) = "_v" ++ show x
-	show (Fun f ts) = (filter (/= '"') $ show f) ++ "(" ++ (concat . intersperse ", " . map show $ ts) ++ ")"
+	show (Fun f ts) = show f ++ "(" ++ (concat . intersperse ", " . map show $ ts) ++ ")"
 
 -- | Type of clause
 data Clause a b c where
 	Clause :: Term a b c -> [Term a b c] -> Clause a b c
+
+instance (Show a, Show b, Show c) => Show (Clause a b c) where
+	show (Clause h bs) = show h ++ " :- " ++ 
+		(concat . intersperse ", " . map show $ bs) ++ "."
 
 -- | Type of Query Clause
 data Query a b c 
@@ -59,8 +63,8 @@ newtype Vr a = Vr { unVr ::  a }
 
 instance (Integral a, Show a) => Show (Vr a) where
 	--show x = "Vr_b" ++ showIntAtBase 2 (head.show) (unVr x) ""
-	show x = "Vr_" ++ show (unVr x)
-	--show x = "Vr_0x" ++ showHex (unVr x) ""
+	--show x = "Vr_" ++ show (unVr x)
+	show x = "Vr_0x" ++ showHex (unVr x) ""
 
 instance Eq a => Eq (Vr a) where
 	(Vr x) == (Vr y) = x == y

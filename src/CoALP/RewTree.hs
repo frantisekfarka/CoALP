@@ -59,19 +59,29 @@ subst s (Fun id ts)	= Fun id (subst s <$> ts)
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
-trans :: (Eq d, Show d, Integral d) => Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
+trans :: (Eq d, Show d, Integral d, Show c, Show b, Show a )
+	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
 trans p origT vr = findVar origT
 	where
-		findVar (RT _ _ ands) = error $ "Here: " ++ show (filter ((== vr).fst) $
+		findVar (RT _ _ ands) = error $ "Here: " ++ f (filter ((== vr).fst') $
 			concatMap processAnd ands)
 		
-		processAnd :: AndNode a b c -> [(c,Int)]
-		processAnd (AndNode _ ors) = (concat $ zipWith processOr ors [0..]) ++ 
+		processAnd :: AndNode e (Term a b c) (Vr d) -> [(Vr d,Int,Term a b c)]
+		processAnd (AndNode t ors) = (concat $ zipWith (processOr t) ors [0..]) ++ 
 			concatMap continueOr ors
-		processOr (OrNode _ _) _ = []
-		processOr (OrNodeEmpty d) c = [(d, c)]
+
+		processOr :: Term a b c -> OrNode e (Term a b c) (Vr d) -> Int -> [(Vr d, Int, Term a b c)]
+		processOr _ (OrNode _ _) _ = []
+		processOr t (OrNodeEmpty d) c = [(d, c, t)]
+
 		continueOr (OrNode _ ands) = concatMap processAnd ands
 		continueOr _ = []
+		fst' (a,_,_) = a
+
+		f ((var, pIx, term):_) = "\nVariable " ++ show var ++ ",\n" ++
+			"Parent term " ++ show term ++ ",\n" ++
+			"Unify with " ++ show (p !! pIx)
+		f [] = "Not found"
 
 
 
