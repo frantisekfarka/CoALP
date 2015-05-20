@@ -36,7 +36,11 @@ data Term a b c where
 	Fun :: Eq a => a -> [Term a b c] -> Term a b c   -- ^ a function
 --	| Const c            -- ^ a integral constant -- keep out for now
 
---	deriving (Eq, Ord)
+
+instance (Eq a, Eq b) => Eq (Term a b c) where
+	(Var v1) == (Var v2) = v1 == v2
+	(Fun id1 ts1) == (Fun id2 ts2) = id1 == id2 && ts1 == ts2
+	_ == _ = False
 --
 instance (Show a, Show b, Show c) => Show (Term a b c) where
 	show (Var x) = "_v" ++ show x

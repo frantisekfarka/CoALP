@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 -- | This module provides guardednes checks
 --
 module CoALP.Guards2 (
@@ -87,7 +88,7 @@ guardedTerm _ _				= False
 
 
 
-gc2 :: Query a b c -> Program a b c -> Bool
+gc2 :: (Eq a, Eq b, Ord b) => Query a b c -> Program a b c -> Bool
 gc2 q p = all (uncurry guardedTerm) $ loops (rew p q [])
 
 -- TODO Freshable!
