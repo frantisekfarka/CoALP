@@ -14,6 +14,8 @@ import CoALP.Unify (match, unify, applySubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar)
 
+import Debug.Trace
+
 -- TODO rew :: {-(Show a, Show b, Show c) => -} d ~ Integer => Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
 rew :: (Eq a, Eq b, Ord b, Freshable d) =>
 	Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
@@ -52,11 +54,16 @@ subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
-trans :: (Eq a, Eq b, Ord b, Eq d, Show d, Integral d, Show c, Show b, Show a )
+trans :: (Eq a, Eq b, Ord b, Eq d, Show d, Integral d, Show c, Show b, Show a, Freshable d)
 	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
-trans p origT vr = findVar origT
+trans _ RTEmpty _ = RTEmpty
+trans p (origT@(RT q s ands)) vr = case traceShowId ms' of
+		Just s'	-> rew p q (s `composeSubst` s')
+		Nothing 	-> RTEmpty
 	where
-		findVar (RT _ _ ands) = error $ "Here: " ++ f (filter ((== vr).fst') $
+		ms' = unify term (cHead (p !! pIx))
+		(var, pIx, term):_ {-= findVar origT
+		findVar (RT _ _ ands)-} = (filter ((== vr).fst') $
 			concatMap processAnd ands)
 		
 		processAnd :: AndNode e (Term a b c) (Vr d) -> [(Vr d,Int,Term a b c)]
@@ -71,12 +78,17 @@ trans p origT vr = findVar origT
 		continueOr _ = []
 		fst' (a,_,_) = a
 
+		{-f :: (Freshable d, Show (RewTree a b c d), Show a1) =>
+		     [(a1, Int, Term a b c)] -> [Char]
 		f ((var, pIx, term):_) = "\nVariable " ++ show var ++ ",\n" ++
 			"Parent term " ++ show term ++ ",\n" ++
 			"Unify with the head of " ++ show (p !! pIx) ++ "\n" ++
-			"Unification " ++ show (unify term (cHead (p !! pIx)))
+			"Unification " ++ show (unify term (cHead (p !! pIx))) ++
+			"New rew tree" ++ show (transT p origT (unify term (cHead (p !! pIx))))
 		f [] = "Not found"
+		-}
 		cHead (Clause h _) = h
+
 
 
 

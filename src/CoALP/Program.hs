@@ -67,8 +67,8 @@ newtype Vr a = Vr { unVr ::  a }
 
 instance (Integral a, Show a) => Show (Vr a) where
 	--show x = "Vr_b" ++ showIntAtBase 2 (head.show) (unVr x) ""
-	--show x = "Vr_" ++ show (unVr x)
-	show x = "Vr_0x" ++ showHex (unVr x) ""
+	show x = "Vr_" ++ show (unVr x)
+	--show x = "Vr_0x" ++ showHex (unVr x) ""
 
 instance Eq a => Eq (Vr a) where
 	(Vr x) == (Vr y) = x == y
@@ -159,7 +159,7 @@ data OrNode a b c
 type Subst a b c = [(b, Term a b c)]
 type Subst1 = Subst Ident Variable Constant
 
-data RewTree a b c d = RT (Query a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
+data RewTree a b c d = RTEmpty | RT (Query a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
 type RewTree1 = RewTree Ident Variable Constant VariableRew
 
 --AndNode (Term a b c)

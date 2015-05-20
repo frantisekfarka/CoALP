@@ -88,6 +88,11 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 	
 renderRewT :: Int -> RewTree1 -> String
 renderRewT 0 _ = ""
+renderRewT _ RTEmpty = 
+	"digraph G {\n" ++ 
+	"\tnode [fontname=\"Monospace\"];\n" ++
+	"\troot[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
+	"}\n"
 renderRewT depth rt@(RT q s os) = 
 	"digraph G {\n" ++ 
 	"\tnode [fontname=\"Monospace\"];\n" ++
