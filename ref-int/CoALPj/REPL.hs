@@ -243,7 +243,7 @@ drawTrans depth var q = whenProgram (
 			iputStrLn err
 			return ()
 		Right r		-> do
-			iputStrLn $ "Query" ++ q ++ " loaded."
+			iputStrLn $ "Query " ++ q ++ " loaded."
 			let rt = rew prog r []
 			let tt = trans prog rt (mkVar var)
 			liftIO . displayRewTree depth $ tt 

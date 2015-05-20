@@ -41,6 +41,7 @@ library
                     CoALP.Render
                     CoALP.RewTree
                     CoALP.Guards2
+                    CoALP.Unify
 
   other-modules:    CoALP.Tree
                     CoALP.Subst

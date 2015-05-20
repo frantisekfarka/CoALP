@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 -- 
 -- | This module provied FreshVar monad
 --
@@ -9,6 +10,8 @@
 --
 module CoALP.FreshVar (
 	  initFresh
+	, apartL
+	, apartR
 	, FreshVar
 	, runFresh
 	, evalFresh
@@ -83,19 +86,24 @@ instance Monad (FreshVar v) where
 		in runFresh (k a) v'
 
 -- | Get next fresh variable
-getFresh :: (Bits v, Num v) => FreshVar v v -- ^ TODO is Num for efficiency neccessary?
+getFresh :: (Freshable v) => FreshVar v v -- ^ TODO is Num for efficiency neccessary?
 --getFresh = FreshVar $ \v -> (v, v + 1)
-getFresh = FreshVar $ \v -> let v' = shiftL v 1 in (v', setBit v' 0)
+getFresh = FreshVar $ \v -> split $ v
 
 -- | Class to force initial 0 to be polymorphic
-class (Bits a, Num a, Show a, Integral a) => Freshable a where
+class Freshable a where
 	initFresh :: a
 	split :: a -> (a,a)
+	apartL :: a -> a
+	apartR :: a -> a
 
 instance Freshable Integer where
 	initFresh = 1
 	--split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
 	split v = let v' = shiftL v 1 in (v', setBit v' 0)
+	apartL v = shiftL v 1
+	apartR v = setBit (shiftL v 1) 0
+
 
 
 {-

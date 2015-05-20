@@ -40,7 +40,7 @@ data Term a b c where
 --
 instance (Show a, Show b, Show c) => Show (Term a b c) where
 	show (Var x) = "_v" ++ show x
-	show (Fun f ts) = show f ++ "(" ++ (concat . intersperse ", " . map show $ ts) ++ ")"
+	show (Fun f ts) = shows f "(" ++ (concat . intersperse ", " . map show $ ts) ++ ")"
 
 -- | Type of clause
 data Clause a b c where
