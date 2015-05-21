@@ -14,6 +14,8 @@ import Data.List (sortBy)
 import CoALP.Program
 import CoALP.FreshVar
 
+import Debug.Trace
+
 term1, term2 :: Term String Integer Int
 term1 = Fun "Parent" [Var 1, (Fun "John" [])]
 term2 = Fun "Parent" [(Fun "John" []), Var 1]
@@ -69,8 +71,8 @@ match (Var x) 		(Fun id1 ts)	= Just $ (x, Fun id1 ts):[]
 match _ 		_		= Nothing
 
 
-unify :: (Ord b, Eq a, Eq b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
-unify t1 t2 = unifyImpl [(t1,t2)]
+unify :: (Ord b, Eq a, Eq b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
+unify t1 t2 = traceShow t1 $ traceShow t2 $ unifyImpl [(t1,t2)]
 
 
 -- | Wiki, yay!

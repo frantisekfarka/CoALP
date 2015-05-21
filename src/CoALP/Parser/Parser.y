@@ -37,7 +37,7 @@ import Data.Map(empty,findWithDefault,insert)
 
 Clauses :: { Program1 }
 -- ^ we do not clear vars as matching currently does not assign fresh vars
-Clauses	: Clauses Clause		{% {- clearVars >> -} return ($2 : $1) }
+Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
 	| {- empty -}			{ [ ] }
 
 Clause :: { Clause1 }

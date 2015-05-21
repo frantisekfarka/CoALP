@@ -35,8 +35,11 @@ ppTerms :: (Show a, Show b, Show c) =>  [Term a b c] -> String
 ppTerms ts = concat . intersperse ", " . map ppTerm $ ts
 
 ppTerm :: (Show a, Show b, Show c) => Term a b c -> String
-ppTerm (Var x) = "_v" ++ show x
-ppTerm (Fun f ts) = (filter (/= '"') $ show f) ++ "(" ++ ppTerms ts ++ ")"
+ppTerm (Var x) = "V_" ++ show x
+ppTerm (Fun f ts) = (filter (/= '"') $ show f) ++
+	if null ts 
+		then ""
+		else "(" ++ ppTerms ts ++ ")"
 --ppTerm (Const i) = show i
 
 ppQuery :: (Show a, Show b, Show c) => Query a b c -> String
