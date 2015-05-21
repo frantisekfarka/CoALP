@@ -10,7 +10,7 @@ import Data.Functor ((<$>))
 import Data.Traversable (sequenceA)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable,initFresh)
-import CoALP.Unify (match, unify, applySubst)
+import CoALP.Unify (match, unify, applySubst, composeSubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar)
 
