@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
-
+main = return () 
+{-
 import CoALP
 import CoALP.UI
 
@@ -63,3 +64,4 @@ benchmark = do
              (intercalate ", " . map show . concat)
              (map (map varsONode . Set.toList) fin)
   save "automata" fin
+-}

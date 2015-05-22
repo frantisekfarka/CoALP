@@ -1,7 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 
+main = return ()
+{-
 import CoALP
-import CoALP.UI
+--import CoALP.UI
 
 import Control.Applicative ( (<$>) )
 import Control.DeepSeq
@@ -82,3 +84,4 @@ benchmark n dir = do
              (intercalate ", " . map show . concat)
              (map (map varsONode . Set.toList) fin)
   save dir fin
+-}
