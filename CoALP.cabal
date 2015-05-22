@@ -6,7 +6,9 @@ name:          CoALP
 version:       0.0.3
 license:       LGPL-3
 author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
-               Jónathan Heras <joheras@gmail.com>
+               Jónathan Heras <joheras@gmail.com>,
+               František Farka <ffarka@gmail.com>
+
 maintainer:    Vladimir Komendantskiy <komendantsky@gmail.com>
 category:      CoALP
 synopsis:      Coalgebraic logic programming library
@@ -127,67 +129,67 @@ executable CoALPj
                     haskeline            >= 0.7.2,
                     parsec               >= 3.1.7
 
-executable CoALP-benchmark-fibs
-  hs-source-dirs:   benchmarks
+--executable CoALP-benchmark-fibs
+--  hs-source-dirs:   benchmarks
 
-  main-is:          Fibs.hs
+--  main-is:          Fibs.hs
 
-  default-language: Haskell2010
+--  default-language: Haskell2010
 
-  if flag(eventlog)
-    ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
-  else
-    ghc-options:    -O2 -Wall -rtsopts -threaded -auto-all -caf-all
+--  if flag(eventlog)
+--    ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
+--  else
+--    ghc-options:    -O2 -Wall -rtsopts -threaded -auto-all -caf-all
 
-  build-depends:    base     >= 4.6,
-                    CoALP    >= 0.0.1,
-                    containers >= 0.5,
-                    deepseq  >= 1.3,
-                    time     >= 1.4,
-                    unordered-containers >= 0.2.3
+--  build-depends:    base     >= 4.6,
+--                    CoALP    >= 0.0.1,
+--                    containers >= 0.5,
+--                    deepseq  >= 1.3,
+--                    time     >= 1.4,
+--                    unordered-containers >= 0.2.3
 
-  default-extensions: BangPatterns
-
-
-executable CoALP-benchmark-automata
-  hs-source-dirs:   benchmarks
-
-  main-is:          Automata.hs
-
-  default-language: Haskell2010
-
-  if flag(eventlog)
-    ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
-  else
-    ghc-options:    -O2 -Wall -rtsopts -threaded -auto-all -caf-all
-
-  build-depends:    base     >= 4.6,
-                    CoALP    >= 0.0.1,
-                    containers >= 0.5,
-                    deepseq  >= 1.3,
-                    time     >= 1.4,
-                    unordered-containers >= 0.2.3
-
-  default-extensions: BangPatterns
+--  default-extensions: BangPatterns
 
 
-test-suite CoALP-tests
-  type:             exitcode-stdio-1.0
+--executable CoALP-benchmark-automata
+--  hs-source-dirs:   benchmarks
 
-  hs-source-dirs:   tests
+--  main-is:          Automata.hs
 
-  main-is:          Tests.hs
+--  default-language: Haskell2010
 
-  other-modules:    CoALP.Tests.Unit.Subst
-                    CoALP.Tests.Unit.Guards
+--  if flag(eventlog)
+--    ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
+--  else
+--    ghc-options:    -O2 -Wall -rtsopts -threaded -auto-all -caf-all
 
-  default-language: Haskell2010
+--  build-depends:    base     >= 4.6,
+--                    CoALP    >= 0.0.1,
+--                    containers >= 0.5,
+--                    deepseq  >= 1.3,
+--                    time     >= 1.4,
+--                    unordered-containers >= 0.2.3
 
-  ghc-options:      -O2 -Wall -rtsopts -threaded
+--  default-extensions: BangPatterns
 
-  build-depends:    base        >= 4.6,
-                    CoALP       >= 0.0.1,
-                    containers  >= 0.5,
-                    directory,
-                    tasty       >= 0.3,
-                    tasty-hunit >= 0.2
+
+--test-suite CoALP-tests
+--  type:             exitcode-stdio-1.0
+
+--  hs-source-dirs:   tests
+
+--  main-is:          Tests.hs
+
+--  other-modules:    CoALP.Tests.Unit.Subst
+--                    CoALP.Tests.Unit.Guards
+
+--  default-language: Haskell2010
+
+--  ghc-options:      -O2 -Wall -rtsopts -threaded
+
+--  build-depends:    base        >= 4.6,
+--                    CoALP       >= 0.0.1,
+--                    containers  >= 0.5,
+--                    directory,
+--                    tasty       >= 0.3,
+--                    tasty-hunit >= 0.2
