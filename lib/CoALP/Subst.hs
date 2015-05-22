@@ -54,7 +54,7 @@ instance (Hashable a, Hashable (m b)) => Hashable (Subst m a b) where
 -}
 
 -- | The structure of the Kleisli category for a monad with constraints.
-class KleisliC (cat :: (* -> *) -> * -> * -> *)  where
+{-class KleisliC (cat :: (* -> *) -> * -> * -> *)  where
   type KleisliC1 a :: Constraint
   type KleisliC1 a = ()
 
@@ -71,7 +71,7 @@ instance KleisliC Subst where
   --   Injectable b c, Injectable b a)
   idc   = identity
 --  compc = flip compose
-
+-}
 -- | The canonical representation of the identity substitution.
 identity :: (Eq a, Hashable a) => Subst m a a
 identity = Subst $ HashMap.empty
