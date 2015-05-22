@@ -43,7 +43,7 @@ renderProgram cl =
 renderClause :: Int ->  Clause1 -> String
 renderClause n (c@(Clause h b)) =
 	"subgraph cluster" ++ show n ++ "{\n" ++
-	"\tcolor=grey,label=\"" ++ helper  ++ "\";\n" ++
+	"\tcolor=grey;label=\"" ++ helper  ++ "\";\n" ++
 	"\t" ++ show n ++ "[color=red,shape=record,fixedsize=false,label=\"<f1> _ | :- | <f2> _ \"];\n" ++
 	renderTerm (10*n) h ++
 	"\t" ++ show n  ++ ":f1 -> " ++ show (10*n) ++ ";\n" ++
@@ -70,7 +70,7 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 	node :: Int -> Term1 -> String
 	node n (Var i) =
 		"\t" ++ show n
-		++ "[color=white,label=\"_v" ++ show i ++ "\"];\n"
+		++ "[color=white,label=\"V_" ++ show i ++ "\"];\n"
 --	node n (Const i) =
 --		"\t" ++ show n
 --		++ "[color=white,label=\"" ++ show i ++ "\"];\n"

@@ -79,7 +79,7 @@ instance (Freshable v) => Applicative (FreshVar v) where
 	-}
 
 
-instance Monad (FreshVar v) where
+instance (Freshable v) => Monad (FreshVar v) where
 	return a = FreshVar $ \v -> (a, v)
 	m >>= k  = FreshVar $ \v -> 
 		let (a, v') = runFresh m v 
