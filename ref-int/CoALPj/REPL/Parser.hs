@@ -13,7 +13,8 @@ import Control.Monad.IO.Class
 import Control.Arrow ((***))
 import Data.Monoid (Monoid,mempty,mappend,mconcat)
 import Text.Parsec (parse,many1,digit,eof)
-import Text.Parsec.Char (char,space,spaces,anyChar,noneOf,string)
+import Text.Parsec.Char (char,space,spaces,anyChar,noneOf,string,hexDigit)
+import Data.Text.Read (hexadecimal)
 --import Text.Parsec.Combinator (eof,manyTill)
 import Text.Parsec.Error (ParseError)
 import Text.Parsec.String (Parser)
@@ -21,6 +22,8 @@ import Text.Parsec.String (Parser)
 import System.Console.Haskeline.Completion -- (Completion(..), CompletionFunc, noCompletion)
 
 import CoALPj.REPL.Commands (Command(..))
+
+import Debug.Trace
 
 
 parseCmd :: String -> Either ParseError Command
@@ -40,25 +43,37 @@ dCmd = toCmdDescr [
 	, (":drawRew",	spaces *> (DrawRew <$> (read <$> digits1 <* spaces1) <*> many anyChar))
 	, (":drawTrans",spaces *> (DrawTrans
 		<$> (read <$> digits1 <* spaces1) 
-		<*> (read <$> digits1 <* spaces1) 
+		<*> (readHex <$> (string "0x" *> hexDigits1 <* spaces1))
 		<*> many anyChar))
 	]
 
 -- | Just a helpers
-spaces1,digits1 :: Parser String
+spaces1,digits1,hexDigits1 :: Parser String
 spaces1 = many1 space
 digits1 = many1 digit
+hexDigits1 = many1 hexDigit
+
+readHex :: (Integral a, Read a) => String -> a
+readHex s = foldl (\x y -> 16 * x + toH y) 0 (traceShowId s)
+	where
+		toH 'a' = 10
+		toH 'b' = 11
+		toH 'c' = 12
+		toH 'd' = 13
+		toH 'e' = 14
+		toH 'f' = 15
+		toH x = read (x:[])
 
 
-{-
-parseCmd :: String -> Either ParseError Command
--- TODO input name
-parseCmd cmd = parse pCmd "(input)" cmd
+	{-
+	parseCmd :: String -> Either ParseError Command
+	-- TODO input name
+	parseCmd cmd = parse pCmd "(input)" cmd
 
 
--- | simple Parsec command line parser
-pCmd :: Parser Command
-pCmd = spaces 
+	-- | simple Parsec command line parser
+	pCmd :: Parser Command
+	pCmd = spaces 
 	*> pCommand
 	<* spaces
 	<* eof
@@ -68,16 +83,16 @@ pCmd = spaces
 				pLoad
 				<|> pReload
 				<|> pPrint
-				<|> pGC
-				<|> pQuit
-				<|> pDraw
-			)
-		pLoad = string "l"
-			*> optional (string "oad")
-			*> spaces1
-			*> (
-				Load <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar))
-			)
+			<|> pGC
+			<|> pQuit
+			<|> pDraw
+		)
+	pLoad = string "l"
+		*> optional (string "oad")
+		*> spaces1
+		*> (
+			Load <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar))
+		)
 		pReload = string "r"
 			*> optional (string "eload")
 			*> pure Reload 

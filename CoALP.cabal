@@ -65,6 +65,7 @@ library
                     directory,
                     hashable,
                     deepseq,
+                    text                 >= 1.2,
                     parsec               >= 3.1,
                     process              >= 1.0,
                     transformers         >= 0.3,
