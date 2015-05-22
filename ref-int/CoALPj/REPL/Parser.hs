@@ -11,6 +11,7 @@ module CoALPj.REPL.Parser (
 import Control.Applicative 
 import Control.Monad.IO.Class
 import Control.Arrow ((***))
+import Data.Maybe (fromJust)
 import Data.Monoid (Monoid,mempty,mappend,mconcat)
 import Text.Parsec (parse,many1,digit,eof)
 import Text.Parsec.Char (char,space,spaces,anyChar,noneOf,string,hexDigit)
@@ -56,13 +57,12 @@ hexDigits1 = many1 hexDigit
 readHex :: (Integral a, Read a) => String -> a
 readHex s = foldl (\x y -> 16 * x + toH y) 0 (traceShowId s)
 	where
-		toH 'a' = 10
-		toH 'b' = 11
-		toH 'c' = 12
-		toH 'd' = 13
-		toH 'e' = 14
-		toH 'f' = 15
-		toH x = read (x:[])
+		toH x = fromJust $ lookup x 
+			[ ('0',  0), ('1',  1), ('2',  2), ('3',  3), ('4',  4)
+			, ('5',  5), ('6',  6), ('7',  7), ('8',  8), ('9',  9)
+			, ('a', 10), ('b', 11), ('c', 12), ('d', 13), ('e', 14), ('f', 15)
+			, ('A', 10), ('B', 11), ('C', 12), ('D', 13), ('E', 14), ('F', 15)
+			]
 
 
 	{-
