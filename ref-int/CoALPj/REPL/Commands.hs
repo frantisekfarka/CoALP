@@ -14,6 +14,7 @@ data Command
 	| GC2 String
 	| DrawRew Int String
 	| DrawTrans Int Integer String
+	| Help
 	deriving Show
 
 

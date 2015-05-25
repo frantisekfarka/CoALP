@@ -42,6 +42,7 @@ import CoALPj.REPL.Commands(
 	)
 import CoALPj.REPL.Parser(
 	    parseCmd
+	  , cmdInfo
 	  , replCompletion
 	)
 
@@ -182,6 +183,7 @@ processInput cmd origState = do
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
 		Right (DrawTrans d v q) -> drawTrans d v q
+		Right (Help) -> iputStrLn cmdInfo
 
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()
