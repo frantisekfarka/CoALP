@@ -16,7 +16,7 @@ import Data.Maybe (fromJust)
 import Data.Monoid (Monoid,mempty,mappend,mconcat)
 import Text.Parsec (parse,many1,digit,eof)
 import Text.Parsec.Char (char,space,spaces,anyChar,noneOf,string,hexDigit)
---import Text.Parsec.Combinator (eof,manyTill)
+import Text.Parsec.Combinator (sepBy)
 import Text.Parsec.Error (ParseError)
 import Text.Parsec.String (Parser)
 
@@ -73,8 +73,12 @@ dCmd = toCmdDescr [
 		":drawTrans"
 		, spaces *> (DrawTrans
 		<$> (read <$> digits1 <* spaces1) 
-		<*> (readHex <$> (string "0x" *> hexDigits1 <* spaces1))
-		<*> many anyChar)
+		<*> (fmap readHex <$>
+		(
+			string "[" *> 
+			((spaces *> string "0x" *> hexDigits1 <* spaces) `sepBy` (string ","))
+			<* string "]" <* spaces1
+		)) <*> many anyChar)
 		, "\n\t:drawTrans <depth> <transvar> <query>\n\t\tDraw transition between rewriting trees, depth is an integer,\n" ++
 		"\t\ttransvar is the transition variable, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"

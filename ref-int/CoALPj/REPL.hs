@@ -239,7 +239,7 @@ drawRew depth q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-drawTrans :: Int -> Integer -> String -> CoALP ()
+drawTrans :: Int -> [Integer] -> String -> CoALP ()
 drawTrans depth var q = whenProgram (
 	\prog -> case parseQuery q of
 		Left err	-> do
@@ -249,7 +249,7 @@ drawTrans depth var q = whenProgram (
 			iputStrLn $ "Query " ++ q ++ " loaded."
 			let r = fixQuery r'
 			let rt = rew prog r []
-			let tt = trans prog rt (mkVar var)
+			let tt = foldl (trans prog) rt (fmap mkVar var)
 			liftIO . displayRewTree depth $ tt 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
