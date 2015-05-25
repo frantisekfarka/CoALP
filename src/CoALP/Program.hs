@@ -24,6 +24,7 @@ module CoALP.Program (
 	, Vr(..)
 	, Vr1
 	, mkVar
+	,fixQuery
 ) where
 
 import Data.List (intersperse)
@@ -170,4 +171,14 @@ type RewTree1 = RewTree Ident Variable Constant VariableRew
 -- TOOD: remove
 mkVar :: VariableRew -> Vr VariableRew
 mkVar = Vr
+
+
+-- | Renaming hack
+-- TODO remove
+fixTerm :: Term a Int c -> Term a Int c
+fixTerm (Var v) = Var (v + 999)
+fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
+
+fixQuery :: Query1 -> Query1
+fixQuery (Query ts) = Query $ fmap fixTerm ts
 

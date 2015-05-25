@@ -50,7 +50,7 @@ import CoALP.Error (Err(..))
 
 import CoALP.Render (renderProgram,displayProgram,displayRewTree)
 import CoALP.Guards2 (gc1,gc2,loops')
-import CoALP.Program (Program1)
+import CoALP.Program (Program1,fixQuery)
 
 import CoALP.RewTree (rew, trans,mkVar)
 
@@ -231,8 +231,9 @@ drawRew depth q = whenProgram (
 		Left err	-> do
 			iputStrLn err
 			return ()
-		Right r		-> do
+		Right r'	-> do
 			iputStrLn $ "Query" ++ q ++ " loaded."
+			let r = fixQuery r'
 			let rt = rew p r []
 			liftIO . displayRewTree depth $ rt  --rew p r []
 			--iputStrLn . show . (head 20) $ loops' rt
@@ -244,8 +245,9 @@ drawTrans depth var q = whenProgram (
 		Left err	-> do
 			iputStrLn err
 			return ()
-		Right r		-> do
+		Right r'	-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
+			let r = fixQuery r'
 			let rt = rew prog r []
 			let tt = trans prog rt (mkVar var)
 			liftIO . displayRewTree depth $ tt 

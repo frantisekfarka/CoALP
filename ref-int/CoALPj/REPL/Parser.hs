@@ -66,16 +66,16 @@ dCmd = toCmdDescr [
 		, pure DrawProgram
 		, "\n\t:drawTerms\n\t\tDraw terms in the program\n"
 	), (
-		":drawRew <depth> <query>"
+		":drawRew"
 		, spaces *> (DrawRew <$> (read <$> digits1 <* spaces1) <*> many anyChar)
-		, "\n\t:drawRew\n\t\tDraw rewriting tree, depth is an integer, query has the form '? :- BODY . '\n"
+		, "\n\t:drawRew <depth> <query>\n\t\tDraw rewriting tree, depth is an integer, query has the form '? :- BODY . '\n"
 	), (
-		":drawTrans <depth> <transvar> <query>"
+		":drawTrans"
 		, spaces *> (DrawTrans
 		<$> (read <$> digits1 <* spaces1) 
 		<*> (readHex <$> (string "0x" *> hexDigits1 <* spaces1))
 		<*> many anyChar)
-		, "\n\t:drawTrans\n\t\tDraw transition between rewriting trees, depth is an integer,\n" ++
+		, "\n\t:drawTrans <depth> <transvar> <query>\n\t\tDraw transition between rewriting trees, depth is an integer,\n" ++
 		"\t\ttransvar is the transition variable, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
@@ -92,7 +92,7 @@ digits1 = many1 digit
 hexDigits1 = many1 hexDigit
 
 readHex :: (Integral a, Read a) => String -> a
-readHex s = foldl (\x y -> 16 * x + toH y) 0 (traceShowId s)
+readHex s = foldl (\x y -> 16 * x + toH y) 0 s
 	where
 		toH x = fromJust $ lookup x 
 			[ ('0',  0), ('1',  1), ('2',  2), ('3',  3), ('4',  4)
