@@ -57,7 +57,7 @@ subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
 trans :: (Eq a, Eq b, Ord b, Eq d, Show d, Integral d, Show c, Show b, Show a, Freshable d)
 	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
 trans _ RTEmpty _ = RTEmpty
-trans p (origT@(RT q s ands)) vr = case traceShowId ms' of
+trans p (origT@(RT q s ands)) vr = case ms' of
 		Just s'	-> rew p q (s `composeSubst` s')
 		Nothing 	-> RTEmpty
 	where

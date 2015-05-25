@@ -72,7 +72,7 @@ match _ 		_		= Nothing
 
 
 unify :: (Ord b, Eq a, Eq b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
-unify t1 t2 = traceShow t1 $ traceShow t2 $ unifyImpl [(t1,t2)]
+unify t1 t2 = unifyImpl [(t1,t2)]
 
 
 -- | Wiki, yay!
