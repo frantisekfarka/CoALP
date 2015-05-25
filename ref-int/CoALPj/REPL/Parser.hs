@@ -68,7 +68,8 @@ dCmd = toCmdDescr [
 	), (
 		":drawRew"
 		, spaces *> (DrawRew <$> (read <$> digits1 <* spaces1) <*> many anyChar)
-		, "\n\t:drawRew <depth> <query>\n\t\tDraw rewriting tree, depth is an integer, query has the form '? :- BODY . '\n"
+		, "\n\t:drawRew <depth> <query>\n\t\tDraw rewriting tree, depth is an integer, query has the form\n" ++
+		"\t\t'? :- BODY . '\n"
 	), (
 		":drawTrans"
 		, spaces *> (DrawTrans
@@ -79,8 +80,8 @@ dCmd = toCmdDescr [
 			((spaces *> string "0x" *> hexDigits1 <* spaces) `sepBy` (string ","))
 			<* string "]" <* spaces1
 		)) <*> many anyChar)
-		, "\n\t:drawTrans <depth> <transvar> <query>\n\t\tDraw transition between rewriting trees, depth is an integer,\n" ++
-		"\t\ttransvar is the transition variable, and query has the form\n" ++
+		, "\n\t:drawTrans <depth> '[' <transvar_1>, ... ']' <query>\n\t\tDraw transition between rewriting trees, depth is an integer,\n" ++
+		"\t\ttransvars are the transition variable, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
 		":help"
