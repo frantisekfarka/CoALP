@@ -72,9 +72,7 @@ match _ 		_		= Nothing
 
 
 unify :: (Ord b, Eq a, Eq b, Freshable b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
-unify t1 t2 = trace ("Unify:\t" ++ show t1 ++ "\tand\t" ++ show t2 ++ "\n") $
-		let f = unifyImpl [apartTerms t1 t2]
-	in traceShow (fmap separateSubst f) $ fmap (snd . separateSubst) f -- $ unifyImpl [apartTerms t1 t2]
+unify t1 t2 = fmap (snd . separateSubst) $ unifyImpl [apartTerms t1 t2]
 
 
 -- | Wiki, yay!
@@ -102,9 +100,9 @@ unifyImpl ((t1, t2):ts )
 	  Var _ <- t2			= unifyImpl $ (t2,t1):ts
 	-- eliminate
 	| Var v <- t1,
-	  Fun _ _ <- t2			= trace (
+	  Fun _ _ <- t2			= {- trace (
 	  		"PartSubst: " ++ show v ++ " (" ++ show (unpart v) ++ "):\t" ++ show t2 ++ "\twas:\t" ++ show (mapVar unpart t2) ++"\n"
-	  	) Just (composeSubst [(v, t2)]) <*> unifyImpl ts
+	  	)-} Just (composeSubst [(v, t2)]) <*> unifyImpl ts
 	  --occursCheck v t2		= 
 	-- occurscheck fails
 	| otherwise			= Nothing
