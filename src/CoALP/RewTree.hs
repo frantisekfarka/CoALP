@@ -12,7 +12,8 @@ import Data.Traversable (sequenceA)
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable,initFresh)
 import CoALP.Unify (match, unify, applySubst, composeSubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
-	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar)
+	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar
+	)
 
 import Debug.Trace
 
@@ -54,16 +55,15 @@ subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
-trans :: (Eq a, Eq b, Ord b, Eq d, Show d, Integral d, Show c, Show b, Show a, Freshable d)
+trans :: (Eq a, Eq b, Ord b, Eq d, Show d, Integral d, Show c, Show b, Show a, Freshable b, Freshable d)
 	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
 trans _ RTEmpty _ = RTEmpty
 trans p (origT@(RT q s ands)) vr = case ms' of
-		Just s'	-> rew p q (s `composeSubst` s')
+		Just s'	-> rew p q (traceShowId (traceShowId s `composeSubst` traceShowId s'))
 		Nothing 	-> RTEmpty
 	where
 		ms' = unify term (cHead (p !! pIx))
-		(var, pIx, term):_ {-= findVar origT
-		findVar (RT _ _ ands)-} = (filter ((== vr).fst') $
+		(var, pIx, term):_ = (filter ((== vr).fst') $
 			concatMap processAnd ands)
 		
 		processAnd :: AndNode e (Term a b c) (Vr d) -> [(Vr d,Int,Term a b c)]

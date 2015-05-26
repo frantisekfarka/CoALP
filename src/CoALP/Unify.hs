@@ -71,15 +71,17 @@ match (Var x) 		(Fun id1 ts)	= Just $ (x, Fun id1 ts):[]
 match _ 		_		= Nothing
 
 
-unify :: (Ord b, Eq a, Eq b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
-unify t1 t2 = unifyImpl [(t1,t2)]
+unify :: (Ord b, Eq a, Eq b, Freshable b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
+unify t1 t2 = trace ("Unify:\t" ++ show t1 ++ "\tand\t" ++ show t2 ++ "\n") $
+		let f = unifyImpl [apartTerms t1 t2]
+	in traceShow (fmap separateSubst f) $ fmap (snd . separateSubst) f -- $ unifyImpl [apartTerms t1 t2]
 
 
 -- | Wiki, yay!
 --
 -- http://en.wikipedia.org/wiki/Unification_%28computer_science%29#A_unification_algorithm
 --
-unifyImpl :: [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
+unifyImpl :: (Eq b, Freshable b, Show a, Show b, Show c) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
 unifyImpl [] = Just []
 unifyImpl ((t1, t2):ts )
 	-- drop constant, coul be actualy droped due to the next rule
@@ -100,11 +102,24 @@ unifyImpl ((t1, t2):ts )
 	  Var _ <- t2			= unifyImpl $ (t2,t1):ts
 	-- eliminate
 	| Var v <- t1,
-	  Fun _ _ <- t2			= Just (composeSubst [(v, t2)]) <*> unifyImpl ts
+	  Fun _ _ <- t2			= trace (
+	  		"PartSubst: " ++ show v ++ " (" ++ show (unpart v) ++ "):\t" ++ show t2 ++ "\twas:\t" ++ show (mapVar unpart t2) ++"\n"
+	  	) Just (composeSubst [(v, t2)]) <*> unifyImpl ts
 	  --occursCheck v t2		= 
 	-- occurscheck fails
 	| otherwise			= Nothing
 
+
+-- | Separate two terms by reㄢaming apart
+apartTerms :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
+apartTerms t1 t2 = (mapVar (apartR) t1, mapVar (apartL) t2)
+
+separateSubst :: (Eq b, Freshable b) => Subst a b c -> (Subst a b c, Subst a b c)
+separateSubst s = (map f $ filter (isL . fst) s
+	, map f $ filter (isR . fst) s
+	)
+	where
+		f (a, b) = (unpart a, mapVar (apart a) b)
 
 
 

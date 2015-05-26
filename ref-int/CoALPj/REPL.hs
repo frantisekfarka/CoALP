@@ -233,7 +233,7 @@ drawRew depth q = whenProgram (
 			return ()
 		Right r'	-> do
 			iputStrLn $ "Query" ++ q ++ " loaded."
-			let r = fixQuery r'
+			let r = r'
 			let rt = rew p r []
 			liftIO . displayRewTree depth $ rt  --rew p r []
 			--iputStrLn . show . (head 20) $ loops' rt
@@ -247,14 +247,18 @@ drawTrans depth var q = whenProgram (
 			return ()
 		Right r'	-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			let r = fixQuery r'
+			let r = r'
 			let rt = rew prog r []
 			let tt = foldl (trans prog) rt (fmap mkVar var)
 			liftIO . displayRewTree depth $ tt 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-
+verbPutStrLn :: String -> CoALP ()
+verbPutStrLn str = do
+	s <- get
+	let verbosity = optVerbosity $ caOptions s
+	when (verbosity >= VVerbose) $ iputStrLn str
 
 
 whenProgram :: (Program1 -> CoALP ()) -> CoALP ()

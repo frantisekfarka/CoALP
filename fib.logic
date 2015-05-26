@@ -1,8 +1,7 @@
-%vars(A,B,C,D,E,F,G,H).
-bit(Z, b0, Y).
-bit(Z, b1, Y).
+bit(b0).
+bit(b1).
 
-bstr(scons(X,Y)) :- bit(c1, X, c3),bstr(Y).
+bstr(scons(X,Y)) :- bit(X),bstr(Y).
 
 
 %conn(X,Y).

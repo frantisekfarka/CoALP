@@ -24,11 +24,13 @@ module CoALP.Program (
 	, Vr(..)
 	, Vr1
 	, mkVar
+	, mapVar
+	,fixTerm
 	,fixQuery
 ) where
 
 import Data.List (intersperse)
-import Numeric (showHex,showIntAtBase)
+import Numeric (showHex) -- ,showIntAtBase)
 
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
@@ -172,11 +174,14 @@ type RewTree1 = RewTree Ident Variable Constant VariableRew
 mkVar :: VariableRew -> Vr VariableRew
 mkVar = Vr
 
+mapVar :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
+mapVar f (Var v)	= Var $ f v
+mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 
 -- | Renaming hack
 -- TODO remove
 fixTerm :: Term a Int c -> Term a Int c
-fixTerm (Var v) = Var (v + 999)
+fixTerm (Var v) = Var (v + 981)
 fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
 
 fixQuery :: Query1 -> Query1

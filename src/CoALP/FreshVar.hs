@@ -12,6 +12,10 @@ module CoALP.FreshVar (
 	  initFresh
 	, apartL
 	, apartR
+	, apart
+	, isL
+	, isR
+	, unpart
 	, FreshVar
 	, runFresh
 	, evalFresh
@@ -19,19 +23,12 @@ module CoALP.FreshVar (
 	, Freshable
 ) where
 
+import Prelude (Int, Integer, Bool, not, ($), fst, (+))
 import Control.Applicative (Applicative, pure, (<*>))
-import Control.Monad (foldM)
-import Data.Bits (Bits, shiftL, setBit)
+import Control.Monad (Monad (..))
 
-
-import Numeric (showIntAtBase)
-
-showBin b = interspace $ replicate pad '0' ++ bin
-	where
-		bin = showIntAtBase 2 (head.show) b ""
-		pad = 4 - ((length bin) `mod` 4)
-		interspace [] = []
-		interspace xs = take 4 xs ++ " " ++ (interspace $ drop 4 xs)
+import Data.Functor (Functor (..))
+import Data.Bits (shiftL, shiftR, setBit, testBit)
 
 
 ---------------------------------------------------------------------------
@@ -96,6 +93,10 @@ class Freshable a where
 	split :: a -> (a,a)
 	apartL :: a -> a
 	apartR :: a -> a
+	apart :: a -> a -> a
+	unpart :: a -> a
+	isL :: a -> Bool
+	isR :: a -> Bool
 
 instance Freshable Integer where
 	initFresh = 1
@@ -103,7 +104,21 @@ instance Freshable Integer where
 	split v = let v' = shiftL v 1 in (v', setBit v' 0)
 	apartL v = shiftL v 1
 	apartR v = setBit (shiftL v 1) 0
+	isL a = not (testBit a 0)
+	isR a = testBit a 0
+	unpart v = shiftR v 1
+	apart a v = a + v
 
+instance Freshable Int where
+	initFresh = 1
+	--split v = let v' = shiftL v 1 in (shiftL v' 1, shiftL (setBit v' 0) 1)
+	split v = let v' = shiftL v 1 in (v', setBit v' 0)
+	apartL v = shiftL v 1
+	apartR v = setBit (shiftL v 1) 0
+	isL a = not (testBit a 0)
+	isR a = testBit a 0
+	unpart v = shiftR v 1
+	apart a v = a + v
 
 
 {-

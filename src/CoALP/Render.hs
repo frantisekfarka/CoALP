@@ -24,7 +24,7 @@ displayProgram p = do
 
 displayRewTree :: Int -> RewTree1 -> IO ()
 displayRewTree depth rt = do
-	putStrLn (renderRewT depth rt)
+	--putStrLn (renderRewT depth rt)
 	writeFile "/tmp/test.dot" (renderRewT depth rt)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
