@@ -15,6 +15,7 @@ data Command
 	| DrawRew Int String
 	| DrawTrans Int [Integer] String
 	| Help
+	| Empty
 	deriving Show
 
 

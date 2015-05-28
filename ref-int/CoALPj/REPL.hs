@@ -184,6 +184,7 @@ processInput cmd origState = do
 		Right (DrawRew d q) -> drawRew d q
 		Right (DrawTrans d v q) -> drawTrans d v q
 		Right (Help) -> iputStrLn cmdInfo
+		Right (Empty) -> return ()
 
 -- | load and parse file
 loadFile :: FilePath -> CoALP ()

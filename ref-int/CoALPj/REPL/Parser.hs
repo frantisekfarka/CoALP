@@ -29,7 +29,11 @@ import Debug.Trace
 
 parseCmd :: String -> Either ParseError Command
 -- TODO input name
-parseCmd cmd = parse (toCmdParser dCmd <* spaces <* eof) "(input)" cmd
+parseCmd cmd = parse (
+	(
+		(spaces *> pure Empty <* eof)
+		<|> toCmdParser dCmd
+	) <* spaces <* eof) "(input)" cmd
 
 cmdInfo :: String
 cmdInfo = toCmdInfo dCmd
