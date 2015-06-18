@@ -184,6 +184,7 @@ processInput cmd origState = do
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
 		Right (DrawTrans d v q) -> drawTrans d v q
+		Right (DrawDer dD dR q) -> drawDer dD dR q
 		Right (Help) -> iputStrLn cmdInfo
 		Right (Empty) -> return ()
 
@@ -247,15 +248,31 @@ drawTrans depth var q = whenProgram (
 		Left err	-> do
 			iputStrLn err
 			return ()
-		Right r'	-> do
+		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			let r = r'
 			let rt = rew prog r []
 			let tt = foldl (trans prog) rt (fmap mkVar var)
 			--let tt = trans prog rt (mkVar $ head var)
 			liftIO . displayRewTree depth $ tt 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
+
+drawDer :: Int -> Int -> String -> CoALP ()
+drawDer depD depR q = whenProgram (
+	\prog -> case parseQuery q of
+		Left err	-> do
+			iputStrLn err
+			return ()
+		Right r		-> do
+			iputStrLn $ "Query " ++ q ++ " loaded."
+			--let rt = rew prog r []
+			--let dt = undefined
+			undefined
+			--let tt = trans prog rt (mkVar $ head var)
+			--liftIO . displayRewTree depth $ dt 
+			--iputStrLn . show . (head 20) $ loops' rt
+	)
+
 
 verbPutStrLn :: String -> CoALP ()
 verbPutStrLn str = do

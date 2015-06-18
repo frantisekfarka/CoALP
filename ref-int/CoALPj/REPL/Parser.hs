@@ -64,7 +64,8 @@ dCmd = toCmdDescr [
 	), (
 		":gc2"
 		, spaces *> (GC2 <$> many anyChar)
-		, "\n\t:gc2 <query>\n\t\tGuardedness check 2, query bas the form '? :- BODY . '\n"
+		, "\n\t:gc2 <query>\n\t\tGuardedness check 2, query bas the form\n" ++
+		"\t\t'? :- BODY . '\n"
 	), (
 		":drawTerms"
 		, pure DrawProgram
@@ -86,6 +87,14 @@ dCmd = toCmdDescr [
 		)) <*> many anyChar)
 		, "\n\t:drawTrans <depth> '[' <transvar_1>, ... ']' <query>\n\t\tDraw transition between rewriting trees, depth is an integer,\n" ++
 		"\t\ttransvars are the transition variable, and query has the form\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
+		":drawDer"
+		, spaces *> (DrawDer
+		<$> (read <$> digits1 <* spaces1) 
+		<*> (read <$> digits1 <* spaces1) 
+		<*> many anyChar)
+		, "\n\t:drawDer <depthDer> <depthRew> <query>\n\t\tDraw derivation tree, depth is an integer, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
 		":help"
