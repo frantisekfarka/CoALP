@@ -10,5 +10,6 @@ data Err = EmptyMsg
          | InternalMsg String
 	 | NotImplementedYet String
 	 | ParserErr String
+	 | QuitErr
 	deriving Show
 

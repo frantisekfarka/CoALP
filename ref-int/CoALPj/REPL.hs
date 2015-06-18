@@ -176,6 +176,7 @@ processInput cmd origState = do
 		Right (Quit) 	-> do
 			-- iputStrLn $ "doing some action: " ++ (show a)
 			-- return ()
+			lift $ throwE QuitErr
 			undefined
 		Right (GC1)	-> checkGuard1
 		Right (GC2 q)	-> checkGuard2 q
@@ -251,6 +252,7 @@ drawTrans depth var q = whenProgram (
 			let r = r'
 			let rt = rew prog r []
 			let tt = foldl (trans prog) rt (fmap mkVar var)
+			--let tt = trans prog rt (mkVar $ head var)
 			liftIO . displayRewTree depth $ tt 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
