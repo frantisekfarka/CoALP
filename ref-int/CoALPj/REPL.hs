@@ -48,11 +48,12 @@ import CoALPj.REPL.Parser(
 
 import CoALP.Error (Err(..))
 
-import CoALP.Render (renderProgram,displayProgram,displayRewTree)
+import CoALP.Render (renderProgram,displayProgram,displayRewTree,displayDerTree)
 import CoALP.Guards2 (gc1,gc2,loops')
 import CoALP.Program (Program1,fixQuery)
 
-import CoALP.RewTree (rew, trans,mkVar)
+import CoALP.RewTree (rew)
+import CoALP.DerTree (der,trans,mkVar)
 
 
 -- TODO refactor
@@ -265,11 +266,7 @@ drawDer depD depR q = whenProgram (
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			--let rt = rew prog r []
-			--let dt = undefined
-			undefined
-			--let tt = trans prog rt (mkVar $ head var)
-			--liftIO . displayRewTree depth $ dt 
+			liftIO . displayDerTree depD depR $ der prog r 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 

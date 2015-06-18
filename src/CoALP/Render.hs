@@ -3,6 +3,7 @@ module CoALP.Render (
 	  renderProgram
 	, displayProgram
 	, displayRewTree
+	, displayDerTree
 ) where
 
 --import Data.Foldable
@@ -10,7 +11,8 @@ import Numeric (showHex)
 import System.Process
 
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
-	AndNode(..),OrNode(..),Query(..),Query1,Vr(..),Vr1
+	AndNode(..),OrNode(..),Query(..),Query1,Vr(..),Vr1,
+	DerTree1,DerTree(..),Trans(..),Trans1
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery)
 
@@ -24,11 +26,15 @@ displayProgram p = do
 
 displayRewTree :: Int -> RewTree1 -> IO ()
 displayRewTree depth rt = do
-	--putStrLn (renderRewT depth rt)
-	writeFile "/tmp/test.dot" (renderRewT depth rt)
+	writeFile "/tmp/test.dot" (renderRewT "digraph G" depth rt 1)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	
+displayDerTree :: Int -> Int -> DerTree1 -> IO ()
+displayDerTree depD depR dt = do
+	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
+	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+	return ()
 	
 saveProgram :: Program1 -> FilePath -> IO ()
 saveProgram p f = writeFile f (renderProgram p)
@@ -86,19 +92,18 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
 	
-renderRewT :: Int -> RewTree1 -> String
-renderRewT 0 _ = ""
-renderRewT _ RTEmpty = 
-	"digraph G {\n" ++ 
+renderRewT :: String -> Int -> RewTree1 -> Int -> String
+renderRewT pref _ RTEmpty n = 
+	pref ++ " {\n" ++ 
 	"\tnode [fontname=\"Monospace\"];\n" ++
-	"\troot[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
+	"\troot" ++ show n ++ "[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
 	"}\n"
-renderRewT depth rt@(RT q s os) = 
-	"digraph G {\n" ++ 
+renderRewT pref depth rt@(RT q s os) n = 
+	pref ++ " {\n" ++ 
 	"\tnode [fontname=\"Monospace\"];\n" ++
-	"\troot[shape=box,color=blue,width=" ++ lh (ppQuery q) ++ ",label=\"" ++ ppQuery q ++ "\",fixedsize=false];\n" ++
-	concat (zipWith (renderRewAnd (depth-1)) [i  | i <- [1..]] os) ++
-	concatMap (\o -> "\troot -> " ++ show o ++ ";\n") [i  | i <- [1..(length os)]] ++
+	"\troot" ++ show n ++ "[shape=box,color=blue,width=" ++ lh (ppQuery q) ++ ",label=\"" ++ ppQuery q ++ "\",fixedsize=false];\n" ++
+	concat (zipWith (renderRewAnd (depth-1)) [10*n + i  | i <- [1..]] os) ++
+	concatMap (\o -> "\troot" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..(length os)]] ++
 	"}\n"
 
 
@@ -134,3 +139,28 @@ renderRewOr depth n (OrNode c@(Clause h b) ands) =
 
 lh :: String -> String
 lh s = show ( fromIntegral (length s) * (0.15 :: Float) )
+
+
+	
+renderDerT :: Int -> Int -> DerTree1 -> String
+renderDerT depD depR dt = 
+	"digraph D {\n" ++ 
+	renderDer depD depR 1 dt ++
+	"}\n"
+
+renderDer :: Int -> Int -> Int -> DerTree1 -> String
+renderDer 0 _ _ _ = ""
+renderDer depD depR n (DT rew trans) = 
+	renderRewT ("\tsubgraph " ++ show n) depR rew (10*n) ++
+	concat (zipWith (renderTrans (depD - 1) depR) [10*n + i | i <- [1..]] trans) ++
+	concatMap (\o -> "\troot" ++ show (10 *n) ++ " -> " ++ show o ++ ";\n") [n*10 + i  | i <- [1..(length trans)]] 
+
+renderTrans :: Int -> Int -> Int -> Trans1 -> String
+renderTrans depD depR n (Trans vr dt) =
+	"\t" ++ show n ++ "[shape=box,color=blue,width=" ++ lh (show (Vr vr)) ++ ",label=\"" ++ show vr ++ "\",fixedsize=false];\n" ++ 
+	renderDer depD depR (10*n) dt ++
+	show n ++ "-> root" ++ show (100*n) ++ ";\n"
+
+
+
+
