@@ -12,6 +12,8 @@ module CoALP.Program (
 	, Subst1
 	, RewTree(..)
 	, RewTree1
+	, DerTree(..)
+	, DerTree1
 	, Program1
 	, Clause1
 	, Query1
@@ -27,6 +29,8 @@ module CoALP.Program (
 	, mapVar
 	,fixTerm
 	,fixQuery
+	,Trans(..)
+	,Trans1
 ) where
 
 import Data.List (intersperse)
@@ -165,9 +169,12 @@ type Subst1 = Subst Ident Variable Constant
 data RewTree a b c d = RTEmpty | RT (Query a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
 type RewTree1 = RewTree Ident Variable Constant VariableRew
 
---AndNode (Term a b c)
+data DerTree a b c d = DT (RewTree a b c d) [Trans d (DerTree a b c d)]
+type DerTree1 = DerTree Ident Variable Constant VariableRew
 
---type RewTree1 = RewTree Ident Variable Constant
+data Trans a b = Trans a b
+type Trans1 = Trans VariableRew DerTree1 
+
 
 -- | Just Helper
 -- TOOD: remove

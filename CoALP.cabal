@@ -42,6 +42,7 @@ library
                     CoALP.Parser.PrettyPrint
                     CoALP.Render
                     CoALP.RewTree
+                    CoALP.DerTree
                     CoALP.Guards2
                     CoALP.Unify
 --                    CoALP.UI
