@@ -4,6 +4,7 @@ module CoALP.Unify (
 	, unify
 	, applySubst
 	, composeSubst
+	, unifyImpl
 ) where
 
 import Control.Monad (join)
@@ -45,12 +46,16 @@ applySubst s (Var v) = case lookup v s of
 	Just st	-> st
 	Nothing	-> Var v
 
-composeSubst :: Subst a b c -> Subst a b c -> Subst a b c
-composeSubst s1 s2 = filter neq $ (fmap f s1) ++ s2
+composeSubst :: Eq b => Subst a b c -> Subst a b c -> Subst a b c
+composeSubst s1 s2 = prune $ filter neq $ (fmap f s1) ++ s2
 	where
 		f (v,t) = (v, applySubst s2 t)
 		neq (v,Fun _ _) = True
 		neq (v,Var v') = v /= v'
+		prune [] = []
+		prune (x:xs) = x:(prune (pruneEl x xs))
+		pruneEl (v, _) [] = []
+		pruneEl v (w:ws) = if fst v == fst w then ws else v:(pruneEl v ws)
 
 renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
 renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
@@ -72,7 +77,17 @@ match _ 		_		= Nothing
 
 
 unify :: (Ord b, Eq a, Eq b, Freshable b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
-unify t1 t2 = fmap (snd . separateSubst) $ unifyImpl [apartTerms t1 t2]
+--unify t1 t2 = traceShowId $ fmap (snd . separateSubst) $ traceShowId $ unifyImpl $ traceShowId [apartTerms t1 t2]
+unify t1 t2 = traceShowId $ fmap snd $ traceShowId $ fmap separateSubst $ traceShowId $ collapseS $ unifyImpl $ traceShowId [apartTerms t1 t2]
+	where
+		-- TODO fix 99 :-)
+		collapseS (Just x) = Just $ foldr f x (take 99 (repeat x))
+		collapseS x = x
+		f x y = g $ composeSubst x y
+		g [] = []
+		g (x:xs) = x:(g (elim x xs))
+		elim _ [] = []
+		elim x (y:ys) = if (x == y) then ys else y:(elim x ys)
 
 
 -- | Wiki, yay!
@@ -82,6 +97,12 @@ unify t1 t2 = fmap (snd . separateSubst) $ unifyImpl [apartTerms t1 t2]
 unifyImpl :: (Eq b, Freshable b, Show a, Show b, Show c) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
 unifyImpl [] = Just []
 unifyImpl ((t1, t2):ts )
+	-- bind vars
+	| Var v1 <- t1,
+	  Var v2 <- t2			= Just (composeSubst ( 
+	  					composeSubst [(v1, Var $ apart v1 v2)]
+							[(v2, Var $ apart v1 v2)])
+					) <*> unifyImpl ts
 	-- drop constant, coul be actualy droped due to the next rule
 	| Fun id1 [] <- t1,
 	  Fun id2 [] <- t2,
@@ -94,21 +115,22 @@ unifyImpl ((t1, t2):ts )
 	-- conflict
 	| Fun id1 _ <- t1,
 	  Fun id2 _ <- t2,
-	  id1 /= id2			= Nothing
+	  id1 /= id2			= trace ("Failed to unify " ++ show (t1, t2)) Nothing
 	-- swap
 	| Fun id1 ts1 <- t1,
 	  Var _ <- t2			= unifyImpl $ (t2,t1):ts
 	-- eliminate
 	| Var v <- t1,
-	  Fun _ _ <- t2			= {- trace (
+	  Fun _ _ <- t2			= trace (
 	  		"PartSubst: " ++ show v ++ " (" ++ show (unpart v) ++ "):\t" ++ show t2 ++ "\twas:\t" ++ show (mapVar unpart t2) ++"\n"
-	  	)-} Just (composeSubst [(v, t2)]) <*> unifyImpl ts
+	  	) Just (composeSubst [(v, t2)]) <*> unifyImpl ts
 	  --occursCheck v t2		= 
 	-- occurscheck fails
-	| otherwise			= Nothing
+	| _ <- t1, _ <- t2, 
+		otherwise			= traceShow (t1, t2) Nothing
 
 
--- | Separate two terms by reㄢaming apart
+-- | Separate two terms by renaming apart
 apartTerms :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
 apartTerms t1 t2 = (mapVar (apartR) t1, mapVar (apartL) t2)
 

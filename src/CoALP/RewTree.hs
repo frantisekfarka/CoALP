@@ -21,7 +21,7 @@ import Debug.Trace
 rew :: (Eq a, Eq b, Ord b, Freshable d) =>
 	Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
 rew p c@(Query b) s = flip evalFresh initFresh $ do
-		ands <- sequenceA $ fmap (mkAndNode p) b'
+		ands <- sequenceA $ fmap (mkAndNode p s) b'
 		return $ RT c s ands
 	where
 		b' = fmap (applySubst s) b
@@ -30,17 +30,17 @@ rew p c@(Query b) s = flip evalFresh initFresh $ do
 
 -- | AndNode aka Term node
 mkAndNode :: (Eq a, Eq b, Ord b, Freshable d) => 
-	Program a b c -> Term a b c -> FreshVar d (AndNode (Clause a b c) (Term a b c) (Vr d))
-mkAndNode p t = do
-	ors <- sequenceA $ fmap (mkOrNode p t) p
+	Program a b c -> Subst a b c -> Term a b c -> FreshVar d (AndNode (Clause a b c) (Term a b c) (Vr d))
+mkAndNode p os t = do
+	ors <- sequenceA $ fmap (mkOrNode p os t) p
 	return $ AndNode t ors
 
 mkOrNode :: (Eq a, Eq b, Ord b, Freshable d) =>
-	Program a b c -> Term a b c -> Clause a b c -> FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
-mkOrNode p t (Clause h b)  = case h `match` t of
-	Just s	->	let sb = (s `subst`) <$> b
+	Program a b c -> Subst a b c -> Term a b c -> Clause a b c -> FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
+mkOrNode p os t (Clause h b)  = case h `match` t of
+	Just s	->	let sb = ((os `composeSubst` s) `subst`) <$> b
 			in do
-				ands <- sequenceA ((mkAndNode p) <$> sb)
+				ands <- sequenceA ((mkAndNode p os) <$> sb)
 				return $ OrNode (Clause t sb) ands
 	--Just s	->	OrNode (Clause h (([] `subst`) <$> b)) (fmap (mkAndNode p) b)
 	Nothing	->	getFresh >>= return . OrNodeEmpty . Vr
