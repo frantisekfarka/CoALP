@@ -95,45 +95,45 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 renderRewT :: String -> Int -> RewTree1 -> Int -> String
 renderRewT pref _ RTEmpty n = 
 	pref ++ " {\n" ++ 
+	"\tstyle=filled;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
 	"\troot" ++ show n ++ "[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
 	"}\n"
 renderRewT pref depth rt@(RT q s os) n = 
 	pref ++ " {\n" ++ 
+	"\tstyle=filled;color=lightgrey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
 	"\troot" ++ show n ++ "[shape=box,color=blue,width=" ++ lh (ppQuery q) ++ ",label=\"" ++ ppQuery q ++ "\",fixedsize=false];\n" ++
-	concat (zipWith (renderRewAnd (depth-1)) [10*n + i  | i <- [1..]] os) ++
+	concat (zipWith (renderRewAnd n (depth-1)) [10*n + i  | i <- [1..]] os) ++
 	concatMap (\o -> "\troot" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..(length os)]] ++
 	"}\n"
 
 
-renderRewAnd :: Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
-renderRewAnd 0 _ _ = ""
-renderRewAnd depth n (AndNode t ors) = 
+renderRewAnd :: Int -> Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
+renderRewAnd sn 0 _ _ = ""
+renderRewAnd sn depth n (AndNode t ors) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
 	ppTerm t ++ "\",fixedsize=true];\n" ++
-	concat (zipWith (renderRewOr (depth - 1)) [10*n + i | i <- [1..]] ors) ++
-	concat (zipWith
-		(\o p -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n")
-		[10*n + i  | i <- [1..]] 
-		ors
-	) ++ ""
+	concat (zipWith (renderRewOr sn (show n) (depth - 1)) [10*n + i | i <- [1..]] ors) 
 
 
-renderRewOr :: Int -> Int -> OrNode Clause1 Term1 Vr1 -> String
-renderRewOr 0 n _ = 
+renderRewOr :: Int -> String -> Int -> Int -> OrNode Clause1 Term1 Vr1 -> String
+renderRewOr sn par 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"_|_" ++ "\",fixedsize=true];\n" ++
+	par ++ " -> " ++ show n ++ ";\n" ++
 	""
-renderRewOr depth n (OrNodeEmpty x) =
-	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (show x) ++ ",label=\"" ++ 
-	show x ++ "\",fixedsize=true];\n" ++
+renderRewOr sn par depth n (OrNodeEmpty x) =
+	"\t" ++ show x ++ "_" ++ show sn ++ "[shape=box,color=green,width=" ++ lh (show x) ++ ",label=\"" ++ 
+	show x ++  "\",fixedsize=true];\n" ++
+	par ++ " -> " ++ show x ++ "_" ++ show sn ++ ";\n" ++
 	""
-renderRewOr depth n (OrNode c@(Clause h b) ands) = 
+renderRewOr sn par depth n (OrNode c@(Clause h b) ands) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
 	ppClause c ++ "\",fixedsize=true];\n" ++
-	concat (zipWith (renderRewAnd (depth - 1)) [10*n + i  | i <- [1..]] ands) ++
+	concat (zipWith (renderRewAnd sn (depth - 1)) [10*n + i  | i <- [1..]] ands) ++
 	concatMap (\o -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n") [n*10 + i  | i <- [1..(length ands)]] ++
+	par ++ " -> " ++ show n ++ ";\n" ++
 	""
 
 
@@ -151,14 +151,14 @@ renderDerT depD depR dt =
 renderDer :: Int -> Int -> Int -> DerTree1 -> String
 renderDer 0 _ _ _ = ""
 renderDer depD depR n (DT rew trans) = 
-	renderRewT ("\tsubgraph " ++ show n) depR rew (10*n) ++
-	concat (zipWith (renderTrans (depD - 1) depR) [10*n + i | i <- [1..]] trans) ++
-	concatMap (\o -> "\troot" ++ show (10 *n) ++ " -> " ++ show o ++ ";\n") [n*10 + i  | i <- [1..(length trans)]] 
+	renderRewT ("\tsubgraph cluster_" ++ show n) depR rew (10*n) ++
+	concat (zipWith (renderTrans (10*n) (depD - 1) depR) [10*n + i | i <- [1..]] trans) 
 
-renderTrans :: Int -> Int -> Int -> Trans1 -> String
-renderTrans depD depR n (Trans vr dt) =
-	"\t" ++ show n ++ "[shape=box,color=blue,width=" ++ lh (show (Vr vr)) ++ ",label=\"" ++ show vr ++ "\",fixedsize=false];\n" ++ 
+renderTrans :: Int -> Int -> Int -> Int -> Trans1 -> String
+renderTrans sn depD depR n (Trans vr dt) =
+	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh (show (Vr vr)) ++ ",label=\"CX for " ++ show (Vr vr) ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
+	show (Vr vr) ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
 	show n ++ "-> root" ++ show (100*n) ++ ";\n"
 
 
