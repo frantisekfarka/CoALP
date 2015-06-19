@@ -88,7 +88,7 @@ guardedTerm _ _				= False
 
 
 
-gc2 :: (Eq a, Eq b, Ord b) => Query a b c -> Program a b c -> Bool
+gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Query a b c -> Program a b c -> Bool
 gc2 q p = all (uncurry guardedTerm) $ loops (rew p q [])
 
 -- TODO Freshable!
@@ -98,6 +98,7 @@ loops rt = snd (loops' rt)
 
 -- | recursively build loops
 loops' :: Freshable d => RewTree a b c d -> ([(Term a b c,Int)],[(Term a b c, Term a b c)])
+loops' RTEmpty = ([],[])
 loops' (RT _ _ ands) = (id *** concat.concat) $ sequenceA $ fmap f ands
 	where
 		f (AndNode _ ors) = sequenceA $ zipWith loopsO [1..] ors

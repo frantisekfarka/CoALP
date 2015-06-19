@@ -15,7 +15,7 @@ import Data.List (sortBy)
 import CoALP.Program
 import CoALP.FreshVar
 
-import Debug.Trace
+--import Debug.Trace
 
 term1, term2 :: Term String Integer Int
 term1 = Fun "Parent" [Var 1, (Fun "John" [])]
@@ -52,10 +52,11 @@ composeSubst s1 s2 = prune $ filter neq $ (fmap f s1) ++ s2
 		f (v,t) = (v, applySubst s2 t)
 		neq (v,Fun _ _) = True
 		neq (v,Var v') = v /= v'
-		prune [] = []
-		prune (x:xs) = x:(prune (pruneEl x xs))
-		pruneEl (v, _) [] = []
-		pruneEl v (w:ws) = if fst v == fst w then ws else v:(pruneEl v ws)
+		--prune [] = []
+		--prune (x:xs) = x:(prune (pruneEl x xs))
+		--pruneEl (v, _) [] = []
+		--pruneEl v (w:ws) = if fst v == fst w then ws else v:(pruneEl v ws)
+		prune = id
 
 renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
 renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
@@ -76,9 +77,8 @@ match (Var x) 		(Fun id1 ts)	= Just $ (x, Fun id1 ts):[]
 match _ 		_		= Nothing
 
 
-unify :: (Ord b, Eq a, Eq b, Freshable b, Show a, Show b, Show c) => Term a b c -> Term a b c -> Maybe (Subst a b c)
---unify t1 t2 = traceShowId $ fmap (snd . separateSubst) $ traceShowId $ unifyImpl $ traceShowId [apartTerms t1 t2]
-unify t1 t2 = traceShowId $ fmap snd $ traceShowId $ fmap separateSubst $ traceShowId $ collapseS $ unifyImpl $ traceShowId [apartTerms t1 t2]
+unify :: (Ord b, Eq a, Eq b, Freshable b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
+unify t1 t2 = fmap snd $ fmap separateSubst $ collapseS $ unifyImpl [apartTerms t1 t2]
 	where
 		-- TODO fix 99 :-)
 		collapseS (Just x) = Just $ foldr f x (take 99 (repeat x))
@@ -94,7 +94,7 @@ unify t1 t2 = traceShowId $ fmap snd $ traceShowId $ fmap separateSubst $ traceS
 --
 -- http://en.wikipedia.org/wiki/Unification_%28computer_science%29#A_unification_algorithm
 --
-unifyImpl :: (Eq b, Freshable b, Show a, Show b, Show c) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
+unifyImpl :: (Eq b, Freshable b) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
 unifyImpl [] = Just []
 unifyImpl ((t1, t2):ts )
 	-- bind vars
@@ -115,19 +115,17 @@ unifyImpl ((t1, t2):ts )
 	-- conflict
 	| Fun id1 _ <- t1,
 	  Fun id2 _ <- t2,
-	  id1 /= id2			= trace ("Failed to unify " ++ show (t1, t2)) Nothing
+	  id1 /= id2			= Nothing
 	-- swap
 	| Fun id1 ts1 <- t1,
 	  Var _ <- t2			= unifyImpl $ (t2,t1):ts
 	-- eliminate
 	| Var v <- t1,
-	  Fun _ _ <- t2			= trace (
-	  		"PartSubst: " ++ show v ++ " (" ++ show (unpart v) ++ "):\t" ++ show t2 ++ "\twas:\t" ++ show (mapVar unpart t2) ++"\n"
-	  	) Just (composeSubst [(v, t2)]) <*> unifyImpl ts
+	  Fun _ _ <- t2			= Just (composeSubst [(v, t2)]) <*> unifyImpl ts
 	  --occursCheck v t2		= 
 	-- occurscheck fails
 	| _ <- t1, _ <- t2, 
-		otherwise			= traceShow (t1, t2) Nothing
+		otherwise			= Nothing
 
 
 -- | Separate two terms by renaming apart

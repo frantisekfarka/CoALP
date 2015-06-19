@@ -8,13 +8,13 @@ module CoALP.RewTree (
 import Data.Functor ((<$>))
 import Data.Traversable (sequenceA)
 
-import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable,initFresh)
+import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
 import CoALP.Unify (match, unify, applySubst, composeSubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar
 	)
 
-rew :: (Eq a, Eq b, Ord b, Freshable d) =>
+rew :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
 rew p c@(Query b) s = flip evalFresh initFresh $ do
 		ands <- sequenceA $ fmap (mkAndNode p s) b'
@@ -23,22 +23,31 @@ rew p c@(Query b) s = flip evalFresh initFresh $ do
 		b' = fmap (applySubst s) b
 
 -- | AndNode aka Term node
-mkAndNode :: (Eq a, Eq b, Ord b, Freshable d) => 
+mkAndNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => 
 	Program a b c -> Subst a b c -> Term a b c -> FreshVar d (AndNode (Clause a b c) (Term a b c) (Vr d))
 mkAndNode p os t = do
 	ors <- sequenceA $ fmap (mkOrNode p os t) p
 	return $ AndNode t ors
 
 -- | OrNode aka Clause node
-mkOrNode :: (Eq a, Eq b, Ord b, Freshable d) =>
+mkOrNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Subst a b c -> Term a b c -> Clause a b c -> FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
-mkOrNode p os t (Clause h b)  = case h `match` t of
-	Just s	->	let sb = ((os `composeSubst` s) `subst`) <$> b
-			in do
-				ands <- sequenceA ((mkAndNode p os) <$> sb)
-				return $ OrNode (Clause t sb) ands
-	--Just s	->	OrNode (Clause h (([] `subst`) <$> b)) (fmap (mkAndNode p) b)
+mkOrNode p os t (Clause h b)  = case h' `match` t' of
+	Just s	->	do
+				ands <- sequenceA ((mkAndNode p os) <$> (sb' s))
+				return $ OrNode (Clause t (sb' s)) ands
 	Nothing	->	getFresh >>= return . OrNodeEmpty . Vr
+
+	where
+		sb' s' = map (mapTerm unpart) $ ((os `composeSubst` s') `subst`) <$> b'
+		h' = mapTerm apartL h
+		b' = map (mapTerm apartL) b
+		t' = mapTerm apartR t
+
+-- TODO make Term (bi)functor
+mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
+mapTerm f (Fun idn ts) = Fun idn $ map (mapTerm f) ts
+mapTerm f (Var a) = Var $ f a
 
 
 -- | apply substitution to the term tree

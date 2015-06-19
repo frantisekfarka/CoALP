@@ -14,7 +14,7 @@ import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTr
 	AndNode(..),OrNode(..),Query(..),Query1,Vr(..),Vr1,
 	DerTree1,DerTree(..),Trans(..),Trans1
 	)
-import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery)
+import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
 
 
 -- | TODO refactor! -- use tree language!
@@ -95,18 +95,20 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 renderRewT :: String -> Int -> RewTree1 -> Int -> String
 renderRewT pref _ RTEmpty n = 
 	pref ++ " {\n" ++ 
-	"\tstyle=filled;color=grey;\n" ++
+	"\tstyle=dashed;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
 	"\troot" ++ show n ++ "[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
 	"}\n"
 renderRewT pref depth rt@(RT q s os) n = 
 	pref ++ " {\n" ++ 
-	"\tstyle=filled;color=lightgrey;\n" ++
+	"\tstyle=dashed;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
-	"\troot" ++ show n ++ "[shape=box,color=blue,width=" ++ lh (ppQuery q) ++ ",label=\"" ++ ppQuery q ++ "\",fixedsize=false];\n" ++
+	"\troot" ++ show n ++ "[shape=box,color=blue,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++
 	concat (zipWith (renderRewAnd n (depth-1)) [10*n + i  | i <- [1..]] os) ++
 	concatMap (\o -> "\troot" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..(length os)]] ++
 	"}\n"
+	where 
+		lbl = ppQuery q ++ " | " ++ ppSubst s
 
 
 renderRewAnd :: Int -> Int -> Int -> AndNode Clause1 Term1 Vr1 -> String

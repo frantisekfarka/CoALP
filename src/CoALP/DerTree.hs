@@ -14,13 +14,11 @@ import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
---trans :: (Eq a, Eq b, Ord b, Eq d, Show d, Integral d, Show c, Show b, Show a, Freshable b, Freshable d)
---	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
---trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
---	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
+trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
+	=> Program a b c -> RewTree a b c d -> Vr d ->  RewTree a b c d
 trans _ RTEmpty _ = RTEmpty
 trans p (origT@(RT q s ands)) vr = case ms' of
-		Just s'	-> rew p q (s `composeSubst` s')
+		Just s'	-> rew p q $ (s `composeSubst` s')
 		Nothing 	-> RTEmpty
 	where
 		ms' = unify term (cHead (p !! pIx))
@@ -53,11 +51,11 @@ trans p (origT@(RT q s ands)) vr = case ms' of
 
 
 
-der :: (Eq a, Eq b, Ord b, Freshable b, Freshable d, Show c, Show b, Show a, Eq d) =>
+der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Query a b c -> DerTree a b c d
 der p q = derT p $ rew p q []
 
-derT :: (Eq a, Eq b, Ord b, Freshable b, Freshable d, Show c, Show b, Show a, Eq d) =>
+derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> RewTree a b c d -> DerTree a b c d
 derT p rt = DT rt (fmap (\v -> Trans v $ derT p $ trans p rt (Vr v)) (getVrs rt))
 

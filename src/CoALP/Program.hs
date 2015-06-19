@@ -48,6 +48,7 @@ instance (Eq a, Eq b) => Eq (Term a b c) where
 	(Var v1) == (Var v2) = v1 == v2
 	(Fun id1 ts1) == (Fun id2 ts2) = id1 == id2 && ts1 == ts2
 	_ == _ = False
+
 --
 instance (Show a, Show b, Show c) => Show (Term a b c) where
 	show (Var x) = "_v" ++ show x
@@ -64,6 +65,10 @@ instance (Show a, Show b, Show c) => Show (Clause a b c) where
 -- | Type of Query Clause
 data Query a b c 
 	= Query [Term a b c]
+
+instance (Show a, Show b, Show c) => Show (Query a b c) where
+	show (Query ts ) = "? :- " ++ 
+		(concat . intersperse ", " . map show $ ts) ++ "."
 
 -- | Type of Program
 type Program a b c = [Clause a b c]
