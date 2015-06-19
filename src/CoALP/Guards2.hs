@@ -12,8 +12,8 @@ module CoALP.Guards2 (
 ) where
 
 import Control.Arrow ((***))
-import Data.Functor ((<$>))
-import Data.Maybe (catMaybes)
+--import Data.Functor ((<$>))
+--import Data.Maybe (catMaybes)
 import Data.Traversable (sequenceA,traverse)
 
 import CoALP.Program (Program, Clause(..), Term(..),
@@ -104,19 +104,19 @@ loops' (RT _ _ ands) = (id *** concat.concat) $ sequenceA $ fmap f ands
 		f (AndNode _ ors) = sequenceA $ zipWith loopsO [1..] ors
 
 loopsA :: Int -> AndNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
-loopsA pi (AndNode f@(Fun fid _) ors) = (id *** concat) $
-				sequenceA $ ([(f,pi)],newLoops) : boundLower
+loopsA pari (AndNode f@(Fun fid _) ors) = (id *** concat) $
+				sequenceA $ ([(f,pari)],newLoops) : boundLower
 	where
 		boundLower = zipWith loopsO [1..] ors
-		newLoops = [(f, f') | (f'@(Fun fid' _), pi')  <- concatMap fst boundLower,
-			fid == fid' && pi == pi'
+		newLoops = [(f, f') | (f'@(Fun fid' _), pari')  <- concatMap fst boundLower,
+			fid == fid' && pari == pari'
 			]
 
-loopsA pi (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1..] ors
+loopsA _ (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1..] ors
 
 loopsO :: Int -> OrNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
-loopsO pi (OrNodeEmpty _) = ([],[])
-loopsO pi (OrNode _  ands) = (id *** concat) $ traverse (loopsA pi) ands
+loopsO _ (OrNodeEmpty _) = ([],[])
+loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
 
 
 

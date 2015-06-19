@@ -5,13 +5,9 @@ module CoALPj.REPL where
 import Control.Exception (SomeException)
 import Control.Monad (when, (=<<))
 import Control.Monad.Trans (lift, liftIO)
-import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, mapExceptT, throwE)
-import Control.Monad.Trans.State --(StateT, execStateT)
-import Control.Monad.State (MonadState)
-import Control.Monad.IO.Class(MonadIO)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
+import Control.Monad.Trans.State (StateT (..), execStateT, get, put)
 import Data.Functor ((<$>))
-import Data.Functor.Identity (runIdentity)
-import Data.Maybe (maybe)
 
 import System.Console.Haskeline as H (
 	  runInputT
@@ -48,20 +44,18 @@ import CoALPj.REPL.Parser(
 
 import CoALP.Error (Err(..))
 
-import CoALP.Render (renderProgram,displayProgram,displayRewTree,displayDerTree)
-import CoALP.Guards2 (gc1,gc2,loops')
-import CoALP.Program (Program1,fixQuery)
+import CoALP.Render (displayProgram,displayRewTree,displayDerTree)
+import CoALP.Guards2 (gc1,gc2)
+import CoALP.Program (Program1)
 
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,mkVar)
 
 
 -- TODO refactor
-import CoALP.Parser.Lexer
 import CoALP.Parser.Parser (parse,parseQuery)
 
 import CoALP.Parser.PrettyPrint (ppProgram)
-import CoALP.Program (Clause(..))
 
 -- | MonadException instance for ExceptT
 -- this is only a substitution for missing instance in haskeline-1.7.3
@@ -154,17 +148,18 @@ repl initState efile = do
 		ctrlC act e = do
 			lift $ iputStrLn (show e)
 			act -- repl orig mods
-		inputExcept :: SomeException -> InputT CoALP ()
+		{-inputExcept :: SomeException -> InputT CoALP ()
 		inputExcept e = do
 			lift $ iputStrLn (show e)
 			return ()
+		-}
 
 iputStrLn :: String -> CoALP ()
 iputStrLn s = runIO $ putStrLn s
 
 -- | Process REPL command line input
 processInput :: String -> REPLState -> CoALP ()
-processInput cmd origState = do
+processInput cmd _origState = do
 	-- some initialization?
 	case parseCmd cmd of
 		Left err 	-> do
@@ -177,7 +172,7 @@ processInput cmd origState = do
 		Right (Quit) 	-> do
 			-- iputStrLn $ "doing some action: " ++ (show a)
 			-- return ()
-			lift $ throwE QuitErr
+			_ <- lift $ throwE QuitErr
 			undefined
 		Right (GC1)	-> checkGuard1
 		Right (GC2 q)	-> checkGuard2 q
