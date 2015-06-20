@@ -7,11 +7,11 @@ module CoALP.Render (
 ) where
 
 --import Data.Foldable
-import Numeric (showHex)
+--import Numeric (showHex)
 import System.Process
 
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
-	AndNode(..),OrNode(..),Query(..),Query1,Vr(..),Vr1,
+	AndNode(..),OrNode(..),Vr(..),Vr1,
 	DerTree1,DerTree(..),Trans(..),Trans1
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
@@ -64,8 +64,6 @@ renderClause n (c@(Clause h b)) =
 
 
 
---renderTerm h
-
 -- | render in imagemagic dot format
 -- TODO refactor
 -- render :: ONode Occ -> String
@@ -85,9 +83,8 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 		"[shape=box,color=white,width=.2,label=\"" ++ f ++ "\",fixedsize=false];\n" ++
 		concat (zipWith node [10*n + i  | i <- [1..]] t)
 	edge :: Int -> Term1 -> String
-	edge n (Var _) = ""
---	edge n (Const _) = ""
-	edge n (Fun f t) = 
+	edge _ (Var _) = ""
+	edge n (Fun _f t) = 
 		concat (zipWith (\o _ -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..]] t) ++
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
@@ -99,7 +96,7 @@ renderRewT pref _ RTEmpty n =
 	"\tnode [fontname=\"Monospace\"];\n" ++
 	"\troot" ++ show n ++ "[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
 	"}\n"
-renderRewT pref depth rt@(RT q s os) n = 
+renderRewT pref depth (RT q s os) n = 
 	pref ++ " {\n" ++ 
 	"\tstyle=dashed;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
@@ -112,7 +109,7 @@ renderRewT pref depth rt@(RT q s os) n =
 
 
 renderRewAnd :: Int -> Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
-renderRewAnd sn 0 _ _ = ""
+renderRewAnd _ 0 _ _ = ""
 renderRewAnd sn depth n (AndNode t ors) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
 	ppTerm t ++ "\",fixedsize=true];\n" ++
@@ -120,17 +117,17 @@ renderRewAnd sn depth n (AndNode t ors) =
 
 
 renderRewOr :: Int -> String -> Int -> Int -> OrNode Clause1 Term1 Vr1 -> String
-renderRewOr sn par 0 n _ = 
+renderRewOr _sn par 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"_|_" ++ "\",fixedsize=true];\n" ++
 	par ++ " -> " ++ show n ++ ";\n" ++
 	""
-renderRewOr sn par depth n (OrNodeEmpty x) =
+renderRewOr sn par _depth _n (OrNodeEmpty x) =
 	"\t" ++ show x ++ "_" ++ show sn ++ "[shape=box,color=green,width=" ++ lh (show x) ++ ",label=\"" ++ 
 	show x ++  "\",fixedsize=true];\n" ++
 	par ++ " -> " ++ show x ++ "_" ++ show sn ++ ";\n" ++
 	""
-renderRewOr sn par depth n (OrNode c@(Clause h b) ands) = 
+renderRewOr sn par depth n (OrNode c ands) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
 	ppClause c ++ "\",fixedsize=true];\n" ++
 	concat (zipWith (renderRewAnd sn (depth - 1)) [10*n + i  | i <- [1..]] ands) ++

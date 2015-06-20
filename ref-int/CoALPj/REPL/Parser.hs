@@ -10,7 +10,7 @@ module CoALPj.REPL.Parser (
 ) where
 
 import Control.Applicative 
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO)
 import Control.Arrow ((***))
 import Data.Maybe (fromJust)
 import Data.Monoid (Monoid,mempty,mappend,mconcat)
@@ -23,8 +23,6 @@ import Text.Parsec.String (Parser)
 import System.Console.Haskeline.Completion -- (Completion(..), CompletionFunc, noCompletion)
 
 import CoALPj.REPL.Commands (Command(..))
-
-import Debug.Trace
 
 
 parseCmd :: String -> Either ParseError Command

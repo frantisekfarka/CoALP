@@ -5,6 +5,7 @@ module CoALP.Unify (
 	, applySubst
 	, composeSubst
 	, unifyImpl
+	, renameApart
 ) where
 
 import Control.Monad (join)
@@ -16,11 +17,6 @@ import CoALP.Program
 import CoALP.FreshVar
 
 --import Debug.Trace
-
-term1, term2 :: Term String Integer Int
-term1 = Fun "Parent" [Var 1, (Fun "John" [])]
-term2 = Fun "Parent" [(Fun "John" []), Var 1]
-
 
 combineSubst :: (Eq a, Eq b, Ord b) => Subst a b c -> Subst a b c -> Maybe (Subst a b c)
 combineSubst s1 s2 = c' (sortBy cmp s1) (sortBy cmp s2)

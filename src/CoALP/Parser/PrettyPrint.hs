@@ -19,7 +19,7 @@ ppLexer = concat . intersperse ", " . map show
 ppProgram :: (Show a, Show b, Show c) => Program a b c -> String
 ppProgram = concat . intersperse "\n" . ppLines . (map ppClause) 
 	where
-	ppLines = zipWith (\x y -> show x ++ ":\t" ++ y) [1..]
+	ppLines = zipWith (\x y -> show x ++ ":\t" ++ y) ([1..] :: [Integer])
 
 ppClause :: (Show a, Show b, Show c) => Clause a b c -> String
 ppClause (Clause h (bs@(_:_))) = ppTerm h ++ " :- " ++ ppTerms bs ++ "."
