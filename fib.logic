@@ -8,14 +8,3 @@ bstr(scons(X,Y)) :- bit(X),bstr(Y).
 %conn(X,Y) :- edge(X,Z),conn(Z,Y).
 %edge(a,b).
 %conn(b,c).
-
-%p(f(g(f(X)))) :- p(f(f(X))).
-
-%? :- bstr(scons(b0,Y)).
-%? :- conn(a,c).
-
-
-%1 -> (10, 11)
-
-
-%10 -> (010, 110)
