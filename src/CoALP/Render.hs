@@ -100,26 +100,32 @@ renderRewT pref depth (RT q s os) n =
 	pref ++ " {\n" ++ 
 	"\tstyle=dashed;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
-	"\troot" ++ show n ++ "[shape=box,color=blue,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++
-	concat (zipWith (renderRewAnd n (depth-1)) [10*n + i  | i <- [1..]] os) ++
-	concatMap (\o -> "\troot" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..(length os)]] ++
+	"\t" ++ nid ++ "[shape=box,color=blue,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++
+	concat (zipWith (renderRewAnd n nid (depth-1)) [10*n + i  | i <- [1..]] os) ++
 	"}\n"
 	where 
 		lbl = ppQuery q ++ " | " ++ ppSubst s
+		nid = "root" ++ show n
 
 
-renderRewAnd :: Int -> Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
-renderRewAnd _ 0 _ _ = ""
-renderRewAnd sn depth n (AndNode t ors) = 
+renderRewAnd :: Int -> String -> Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
+renderRewAnd _ par 0 n _ = 
+	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
+	"..." ++ "\",fixedsize=true];\n" ++
+	par ++ " -> " ++ show n ++ ";\n" ++
+	""
+
+renderRewAnd sn par depth n (AndNode t ors) = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
 	ppTerm t ++ "\",fixedsize=true];\n" ++
-	concat (zipWith (renderRewOr sn (show n) (depth - 1)) [10*n + i | i <- [1..]] ors) 
-
+	concat (zipWith (renderRewOr sn (show n) (depth - 1)) [10*n + i | i <- [1..]] ors) ++
+	par ++ " -> " ++ show n ++ ";\n" ++
+	""
 
 renderRewOr :: Int -> String -> Int -> Int -> OrNode Clause1 Term1 Vr1 -> String
 renderRewOr _sn par 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
-	"_|_" ++ "\",fixedsize=true];\n" ++
+	"..." ++ "\",fixedsize=true];\n" ++
 	par ++ " -> " ++ show n ++ ";\n" ++
 	""
 renderRewOr sn par _depth _n (OrNodeEmpty x) =
@@ -128,12 +134,13 @@ renderRewOr sn par _depth _n (OrNodeEmpty x) =
 	par ++ " -> " ++ show x ++ "_" ++ show sn ++ ";\n" ++
 	""
 renderRewOr sn par depth n (OrNode c ands) = 
-	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
+	"\t" ++ nid ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
 	ppClause c ++ "\",fixedsize=true];\n" ++
-	concat (zipWith (renderRewAnd sn (depth - 1)) [10*n + i  | i <- [1..]] ands) ++
-	concatMap (\o -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n") [n*10 + i  | i <- [1..(length ands)]] ++
-	par ++ " -> " ++ show n ++ ";\n" ++
+	concat (zipWith (renderRewAnd sn nid (depth - 1)) [10*n + i  | i <- [1..]] ands) ++
+	par ++ " -> " ++ nid ++ ";\n" ++
 	""
+	where
+		nid = show n
 
 
 lh :: String -> String
