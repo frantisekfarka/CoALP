@@ -1,0 +1,4 @@
+eq ( char, c).
+eq(d(X), f(A1,A2)) :- eq(X,A1),eq(d(d(X)), A2).
+
+
