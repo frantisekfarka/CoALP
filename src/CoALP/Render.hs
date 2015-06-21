@@ -10,11 +10,13 @@ module CoALP.Render (
 --import Numeric (showHex)
 import System.Process
 
+import CoALP.DerTree (clauseProj)
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
-	AndNode(..),OrNode(..),Vr(..),Vr1,
+	AndNode(..),OrNode(..),Vr1,
 	DerTree1,DerTree(..),Trans(..),Trans1
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
+
 
 
 -- | TODO refactor! -- use tree language!
@@ -104,7 +106,7 @@ renderRewT pref depth (RT q s os) n =
 	concat (zipWith (renderRewAnd n nid (depth-1)) [10*n + i  | i <- [1..]] os) ++
 	"}\n"
 	where 
-		lbl = ppQuery q ++ " | " ++ ppSubst s
+		lbl = ppClause q ++ " | " ++ ppSubst s
 		nid = "root" ++ show n
 
 
@@ -155,17 +157,23 @@ renderDerT depD depR dt =
 	"}\n"
 
 renderDer :: Int -> Int -> Int -> DerTree1 -> String
-renderDer 0 _ _ _ = ""
+renderDer 0 _ n _ = 
+	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
+	""
 renderDer depD depR n (DT rew trans) = 
 	renderRewT ("\tsubgraph cluster_" ++ show n) depR rew (10*n) ++
 	concat (zipWith (renderTrans (10*n) (depD - 1) depR) [10*n + i | i <- [1..]] trans) 
 
 renderTrans :: Int -> Int -> Int -> Int -> Trans1 -> String
-renderTrans sn depD depR n (Trans vr dt) =
-	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh (show (Vr vr)) ++ ",label=\"CX for " ++ show (Vr vr) ++ "\",fixedsize=false];\n" ++ 
+renderTrans sn depD depR n (Trans p vr cp dt) =
+	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
-	show (Vr vr) ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
+	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
 	show n ++ "-> root" ++ show (100*n) ++ ";\n"
+	where
+		lbl = f $ clauseProj p cp
+		f a = concatMap g a
+		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
 
 
