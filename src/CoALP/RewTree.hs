@@ -9,14 +9,14 @@ import Data.Functor ((<$>))
 import Data.Traversable (sequenceA)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Unify (match, unify, applySubst, composeSubst)
+import CoALP.Unify (match, applySubst, composeSubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar
 	)
 
 rew :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
-	Program a b c -> Query a b c -> Subst a b c -> RewTree a b c d
-rew p c@(Query b) s = flip evalFresh initFresh $ do
+	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
+rew p c@(Clause _ b) s = flip evalFresh initFresh $ do
 		ands <- sequenceA $ fmap (mkAndNode p s) b'
 		return $ RT c s ands
 	where
@@ -59,11 +59,11 @@ subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
 -- get Vr variables in rew tree
 -- TODO breath first search - thus we can show finite subtrees of infinitely
 -- branching DerTrees
-getVrs :: RewTree a b c d -> [d]
+getVrs :: RewTree a b c d -> [Vr d]
 getVrs RTEmpty = []
 getVrs (RT _ _ ands) = concatMap getAndVrs ands
 	where 
 		getAndVrs (AndNode _ os) = concatMap getOrVrs os
-		getOrVrs (OrNodeEmpty (Vr c)) = [c]
+		getOrVrs (OrNodeEmpty c) = [c]
 		getOrVrs (OrNode _ as) = concatMap getAndVrs as
 

@@ -65,7 +65,7 @@ gc1 = all guardedClause
 --
 -- C(i) is a reduct of C(ε)
 --
--- TODO heads to tree lanگ projections?
+-- TODO heads to tree lang projections?
 guardedClause :: Clause a b c -> Bool
 guardedClause (Clause h b) = all (guardedTerm h) $ filter (sameHead h) b
 	where
@@ -88,8 +88,8 @@ guardedTerm _ _				= False
 
 
 
-gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Query a b c -> Program a b c -> Bool
-gc2 q p = all (uncurry guardedTerm) $ loops (rew p q [])
+gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Clause a b c -> Program a b c -> Bool
+gc2 c p = all (uncurry guardedTerm) $ loops (rew p c [])
 
 -- TODO Freshable!
 --loops :: Freshable d => RewTree a b c d -> [(Term a b c, Term a b c)]
