@@ -48,6 +48,7 @@ library
 --                    CoALP.UI
 
   other-modules:    CoALP.FreshVar
+                    CoALP.Reductions
   --other-modules:    CoALP.Tree
   --                  CoALP.Subst
   --                  CoALP.Clause
