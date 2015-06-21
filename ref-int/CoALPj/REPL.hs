@@ -53,7 +53,7 @@ import CoALP.DerTree (der,trans,mkVar)
 
 
 -- TODO refactor
-import CoALP.Parser.Parser (parse,parseQuery)
+import CoALP.Parser.Parser (parse,parseClause)
 
 import CoALP.Parser.PrettyPrint (ppProgram)
 
@@ -215,7 +215,7 @@ checkGuard1 = whenProgram (iputStrLn . show . gc1)
 			
 checkGuard2 :: String -> CoALP ()
 checkGuard2 q = whenProgram (
-	\p -> case parseQuery q of
+	\p -> case parseClause q of
 		Left err	-> iputStrLn err
 		Right r		-> iputStrLn . show $ (gc2 r p)
 	)
@@ -226,7 +226,7 @@ drawProgram = whenProgram (liftIO . displayProgram)
 
 drawRew :: Int -> String -> CoALP ()
 drawRew depth q = whenProgram (
-	\p -> case parseQuery q of
+	\p -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
@@ -240,14 +240,14 @@ drawRew depth q = whenProgram (
 
 drawTrans :: Int -> [Integer] -> String -> CoALP ()
 drawTrans depth var q = whenProgram (
-	\prog -> case parseQuery q of
+	\prog -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
 			let rt = rew prog r []
-			let tt = foldl (trans prog) rt (fmap mkVar var)
+			let tt = fst $ foldl (trans prog . fst) (rt, Nothing) (fmap mkVar var)
 			--let tt = trans prog rt (mkVar $ head var)
 			liftIO . displayRewTree depth $ tt 
 			--iputStrLn . show . (head 20) $ loops' rt
@@ -255,7 +255,7 @@ drawTrans depth var q = whenProgram (
 
 drawDer :: Int -> Int -> String -> CoALP ()
 drawDer depD depR q = whenProgram (
-	\prog -> case parseQuery q of
+	\prog -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()

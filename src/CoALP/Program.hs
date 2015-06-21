@@ -171,14 +171,14 @@ data OrNode a b c
 type Subst a b c = [(b, Term a b c)]
 type Subst1 = Subst Ident Variable Constant
 
-data RewTree a b c d = RTEmpty | RT (Query a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
+data RewTree a b c d = RTEmpty | RT (Clause a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
 type RewTree1 = RewTree Ident Variable Constant VariableRew
 
-data DerTree a b c d = DT (RewTree a b c d) [Trans d (DerTree a b c d)]
+data DerTree a b c d = DT (RewTree a b c d) [Trans a b c d]
 type DerTree1 = DerTree Ident Variable Constant VariableRew
 
-data Trans a b = Trans a b
-type Trans1 = Trans VariableRew DerTree1 
+data Trans a b c d = Trans (Program a b c) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
+type Trans1 = Trans Ident Variable Constant VariableRew 
 
 
 -- | Just Helper

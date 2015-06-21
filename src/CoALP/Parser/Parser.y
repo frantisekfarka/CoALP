@@ -1,6 +1,8 @@
 {
-module CoALP.Parser.Parser 
-where
+module CoALP.Parser.Parser (
+	  parse
+	, parseClause
+) where
 
 import Control.Monad.Trans.Except (Except, throwE)
 
@@ -16,7 +18,7 @@ import Data.Map(empty,findWithDefault,insert)
 }
 
 %name main Clauses
-%name query Query
+%name clause Clause
 %tokentype { Token }
 %monad { Alex } { >>= } { return }
 %error { parseError }
@@ -72,8 +74,8 @@ parse :: String -> Either String Program1
 parse s = runAlex s main
 
 
-parseQuery :: String -> Either String Query1
-parseQuery s = runAlex s query
+parseClause :: String -> Either String Clause1 
+parseClause s = runAlex s clause 
 
 
 
