@@ -12,7 +12,8 @@ import CoALP.RewTree (rew, getVrs)
 import CoALP.FreshVar (Freshable)
 import CoALP.Unify (unify, applySubst, composeSubst, match)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
-	AndNode(..),OrNode(..),Term(..),Vr(..),mkVar, Trans(..)
+	AndNode(..),OrNode(..),Term(..),Vr(..),mkVar, Trans(..),
+	GuardingContext
 	)
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
@@ -89,7 +90,7 @@ clauseProj p gc@(Just (ix, s, t)) = trace ("GC: \n" ++
 		subs = nvPropSub headC
 -}
 clauseProj :: (Eq a, Ord b) => 
-	Program a b c -> Maybe (Int, Subst a b c, Term a b c) -> [(Int, Term a b c, [Int])]
+	Program a b c -> Maybe (Int, Subst a b c, Term a b c) -> GuardingContext a b c
 clauseProj p Nothing 		= []
 clauseProj p (Just (ix, s, t))
 	| Just t'' <- t `isVarReductOf` (s `applySubst` t),

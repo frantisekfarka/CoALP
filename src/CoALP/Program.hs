@@ -31,6 +31,8 @@ module CoALP.Program (
 	,fixQuery
 	,Trans(..)
 	,Trans1
+	,GuardingContext
+	,GuardingContext1
 ) where
 
 import Data.List (intersperse)
@@ -73,6 +75,9 @@ instance (Show a, Show b, Show c) => Show (Query a b c) where
 -- | Type of Program
 type Program a b c = [Clause a b c]
 
+-- | GuardingContext type
+type GuardingContext a b c = [(Int, Term a b c, [Int])]
+type GuardingContext1 = GuardingContext Ident Variable Constant
 
 -- | Type of Rew tree Variable
 newtype Vr a = Vr { unVr ::  a }

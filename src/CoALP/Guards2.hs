@@ -5,12 +5,6 @@ module CoALP.Guards2 (
 	  gc1 -- ^ guardenes on clauses
 	, gc2 -- ^ guardenes on rew trees
 	, gc3 -- ^ guardenes on der trees
-
-	-- debug
-	, guardedTerm
-	, guardedClause
-	, loops'
-	, guardedDerTree
 ) where
 
 import Control.Arrow ((***))
@@ -20,14 +14,16 @@ import Data.Traversable (sequenceA,traverse)
 
 import CoALP.Program (Program, Clause(..), Term(..),
 	AndNode(..),OrNode(..),RewTree(..),
-	Query(..)
+	Query(..),DerTree(..),Trans(..),
+	GuardingContext
 	)
 
 import CoALP.FreshVar (Freshable)
 import CoALP.RewTree (rew)
-import CoALP.DerTree (der)
+import CoALP.DerTree (der,clauseProj)
 
 
+import Debug.Trace
 
 
 -- | GC1 -- guardendes on cluases
@@ -91,8 +87,11 @@ guardedTerm _ _				= False
 
 
 
-gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
-gc2 p c = all (uncurry guardedTerm) $ loops (rew p c [])
+--gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+gc2 p c = gcRewTree (rew p c [])
+
+--gcRewTree :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => RewTree a b c d -> Bool
+gcRewTree rt = all (uncurry guardedTerm) $ loops (rt)
 
 -- TODO Freshable!
 --loops :: Freshable d => RewTree a b c d -> [(Term a b c, Term a b c)]
@@ -122,12 +121,25 @@ loopsO _ (OrNodeEmpty _) = ([],[])
 loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
 
 
-gc3 = guardedDerTree
 
-guardedDerTree :: Program a b c -> Clause a b c -> Bool
-guardedDerTree p c = undefined --trace (show $ foo der) False
+gc3 :: (Freshable b, Ord b, Eq a) =>
+	Program a b c -> Bool
+gc3 p = all (gcDerTree [] . der p) $ p
+
+--gcDerTree :: (Freshable b, Ord b, Eq a) =>
+--	DerTree a b c Integer -> Bool
+--gcDerTree dt = foo [] dt
+
+gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+gcDerTree gcs (DT rt trs) = gcRewTree rt && all (gcTrans gcs) trs
 	where
-		--dt = der p c
+
+gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+gcTrans gcs (Trans p _ cx dt) = case cp `elem` gcs of
+		True	-> True
+		False	-> gcDerTree (cp:gcs) dt
+	where
+		cp = clauseProj p cx 
 
 
 
