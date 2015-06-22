@@ -11,7 +11,7 @@ data Command
 	| Quit
 	| GC1
 	| GC2 String
-	| GC3 String
+	| GC3
 	| DrawProgram
 	| DrawRew Int String
 	| DrawTrans Int [Integer] String

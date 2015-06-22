@@ -176,7 +176,7 @@ processInput cmd _origState = do
 			undefined
 		Right (GC1)	-> checkGuard1
 		Right (GC2 c)	-> checkGuard2 c
-		Right (GC3 c)	-> checkGuard3 c
+		Right (GC3)	-> checkGuard3 
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
@@ -221,12 +221,8 @@ checkGuard2 c = whenProgram (
 		Right r		-> iputStrLn . show $ (gc2 p r)
 	)
 			
-checkGuard3 :: String -> CoALP ()
-checkGuard3 c = whenProgram (
-	\p -> case parseClause c of
-		Left err	-> iputStrLn err
-		Right r		-> iputStrLn . show $ (gc3 p r)
-	)
+checkGuard3 :: CoALP ()
+checkGuard3 = whenProgram (\p -> iputStrLn . show $ (gc3 p))
 			
 			
 			

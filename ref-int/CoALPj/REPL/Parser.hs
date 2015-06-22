@@ -66,9 +66,8 @@ dCmd = toCmdDescr [
 		"\t\t'? :- BODY . '\n"
 	), (
 		":gc3"
-		, spaces *> (GC3 <$> many anyChar)
-		, "\n\t:gc3 <query>\n\t\tGuardedness check 3, for a clause for now, query bas the form\n" ++
-		"\t\t'? :- BODY . '\n"
+		, spaces *> (pure GC3)
+		, "\n\t:gc3\n\t\tGuardedness check 3 for the loaded program\n"
 	), (
 		":drawTerms"
 		, pure DrawProgram
