@@ -10,8 +10,9 @@ data Command
 	| Print
 	| Quit
 	| GC1
-	| DrawProgram
 	| GC2 String
+	| GC3 String
+	| DrawProgram
 	| DrawRew Int String
 	| DrawTrans Int [Integer] String
 	| DrawDer Int Int String

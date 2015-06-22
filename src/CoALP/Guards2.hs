@@ -4,11 +4,13 @@
 module CoALP.Guards2 (
 	  gc1 -- ^ guardenes on clauses
 	, gc2 -- ^ guardenes on rew trees
+	, gc3 -- ^ guardenes on der trees
 
 	-- debug
 	, guardedTerm
 	, guardedClause
 	, loops'
+	, guardedDerTree
 ) where
 
 import Control.Arrow ((***))
@@ -23,6 +25,7 @@ import CoALP.Program (Program, Clause(..), Term(..),
 
 import CoALP.FreshVar (Freshable)
 import CoALP.RewTree (rew)
+import CoALP.DerTree (der)
 
 
 
@@ -88,8 +91,8 @@ guardedTerm _ _				= False
 
 
 
-gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Clause a b c -> Program a b c -> Bool
-gc2 c p = all (uncurry guardedTerm) $ loops (rew p c [])
+gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+gc2 p c = all (uncurry guardedTerm) $ loops (rew p c [])
 
 -- TODO Freshable!
 --loops :: Freshable d => RewTree a b c d -> [(Term a b c, Term a b c)]
@@ -117,6 +120,14 @@ loopsA _ (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1
 loopsO :: Int -> OrNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
 loopsO _ (OrNodeEmpty _) = ([],[])
 loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
+
+
+gc3 = guardedDerTree
+
+guardedDerTree :: Program a b c -> Clause a b c -> Bool
+guardedDerTree p c = undefined --trace (show $ foo der) False
+	where
+		--dt = der p c
 
 
 
