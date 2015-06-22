@@ -171,7 +171,7 @@ renderTrans sn depD depR n (Trans p vr cp dt) =
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
 	show n ++ "-> root" ++ show (100*n) ++ ";\n"
 	where
-		lbl = f $ clauseProj p cp
+		lbl = "gc: {" ++ (f $ clauseProj p cp) ++ "}"
 		f a = concatMap g a
 		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
