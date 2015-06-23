@@ -8,3 +8,4 @@ bstr(scons(X,Y)) :- bit(X),bstr(Y).
 %conn(X,Y) :- edge(X,Z),conn(Z,Y).
 %edge(a,b).
 %conn(b,c).
+

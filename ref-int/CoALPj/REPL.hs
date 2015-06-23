@@ -45,7 +45,7 @@ import CoALPj.REPL.Parser(
 import CoALP.Error (Err(..))
 
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree)
-import CoALP.Guards2 (gc1,gc2,gc3)
+import CoALP.Guards2 (gc1,gc2,gc3,gc3one)
 import CoALP.Program (Program1)
 
 import CoALP.RewTree (rew)
@@ -177,6 +177,7 @@ processInput cmd _origState = do
 		Right (GC1)	-> checkGuard1
 		Right (GC2 c)	-> checkGuard2 c
 		Right (GC3)	-> checkGuard3 
+		Right (GC3One c) -> checkGuard3One c
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
@@ -223,6 +224,13 @@ checkGuard2 c = whenProgram (
 			
 checkGuard3 :: CoALP ()
 checkGuard3 = whenProgram (\p -> iputStrLn . show $ (gc3 p))
+			
+checkGuard3One :: String -> CoALP ()
+checkGuard3One c = whenProgram (
+	\p -> case parseClause c of
+		Left err	-> iputStrLn err
+		Right r		-> iputStrLn . show $ (gc3one p r)
+	)
 			
 			
 			

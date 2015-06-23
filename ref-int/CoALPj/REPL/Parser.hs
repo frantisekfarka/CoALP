@@ -65,6 +65,10 @@ dCmd = toCmdDescr [
 		, "\n\t:gc2 <query>\n\t\tGuardedness check 2, query bas the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
+		":cgc3"
+		, spaces *> (GC3One <$> many anyChar)
+		, "\n\t:gc3\n\t\tGuardedness check 3 for a clause\n"
+	), (
 		":gc3"
 		, spaces *> (pure GC3)
 		, "\n\t:gc3\n\t\tGuardedness check 3 for the loaded program\n"

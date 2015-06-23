@@ -13,11 +13,15 @@ import System.Process
 import CoALP.DerTree (clauseProj)
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
 	AndNode(..),OrNode(..),Vr1,
-	DerTree1,DerTree(..),Trans(..),Trans1
+	DerTree1,DerTree(..),Trans(..),Trans1,
+	GuardingContext,
+	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,GuardingContext1
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
 
+import CoALP.Guards2 (gcRewTree,derToObs,depthOT)
 
+import Debug.Trace
 
 -- | TODO refactor! -- use tree language!
 displayProgram :: Program1 -> IO ()
@@ -34,9 +38,12 @@ displayRewTree depth rt = do
 	
 displayDerTree :: Int -> Int -> DerTree1 -> IO ()
 displayDerTree depD depR dt = do
-	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
-	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+	putStrLn $ "Tree depth: " ++ show (depthOT ot)
+	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
+	-- _ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
+	where
+		ot = derToObs dt
 	
 saveProgram :: Program1 -> FilePath -> IO ()
 saveProgram p f = writeFile f (renderProgram p)
@@ -110,6 +117,17 @@ renderRewT pref depth (RT q s os) n =
 		nid = "root" ++ show n
 
 
+renderRewT' :: String -> Int -> RewTree1 -> Int -> String
+renderRewT' pref depth rt@(RT c s os) n = pref ++ " {\n" ++ 
+		"\tstyle=dashed;color=grey;\n" ++
+		"\tnode [fontname=\"Monospace\"];\n" ++
+		"\t" ++ nid ++ "[shape=box,color=blue,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++
+		concat (zipWith (renderRewAnd n nid (1)) [10*n + i  | i <- [1..]] os) ++
+		"}\n"
+	where
+		lbl = "unguarded\\n" ++ ppClause c ++ " | " ++ ppSubst s 
+		nid = "root" ++ show n
+
 renderRewAnd :: Int -> String -> Int -> Int -> AndNode Clause1 Term1 Vr1 -> String
 renderRewAnd _ par 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
@@ -156,13 +174,20 @@ renderDerT depD depR dt =
 	renderDer depD depR 1 dt ++
 	"}\n"
 
+renderObsT :: Int -> Int -> OTree1 -> String
+renderObsT depD depR dt = 
+	"digraph D {\n" ++ 
+	renderObs depD depR 1 dt ++
+	"}\n"
+
 renderDer :: Int -> Int -> Int -> DerTree1 -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
-renderDer depD depR n (DT rew trans) = 
-	renderRewT ("\tsubgraph cluster_" ++ show n) depR rew (10*n) ++
-	concat (zipWith (renderTrans (10*n) (depD - 1) depR) [10*n + i | i <- [1..]] trans) 
+renderDer depD depR n (DT rt trans) = case gcRewTree rt of
+	False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
+	True	-> renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+		concat (zipWith (renderTrans (10*n) (depD - 1) depR) [10*n + i | i <- [1..]] trans) 
 
 renderTrans :: Int -> Int -> Int -> Int -> Trans1 -> String
 renderTrans sn depD depR n (Trans p vr cp dt) =
@@ -176,5 +201,34 @@ renderTrans sn depD depR n (Trans p vr cp dt) =
 		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
 
+
+renderObs :: Int -> Int -> Int -> OTree1 -> String
+renderObs 0 _ n _ = 
+	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
+	""
+renderObs depD depR n (UNRT rt ) = 
+	renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
+renderObs depD depR n (ODT rt trans) = 
+	renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+	concat (zipWith (renderOTrans (10*n) (depD - 1) depR) [10*n + i | i <- [1..]] trans) 
+
+renderOTrans :: Int -> Int -> Int -> Int -> OTrans1 -> String
+renderOTrans sn depD depR n (GTrans vr gcs gc) = 
+	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
+	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n"
+	where
+		lbl = "Guarded trans\\ngc: {" ++ (f gc) ++ "}"
+		f a = concatMap g a
+		g (ix, t, v) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
+
+renderOTrans sn depD depR n (OTrans p vr cp dt) =
+	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
+	renderObs depD depR (10*n) dt ++
+	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
+	show n ++ "-> root" ++ show (100*n) ++ ";\n"
+	where
+		lbl = "gc: {" ++ (f $ clauseProj p cp) ++ "}"
+		f a = concatMap g a
+		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
 

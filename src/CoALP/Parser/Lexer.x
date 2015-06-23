@@ -85,7 +85,7 @@ data AlexUserState = AlexUserState {
 
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState {
-	  counter = 1
+	  counter = (1000)
 	, vars = empty
 	}
 

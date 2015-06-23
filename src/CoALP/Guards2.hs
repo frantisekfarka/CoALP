@@ -5,7 +5,13 @@ module CoALP.Guards2 (
 	  gc1 -- ^ guardenes on clauses
 	, gc2 -- ^ guardenes on rew trees
 	, gc3 -- ^ guardenes on der trees
+	, gcRewTree
+	, gc3one
+	, derToObs
+	, depthOT
 ) where
+
+import Debug.Trace
 
 import Control.Arrow ((***))
 --import Data.Functor ((<$>))
@@ -14,16 +20,17 @@ import Data.Traversable (sequenceA,traverse)
 
 import CoALP.Program (Program, Clause(..), Term(..),
 	AndNode(..),OrNode(..),RewTree(..),
-	Query(..),DerTree(..),Trans(..),
-	GuardingContext
+	DerTree(..),Trans(..),
+	GuardingContext,
+	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,GuardingContext1,
+	RewTree(..),
+	RewTree(..)
 	)
 
 import CoALP.FreshVar (Freshable)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,clauseProj)
 
-
-import Debug.Trace
 
 
 -- | GC1 -- guardendes on cluases
@@ -87,11 +94,19 @@ guardedTerm _ _				= False
 
 
 
---gc2 :: (Eq a, Eq b, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+--gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
 gc2 p c = gcRewTree (rew p c [])
 
 --gcRewTree :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => RewTree a b c d -> Bool
-gcRewTree rt = all (uncurry guardedTerm) $ loops (rt)
+--gcRewTree :: RewTree a b c Integer -> Bool
+gcRewTree rt = (all (uncurry guardedTerm) $ (loops (rt)))
+	where
+		f x = case rt of
+			(RT c s _) -> trace ("gcRewTree: " ++ show x ++ ", " ++ show c ++ ", " ++ show s) x
+			RTEmpty	-> x
+		g x = if null x then x else traceShow (take 5 x) x
+		h (RTEmpty) = RTEmpty
+		h x = traceShowId rt
 
 -- TODO Freshable!
 --loops :: Freshable d => RewTree a b c d -> [(Term a b c, Term a b c)]
@@ -122,24 +137,57 @@ loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
 
 
 
-gc3 :: (Freshable b, Ord b, Eq a) =>
-	Program a b c -> Bool
-gc3 p = all (gcDerTree [] . der p) $ p
+--gc3 :: (Freshable b, Ord b, Eq a) =>
+--	Program a b c -> Bool
+gc3 p = all (gc3one p ) p
+	
+
+
+--gc3one :: (Freshable b, Ord b, Eq a) =>
+--	Program a b c -> Clause a b c -> Bool
+gc3one p c = gcDerTree [] $ der p c
 
 --gcDerTree :: (Freshable b, Ord b, Eq a) =>
 --	DerTree a b c Integer -> Bool
 --gcDerTree dt = foo [] dt
 
-gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
-gcDerTree gcs (DT rt trs) = gcRewTree rt && all (gcTrans gcs) trs
+--gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 	where
 
-gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+--gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
 gcTrans gcs (Trans p _ cx dt) = case cp `elem` gcs of
 		True	-> True
 		False	-> gcDerTree (cp:gcs) dt
 	where
 		cp = clauseProj p cx 
+
+
+derToObs :: DerTree1 -> OTree1
+derToObs dt = derToObs' [] dt 
+
+derToObs' :: [GuardingContext1] -> DerTree1 -> OTree1
+derToObs' gcs (DT rt trs) = case gcRewTree rt of
+	False	-> UNRT rt
+	True	-> ODT rt $ map (transToObs gcs) trs
+
+
+transToObs :: [GuardingContext1] -> Trans1 -> OTrans1
+transToObs gcs (Trans p v cx dt) = case cp `elem` gcs of
+		True	-> GTrans v gcs cp
+		False	-> OTrans p v cx $ derToObs'(cp:gcs) dt
+	where
+		cp = clauseProj p cx 
+
+
+depthOT :: OTree1 -> Int
+depthOT (ODT _ [])	= 1 
+depthOT (ODT _ trs)	= 1 + (maximum $ map depthTrs trs)
+depthOT (UNRT _)	= 0
+
+depthTrs :: OTrans1 -> Int
+depthTrs (OTrans _ _ _ ot)	= depthOT ot
+depthTrs (GTrans _ _ _) 	= 0
 
 
 

@@ -33,6 +33,10 @@ module CoALP.Program (
 	,Trans1
 	,GuardingContext
 	,GuardingContext1
+	,OTree(..)
+	,OTree1
+	,OTrans(..)
+	,OTrans1
 ) where
 
 import Data.List (intersperse)
@@ -179,11 +183,30 @@ type Subst1 = Subst Ident Variable Constant
 data RewTree a b c d = RTEmpty | RT (Clause a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
 type RewTree1 = RewTree Ident Variable Constant VariableRew
 
+instance (Show a, Show b, Show c, Show d, Integral d) => Show (RewTree a b c d) where
+	show (RTEmpty)		= "Empty Rew Tree"
+	show (RT c s ands)	= "RT: " ++ show c ++ " | " ++ show s ++ "\n" ++
+			concatMap (showAnd 1) ands
+		where
+			showAnd n (AndNode b ors) = pref n ++ show b ++ "\n" ++
+				concatMap (showOr (n+1)) ors 
+			showOr n (OrNodeEmpty c) = pref n ++ show c ++ "\n"
+			showOr n (OrNode a as) = pref n ++ show a ++ "\n" ++
+				(if (n < 5) then concatMap (showAnd (n+1)) as else "")
+			pref n = take n $ repeat ' '
+
 data DerTree a b c d = DT (RewTree a b c d) [Trans a b c d]
 type DerTree1 = DerTree Ident Variable Constant VariableRew
 
 data Trans a b c d = Trans (Program a b c) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
 type Trans1 = Trans Ident Variable Constant VariableRew 
+
+data OTree a b c d = ODT (RewTree a b c d) [OTrans a b c d] | UNRT (RewTree a b c d)
+type OTree1 = OTree Ident Variable Constant VariableRew
+
+data OTrans a b c d = OTrans (Program a b c) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (OTree a b c d)
+	| GTrans (Vr d) [GuardingContext a b c] (GuardingContext a b c)
+type OTrans1 = OTrans Ident Variable Constant VariableRew 
 
 
 -- | Just Helper

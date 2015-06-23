@@ -60,9 +60,11 @@ trans p (RT cl s ands) vr = case ms' of
 
 
 
-der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
-	Program a b c -> Clause a b c -> DerTree a b c d
-der p c = derT p $ rew p c []
+--der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
+--	Program a b c -> Clause a b c -> DerTree a b c d
+der p c = (derT p $ rew p c [])
+	where 
+		f x = trace ("Der: " ++ show p ++ "\n\nClause:\t" ++ show c) x
 
 derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> RewTree a b c d -> DerTree a b c d
