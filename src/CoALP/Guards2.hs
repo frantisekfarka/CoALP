@@ -11,8 +11,6 @@ module CoALP.Guards2 (
 	, depthOT
 ) where
 
-import Debug.Trace
-
 import Control.Arrow ((***))
 --import Data.Functor ((<$>))
 --import Data.Maybe (catMaybes)
@@ -94,22 +92,13 @@ guardedTerm _ _				= False
 
 
 
---gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
 gc2 p c = gcRewTree (rew p c [])
 
---gcRewTree :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => RewTree a b c d -> Bool
---gcRewTree :: RewTree a b c Integer -> Bool
-gcRewTree rt = (all (uncurry guardedTerm) $ (loops (rt)))
-	where
-		f x = case rt of
-			(RT c s _) -> trace ("gcRewTree: " ++ show x ++ ", " ++ show c ++ ", " ++ show s) x
-			RTEmpty	-> x
-		g x = if null x then x else traceShow (take 5 x) x
-		h (RTEmpty) = RTEmpty
-		h x = traceShowId rt
+gcRewTree :: RewTree a b c Integer -> Bool
+gcRewTree rt = all (uncurry guardedTerm) $ (loops (rt))
 
 -- TODO Freshable!
---loops :: Freshable d => RewTree a b c d -> [(Term a b c, Term a b c)]
 loops :: RewTree a b c Integer -> [(Term a b c, Term a b c)]
 loops rt = snd (loops' rt)
 
@@ -137,25 +126,21 @@ loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
 
 
 
---gc3 :: (Freshable b, Ord b, Eq a) =>
---	Program a b c -> Bool
+gc3 :: (Freshable b, Ord b, Eq a) =>
+	Program a b c -> Bool
 gc3 p = all (gc3one p ) p
 	
 
 
---gc3one :: (Freshable b, Ord b, Eq a) =>
---	Program a b c -> Clause a b c -> Bool
+gc3one :: (Freshable b, Ord b, Eq a) =>
+	Program a b c -> Clause a b c -> Bool
 gc3one p c = gcDerTree [] $ der p c
 
---gcDerTree :: (Freshable b, Ord b, Eq a) =>
---	DerTree a b c Integer -> Bool
---gcDerTree dt = foo [] dt
-
---gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
 gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 	where
 
---gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
 gcTrans gcs (Trans p _ cx dt) = case cp `elem` gcs of
 		True	-> True
 		False	-> gcDerTree (cp:gcs) dt

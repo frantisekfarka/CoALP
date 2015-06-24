@@ -11,16 +11,19 @@ import Data.Traversable (sequenceA)
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
 import CoALP.Unify (match, applySubst, composeSubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
-	AndNode(..),OrNode(..),Term(..),Query(..),Vr(..),mkVar
+	AndNode(..),OrNode(..),Term(..),Vr(..)
 	)
+
 
 rew :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
 rew p c@(Clause _ b) s = flip evalFresh initFresh $ do
-		ands <- sequenceA $ fmap (mkAndNode p s) b'
+		ands <- sequenceA $ fmap (mkAndNode p' s') b'
 		return $ RT c s ands
 	where
-		b' = fmap (applySubst s) b
+		b' = fmap (mapTerm (apartL)) (fmap (applySubst s) b)
+		s' = mapSubst apartR s
+		p' = map (mapClause apartR) p
 
 -- | AndNode aka Term node
 mkAndNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => 
@@ -32,7 +35,7 @@ mkAndNode p os t = do
 -- | OrNode aka Clause node
 mkOrNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Subst a b c -> Term a b c -> Clause a b c -> FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
-mkOrNode p os t (Clause h b)  = case h' `match` t' of
+mkOrNode p os t (Clause h b)  = case (h' `match` t') of
 	Just s	->	do
 				ands <- sequenceA ((mkAndNode p os) <$> (sb' s))
 				return $ OrNode (Clause t (sb' s)) ands
@@ -49,6 +52,15 @@ mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
 mapTerm f (Fun idn ts) = Fun idn $ map (mapTerm f) ts
 mapTerm f (Var a) = Var $ f a
 
+mapSubst :: (Eq b', Eq b) =>
+	(b -> b') -> [(b, Term a b c)] -> [(b', Term a b' c)]
+mapSubst f s = map oneS s
+	where
+		oneS (b, t) = (f b, mapTerm f t)
+
+mapClause :: (Eq b', Eq b) =>
+	(b -> b') -> Clause a b c -> Clause a b' c
+mapClause f (Clause h b) = Clause (mapTerm f h) (map (mapTerm f) b)
 
 -- | apply substitution to the term tree
 subst :: Subst a b c -> Term a b c -> Term a b c

@@ -17,8 +17,6 @@ import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 	)
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
-import Debug.Trace
-
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
 trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
@@ -26,7 +24,7 @@ trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
 	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
 trans _ RTEmpty _ = (RTEmpty, Nothing)
 trans p (RT cl s ands) vr = case ms' of
-		Just s'	-> (rew p cl $ (s `composeSubst` s'), Just (pIx, s', term)) 
+		Just s'	-> (rew p cl (s `composeSubst` s'), Just (pIx, s', term)) 
 		Nothing 	-> (RTEmpty, Nothing)
 	where
 		ms' = unify term (cHead (p !! pIx))
@@ -45,30 +43,17 @@ trans p (RT cl s ands) vr = case ms' of
 		continueOr _ = []
 
 		fst' (a,_,_) = a
-
-		{-f :: (Freshable d, Show (RewTree a b c d), Show a1) =>
-		     [(a1, Int, Term a b c)] -> [Char]
-		f ((var, pIx, term):_) = "\nVariable " ++ show var ++ ",\n" ++
-			"Parent term " ++ show term ++ ",\n" ++
-			"Unify with the head of " ++ show (p !! pIx) ++ "\n" ++
-			"Unification " ++ show (unify term (cHead (p !! pIx))) ++
-			"New rew tree" ++ show (transT p origT (unify term (cHead (p !! pIx))))
-		f [] = "Not found"
-		-}
 		cHead (Clause h _) = h
 
 
 
 
---der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
---	Program a b c -> Clause a b c -> DerTree a b c d
+der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
+	Program a b c -> Clause a b c -> DerTree a b c d
 der p c = (derT p $ rew p c [])
-	where 
-		f x = trace ("Der: " ++ show p ++ "\n\nClause:\t" ++ show c) x
 
 derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> RewTree a b c d -> DerTree a b c d
---derT p rt = DT rt (fmap (\v -> Trans v $ derT p $ trans p rt (Vr v)) (getVrs rt))
 derT p rt = DT rt $ fmap toTrans (getVrs rt)
 	where
 		toTrans v = let (rt', cp) = trans p rt v in Trans p v cp  $ derT p rt' -- $ derT p rt'
@@ -93,7 +78,7 @@ clauseProj p gc@(Just (ix, s, t)) = trace ("GC: \n" ++
 -}
 clauseProj :: (Eq a, Ord b) => 
 	Program a b c -> Maybe (Int, Subst a b c, Term a b c) -> GuardingContext a b c
-clauseProj p Nothing 		= []
+clauseProj _ Nothing 		= []
 clauseProj p (Just (ix, s, t))
 	| Just t'' <- t `isVarReductOf` (s `applySubst` t),
 	  Clause h _ <- p !! ix = do
