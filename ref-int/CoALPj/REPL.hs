@@ -93,6 +93,7 @@ caMain opts = do
 	let histFile = ".history_file"
 	let efile = ""
 	let orig = replInit 
+	iputStrLn replWelcome
 	when runrepl $ do
 		runInputT (replSettings (Just histFile))  $ repl orig efile
 
@@ -130,7 +131,7 @@ repl initState efile = do
 	case x of
 		Nothing -> do
 			-- TODO refactor string to some other place
-			lift $ when (verbosity >= Default) (iputStrLn "Bye bye")
+			lift $ when (verbosity >= Default) (iputStrLn replBye)
 			return ()
 		Just input -> do
 			-- | TODO catch process errors properly
@@ -153,6 +154,27 @@ repl initState efile = do
 			lift $ iputStrLn (show e)
 			return ()
 		-}
+
+replWelcome :: String
+replWelcome =
+  "░█▀▀░░░░░█▀█░█░░░█▀█░░░░▀░░█▀█░▀█▀░█▀▀░█▀▄░█▀█░█▀▄░█▀▀░▀█▀░█▀▀░█▀▄\n" ++
+  "░█░░░█▀█░█▀█░█░░░█▀▀░░░░█░░█░█░░█░░█▀▀░█▀▄░█▀▀░█▀▄░█▀▀░░█░░█▀▀░█▀▄\n" ++
+  "░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀░░░░░░█░░▀░▀░░▀░░▀▀▀░▀░▀░▀░░░▀░▀░▀▀▀░░▀░░▀▀▀░▀░▀\n" ++
+  "░░░░░░░░░░░░░░░░░░░░░░░▀░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n\n" ++
+  "(C) 2014 - 2015, University of Dundee\n\n" ++
+  "Type \":help\" for usage information.\n"
+
+replBye :: String
+replBye = "Bye bye\n" ++
+	" ______\n" ++
+	"( Bye. )\n" ++
+	" ------\n" ++
+	"         \\   (__)\n" ++
+	"          \\  (oo)\\_______\n" ++
+	"             (__)\\       )\\\n" ++
+	"                 ||----w |!\n" ++
+	"                 ||     ||"
+
 
 iputStrLn :: String -> CoALP ()
 iputStrLn s = runIO $ putStrLn s
