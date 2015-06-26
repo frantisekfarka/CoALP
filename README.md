@@ -7,12 +7,16 @@ License: LGPL v3
 
 ## Synopsis
 
-
 Haskell implementation of coalgebraic logic programming. Experimental,
 development version.
 
 
-## Installation
+## Developer's installation
+
+Use cabal sandboxing feature:
+
+> cabal sandbox init && cabal build --dependencies-only
+> caba run
 
 
 ### Standard installation using `cabal`
