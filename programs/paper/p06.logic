@@ -1,0 +1,4 @@
+conn(X,X).
+conn(X,Y) :- edge(X,Z),conn(Z,Y).
+edge(a,b).
+conn(b,c).

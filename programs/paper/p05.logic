@@ -1,0 +1,4 @@
+bit(b0).
+bit(b1).
+bitlist(nil).
+bitlist(bcons(X,Y)) :- bit(X),bitlist(Y).

@@ -1,0 +1,10 @@
+eq(app(app(app(comp, F), G), A), a1(X)) :- eq(app(F, app(G, A)), X).
+eq(app(pair, A), a2(X)) :- eq(A, X). 
+eq(app(app(gs, A), R), a3(X, Y)) :- eq(A, X), eq(R, Y).
+eq(app(app(fix, F), G), a4(X)) :- eq(app(F,app(app(fix,app(app(comp, G), F)), G)), X).
+
+
+%eq(a1(X)) :- eq(X).
+%eq(a2(X)) :- eq(X). 
+%eq(a3(X, Y)) :- eq(X), eq(Y).
+%eq(a4(X)) :- eq(X).
