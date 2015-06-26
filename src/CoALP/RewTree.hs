@@ -9,58 +9,56 @@ import Data.Functor ((<$>))
 import Data.Traversable (sequenceA)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Unify (match, applySubst, composeSubst)
+import CoALP.Unify (match, applySubst, composeSubst, stripFreeVars)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
-	AndNode(..),OrNode(..),Term(..),Vr(..)
+	AndNode(..),OrNode(..),Term(..),Vr(..),
+	mapTerm,mapClause,mapSubst
 	)
 
 
-rew :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
-	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
-rew p c@(Clause _ b) s = flip evalFresh initFresh $ do
-		ands <- sequenceA $ fmap (mkAndNode p' s') b'
-		return $ RT c s ands
+--rew :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
+--	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
+rew p c@(Clause h b) si = flip evalFresh initFresh $ do
+		ands <- sequenceA $ fmap (mkAndNode p si) bsi'
+		return $ RT csi' si ands
+			--(Clause h' b') s' ands
 	where
-		b' = fmap (mapTerm (apartL)) (fmap (applySubst s) b)
-		s' = mapSubst apartR s
-		p' = map (mapClause apartR) p
+		c = Clause h b
+		si' = si `stripFreeVars` c
+		h' = h -- free vars are stripped, no need to apply si'
+		bsi' = map (si' `applySubst`) b
+		csi' = Clause h' bsi'
+
+		{-p = map (mapClause f) p0
+		b = fmap (mapTerm (f)) b0
+		h = mapTerm apartR h0
+		si = mapSubst f si0
+		f = id
+		-}
 
 -- | AndNode aka Term node
 mkAndNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => 
-	Program a b c -> Subst a b c -> Term a b c -> FreshVar d (AndNode (Clause a b c) (Term a b c) (Vr d))
-mkAndNode p os t = do
-	ors <- sequenceA $ fmap (mkOrNode p os t) p
+	Program a b c -> Subst a b c -> Term a b c -> 
+	FreshVar d (AndNode (Clause a b c) (Term a b c) (Vr d))
+mkAndNode p si' t = do
+	ors <- sequenceA $ fmap (mkOrNode p si' t) p
 	return $ AndNode t ors
 
 -- | OrNode aka Clause node
 mkOrNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
-	Program a b c -> Subst a b c -> Term a b c -> Clause a b c -> FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
-mkOrNode p os t (Clause h b)  = case (h' `match` t') of
-	Just s	->	do
-				ands <- sequenceA ((mkAndNode p os) <$> (sb' s))
-				return $ OrNode (Clause t (sb' s)) ands
-	Nothing	->	getFresh >>= return . OrNodeEmpty . Vr
+	Program a b c -> Subst a b c -> Term a b c -> Clause a b c -> 
+	FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
+mkOrNode p si t c@(Clause h b)  = case (h `match` t) of
+		Just th ->	do
+			let	thb = map (applySubst th) b
+			let	si' = si `stripFreeVars` (Clause t thb)
+			let	sithb' = map (applySubst si') thb
+			ands <- sequenceA ((mkAndNode p si) <$> sithb')
+			return $ OrNode (Clause t sithb') ands
+		Nothing	->	getFresh >>= return . OrNodeEmpty . Vr
 
 	where
-		sb' s' = map (mapTerm unpart) $ ((os `composeSubst` s') `subst`) <$> b'
-		h' = mapTerm apartL h
-		b' = map (mapTerm apartL) b
-		t' = mapTerm apartR t
 
--- TODO make Term (bi)functor
-mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
-mapTerm f (Fun idn ts) = Fun idn $ map (mapTerm f) ts
-mapTerm f (Var a) = Var $ f a
-
-mapSubst :: (Eq b', Eq b) =>
-	(b -> b') -> [(b, Term a b c)] -> [(b', Term a b' c)]
-mapSubst f s = map oneS s
-	where
-		oneS (b, t) = (f b, mapTerm f t)
-
-mapClause :: (Eq b', Eq b) =>
-	(b -> b') -> Clause a b c -> Clause a b' c
-mapClause f (Clause h b) = Clause (mapTerm f h) (map (mapTerm f) b)
 
 -- | apply substitution to the term tree
 subst :: Subst a b c -> Term a b c -> Term a b c

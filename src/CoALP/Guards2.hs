@@ -22,14 +22,16 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	GuardingContext,
 	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,GuardingContext1,
 	RewTree(..),
-	RewTree(..)
+	RewTree(..),
+	mapClause,
+	RewTree1,Term1
 	)
 
-import CoALP.FreshVar (Freshable)
+import CoALP.FreshVar (Freshable,apartL,apartR)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,clauseProj)
 
-
+import Debug.Trace
 
 -- | GC1 -- guardendes on cluases
 -- GQ 1 requires that:
@@ -77,7 +79,7 @@ guardedClause (Clause h b) = all (guardedTerm h) $ filter (sameHead h) b
 		sameHead (Var v1) (Var v2)	= v1 == v2
 		sameHead _ _			= False
 
--- | reflects definitoon 4.3
+-- | reflects definitoon 5.1
 --
 -- we ensure 2) by recursion on Term
 guardedTerm :: Term a b c -> Term a b c -> Bool
@@ -90,15 +92,36 @@ guardedTerm (Fun _ _) (Var _)		= True	-- ^ this is the constructor guarding prod
 guardedTerm _ _				= False
 
 
+-- | repeated definition 5.1 for recursive contraction
+--
+--   the direction is v -> v (w is a prefix of v)
+recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
+recGuardedTerm f@(Fun _ _) v@(Var _)	= v `subtermof` f
+recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= c `subtermof` f
+recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= p1 == p2 && -- should hold from recursive hypothesis
+		(or $ zipWith recGuardedTerm s1 s2)
+recGuardedTerm _ _			= False
 
+subtermof :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
+subtermof t1 t2@(Var v2) = t1 == t2
+subtermof t1 t2@(Fun _ t2ts) = t1 == t2 || any (subtermof t1) t2ts
 
 gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
-gc2 p c = gcRewTree (rew p c [])
+gc2 p c = gcRewTree (rew p' c' [])
+	where
+		p' = map (mapClause apartL) p
+		c' = mapClause apartR c
 
-gcRewTree :: RewTree a b c Integer -> Bool
-gcRewTree rt = all (uncurry guardedTerm) $ (loops (rt))
+gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
+gcRewTree rt = all (uncurry recGuardedTerm) $ (loops (rt))
 
 -- TODO Freshable!
+-- TODO
+-- 	rewrite, I believe that the following is better:
+--
+-- 	go from the top, accumulate (clause head, origin in P)
+-- 	when encountered new clause, compare with head, if forms loop, 
+-- 	push loop on loop stack, push (head, origin) on accumulator
 loops :: RewTree a b c Integer -> [(Term a b c, Term a b c)]
 loops rt = snd (loops' rt)
 
@@ -117,7 +140,6 @@ loopsA pari (AndNode f@(Fun fid _) ors) = (id *** concat) $
 		newLoops = [(f, f') | (f'@(Fun fid' _), pari')  <- concatMap fst boundLower,
 			fid == fid' && pari == pari'
 			]
-
 loopsA _ (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1..] ors
 
 loopsO :: Int -> OrNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
@@ -126,21 +148,21 @@ loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
 
 
 
-gc3 :: (Freshable b, Ord b, Eq a) =>
-	Program a b c -> Bool
+--gc3 :: (Freshable b, Ord b, Eq a) =>
+--	Program a b c -> Bool
 gc3 p = all (gc3one p ) p
 	
 
 
-gc3one :: (Freshable b, Ord b, Eq a) =>
-	Program a b c -> Clause a b c -> Bool
+--gc3one :: (Freshable b, Ord b, Eq a) =>
+--	Program a b c -> Clause a b c -> Bool
 gc3one p c = gcDerTree [] $ der p c
 
-gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+--gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
 gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 	where
 
-gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+--gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
 gcTrans gcs (Trans p _ cx dt) = case cp `elem` gcs of
 		True	-> True
 		False	-> gcDerTree (cp:gcs) dt

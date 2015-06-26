@@ -244,7 +244,7 @@ drawRew depth q = whenProgram (
 			iputStrLn err
 			return ()
 		Right r'	-> do
-			iputStrLn $ "Query" ++ q ++ " loaded."
+			iputStrLn $ "Query " ++ q ++ " loaded."
 			let r = r'
 			let rt = rew p r []
 			liftIO . displayRewTree depth $ rt  --rew p r []

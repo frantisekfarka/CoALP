@@ -27,19 +27,23 @@ module CoALP.Program (
 	, Vr1
 	, mkVar
 	, mapVar
-	,fixTerm
-	,fixQuery
-	,Trans(..)
-	,Trans1
-	,GuardingContext
-	,GuardingContext1
-	,OTree(..)
-	,OTree1
-	,OTrans(..)
-	,OTrans1
+	, fixTerm
+	, fixQuery
+	, Trans(..)
+	, Trans1
+	, GuardingContext
+	, GuardingContext1
+	, OTree(..)
+	, OTree1
+	, OTrans(..)
+	, OTrans1
+	, mapTerm
+	, mapSubst
+	, mapClause
 ) where
 
 import Data.List (intersperse)
+import Data.Set (Set)
 import Numeric (showHex) -- ,showIntAtBase)
 
 -- | Type of term for any type of functional symbol and any type of variable.
@@ -81,6 +85,7 @@ type Program a b c = [Clause a b c]
 
 -- | GuardingContext type
 type GuardingContext a b c = [(Int, Term a b c, [Int])]
+--type GuardingContext a b c = Set (Int, Term a b c, [Int])
 type GuardingContext1 = GuardingContext Ident Variable Constant
 
 -- | Type of Rew tree Variable
@@ -226,4 +231,20 @@ fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
 
 fixQuery :: Query1 -> Query1
 fixQuery (Query ts) = Query $ fmap fixTerm ts
+
+-- TODO make Term (bi)functor
+mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
+mapTerm f (Fun idn ts) = Fun idn $ map (mapTerm f) ts
+mapTerm f (Var a) = Var $ f a
+
+mapSubst :: (Eq b', Eq b) =>
+	(b -> b') -> [(b, Term a b c)] -> [(b', Term a b' c)]
+mapSubst f s = map oneS s
+	where
+		oneS (b, t) = (f b, mapTerm f t)
+
+mapClause :: (Eq b', Eq b) =>
+	(b -> b') -> Clause a b c -> Clause a b' c
+mapClause f (Clause h b) = Clause (mapTerm f h) (map (mapTerm f) b)
+
 

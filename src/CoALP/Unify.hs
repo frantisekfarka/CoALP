@@ -6,6 +6,7 @@ module CoALP.Unify (
 	, composeSubst
 	, unifyImpl
 	, renameApart
+	, stripFreeVars
 ) where
 
 import Control.Monad (join)
@@ -134,6 +135,15 @@ separateSubst s = (map f $ filter (isL . fst) s
 	)
 	where
 		f (a, b) = (unpart a, mapVar (apart a) b)
+
+
+
+stripFreeVars :: Eq b =>  Subst a b c -> Clause a b c -> Subst a b c
+stripFreeVars s (Clause h _) = foldr (\x -> filter ((x ==) . fst)) s (frees h)
+	where
+		frees :: Term a b c -> [b]
+		frees (Fun _ ts)	= concatMap frees ts
+		frees (Var i)		= [i]
 
 
 

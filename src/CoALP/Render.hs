@@ -38,9 +38,10 @@ displayRewTree depth rt = do
 	
 displayDerTree :: Int -> Int -> DerTree1 -> IO ()
 displayDerTree depD depR dt = do
-	putStrLn $ "Tree depth: " ++ show (depthOT ot)
+	--putStrLn $ "Tree depth: " ++ show (depthOT ot)
 	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
-	-- _ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
+	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	where
 		ot = derToObs dt
@@ -184,9 +185,10 @@ renderDer :: Int -> Int -> Int -> DerTree1 -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
-renderDer depD depR n (DT rt trans) = case gcRewTree rt of
-	False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
-	True	-> renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+renderDer depD depR n (DT rt trans) = --case gcRewTree rt of
+	--False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
+	--True	-> 
+	renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
 		concat (zipWith (renderTrans (10*n) (depD - 1) depR) [10*n + i | i <- [1..]] trans) 
 
 renderTrans :: Int -> Int -> Int -> Int -> Trans1 -> String
