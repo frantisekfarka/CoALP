@@ -5,7 +5,8 @@
 --
 -- Transformations between different states should also be provided in this file
 module CoALPj.InternalState (
-	  CoALPOptions
+	  CoALP
+	, CoALPOptions
 	, defaultCoALPOptions
 	, caOptions
 	, program
@@ -14,11 +15,38 @@ module CoALPj.InternalState (
 	, REPLState
 	, replInit
 	, Verbosity(..)
+	, runIO
+	, iputStrLn
 ) where
+
+import Control.Monad.Trans (lift, liftIO)
+import Control.Monad.Trans.State (StateT) 
+import Control.Monad.Trans.Except (ExceptT, throwE)
 
 import Data.Monoid (mempty)
 
+import System.IO.Error (tryIOError)
+
+
+import CoALP.Error (Err(Msg))
 import CoALP.Program (Program1)
+
+
+--
+-- TODO refactor
+-- 
+--type CoALP = StateT IState (ErrorT IO)
+--type CoALP = ErrorT Err IO
+type CoALP = StateT REPLState (ExceptT Err IO)
+
+
+iputStrLn :: String -> CoALP ()
+iputStrLn s = runIO $ putStrLn s
+
+-- | A version of liftIO that puts errors into the error type of the CoALPj monad
+-- TODO is the use of ExceptT neccessary?
+runIO :: IO a -> CoALP a
+runIO x = lift $ liftIO (tryIOError x) >>= (either (throwE . Msg . show) return)
 
 
 -- | General CoALPj options that affect all code

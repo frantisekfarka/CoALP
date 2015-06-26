@@ -1,13 +1,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 -- | Read-Eval-Print loop
-module CoALPj.REPL where
+module CoALPj.REPL (
+	  runMain
+	, caMain
+	)where
 
-import Control.Exception (SomeException)
-import Control.Monad (when, (=<<))
-import Control.Monad.Trans (lift, liftIO)
-import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
+import Control.Exception (SomeException,fromException)
+import Control.Monad (when)
+import Control.Monad.Trans (lift)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
 import Control.Monad.Trans.State (StateT (..), execStateT, get, put)
-import Data.Functor ((<$>))
+--import Data.Functor ((<$>))
 
 import System.Console.Haskeline as H (
 	  runInputT
@@ -20,42 +23,45 @@ import System.Console.Haskeline as H (
 	)
 import System.Console.Haskeline.MonadException (MonadException (controlIO), RunIO (RunIO))
 
+import System.Exit (exitWith, ExitCode(ExitSuccess))
 import System.IO ( BufferMode(LineBuffering), stdout, hSetBuffering)
-import System.IO.Error (tryIOError)
 
-import CoALPj.InternalState(
-	  REPLState
+import CoALPj.Actions (
+	  loadFile
+	, reloadFile
+	)
+
+import CoALPj.InternalState (
+	  CoALP
+	, REPLState
 	, CoALPOptions
 	, replInit
 	, caOptions
-	, program
-	, programPath
 	, optVerbosity
 	, Verbosity (..)
+	, runIO
+	, iputStrLn
 	)
-import CoALPj.REPL.Commands(
+import CoALPj.REPL.Commands (
 	  Command(..)
 	)
-import CoALPj.REPL.Parser(
+import CoALPj.REPL.Parser (
 	    parseCmd
 	  , cmdInfo
 	  , replCompletion
 	)
 
-import CoALP.Error (Err(..))
-
-import CoALP.Render (displayProgram,displayRewTree,displayDerTree)
-import CoALP.Guards (gc1,gc2,gc3,gc3one)
-import CoALP.Program (Program1)
-
-import CoALP.RewTree (rew)
-import CoALP.DerTree (der,trans,mkVar)
-
-
--- TODO refactor
-import CoALP.Parser.Parser (parse,parseClause)
-
-import CoALP.Parser.PrettyPrint (ppProgram)
+import CoALPj.Actions (
+	  printProgram
+	, checkGuard1
+	, checkGuard2
+	, checkGuard3
+	, checkGuard3One
+	, drawProgram
+	, drawRew
+	, drawTrans
+	, drawDer
+	)
 
 -- | MonadException instance for ExceptT
 -- this is only a substitution for missing instance in haskeline-1.7.3
@@ -97,20 +103,6 @@ caMain opts = do
 	when runrepl $ do
 		runInputT (replSettings (Just histFile))  $ repl orig efile
 
---
--- TODO refactor
--- 
---type CoALP = StateT IState (ErrorT IO)
---type CoALP = ErrorT Err IO
-type CoALP = StateT REPLState (ExceptT Err IO)
-
-
-
--- | A version of liftIO that puts errors into the error type of the CoALPj monad
--- TODO is the use of ExceptT neccessary?
-runIO :: IO a -> CoALP a
-runIO x = lift $ liftIO (tryIOError x) >>= (either (throwE . Msg . show) return)
-
 replSettings :: Maybe FilePath -> Settings CoALP
 replSettings hFile = setComplete replCompletion $ defaultSettings {
 	  historyFile = hFile 
@@ -146,9 +138,13 @@ repl initState efile = do
 			repl initState efile
 	where 
 		ctrlC :: InputT CoALP a -> SomeException -> InputT CoALP a
-		ctrlC act e = do
-			lift $ iputStrLn (show e)
-			act -- repl orig mods
+		ctrlC act e = case fromException e of
+			Just ExitSuccess	-> do
+				lift . iputStrLn $ replBye
+				lift . lift . lift $ exitWith ExitSuccess
+			_			-> do
+				lift $ iputStrLn ("Err " ++ show e)
+				act -- repl orig mods
 		{-inputExcept :: SomeException -> InputT CoALP ()
 		inputExcept e = do
 			lift $ iputStrLn (show e)
@@ -160,7 +156,7 @@ replWelcome =
   "░█▀▀░░░░░█▀█░█░░░█▀█░░░░▀░░█▀█░▀█▀░█▀▀░█▀▄░█▀█░█▀▄░█▀▀░▀█▀░█▀▀░█▀▄\n" ++
   "░█░░░█▀█░█▀█░█░░░█▀▀░░░░█░░█░█░░█░░█▀▀░█▀▄░█▀▀░█▀▄░█▀▀░░█░░█▀▀░█▀▄\n" ++
   "░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀░░░░░░█░░▀░▀░░▀░░▀▀▀░▀░▀░▀░░░▀░▀░▀▀▀░░▀░░▀▀▀░▀░▀\n" ++
-  "░░░░░░░░░░░░░░░░░░░░░░░▀░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n\n" ++
+  "░░░░░░░░░░░░░░░░░░░░░░░▀ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n\n" ++
   "(C) 2014 - 2015, University of Dundee\n\n" ++
   "Type \":help\" for usage information.\n"
 
@@ -175,9 +171,6 @@ replBye = "Bye bye\n" ++
 	"                 ||----w |!\n" ++
 	"                 ||     ||"
 
-
-iputStrLn :: String -> CoALP ()
-iputStrLn s = runIO $ putStrLn s
 
 -- | Process REPL command line input
 processInput :: String -> REPLState -> CoALP ()
@@ -194,7 +187,7 @@ processInput cmd _origState = do
 		Right (Quit) 	-> do
 			-- iputStrLn $ "doing some action: " ++ (show a)
 			-- return ()
-			_ <- lift $ throwE QuitErr
+			_ <- runIO $ exitWith ExitSuccess
 			undefined
 		Right (GC1)	-> checkGuard1
 		Right (GC2 c)	-> checkGuard2 c
@@ -207,110 +200,5 @@ processInput cmd _origState = do
 		Right (DrawDer dD dR q) -> drawDer dD dR q
 		Right (Help) -> iputStrLn cmdInfo
 		Right (Empty) -> return ()
-
--- | load and parse file
-loadFile :: FilePath -> CoALP ()
-loadFile file = do
-	cnt <- lift . lift $ readFile file
-	--iputStrLn $ ppLexer $ scanTokens cnt
-	--TODO refactor parser monad (stack)
-	case parse cnt of
-		Left err	-> do
-			iputStrLn err
-			return ()
-		Right prg	-> do
-			iputStrLn $ "Program " ++ file ++ " loaded."
-			--iputStrLn . ppProgram $ prg
-			s <- get
-			put $ s { program = Just (reverse prg), programPath = Just file }
-
-reloadFile :: CoALP ()
-reloadFile = maybe (iputStrLn "No program loaded yet") loadFile
-	=<< programPath <$> get
-	
-			
--- | print program
-printProgram :: CoALP ()
---printProgram = get >>= iputStrLn . ppProgram . program 
-printProgram = whenProgram (iputStrLn . ppProgram)
-		
-checkGuard1 :: CoALP ()
-checkGuard1 = whenProgram (iputStrLn . show . gc1)
-			
-checkGuard2 :: String -> CoALP ()
-checkGuard2 c = whenProgram (
-	\p -> case parseClause c of
-		Left err	-> iputStrLn err
-		Right r		-> iputStrLn . show $ (gc2 p r)
-	)
-			
-checkGuard3 :: CoALP ()
-checkGuard3 = whenProgram (\p -> iputStrLn . show $ (gc3 p))
-			
-checkGuard3One :: String -> CoALP ()
-checkGuard3One c = whenProgram (
-	\p -> case parseClause c of
-		Left err	-> iputStrLn err
-		Right r		-> iputStrLn . show $ (gc3one p r)
-	)
-			
-			
-			
-drawProgram :: CoALP ()
-drawProgram = whenProgram (liftIO . displayProgram)
-
-drawRew :: Int -> String -> CoALP ()
-drawRew depth q = whenProgram (
-	\p -> case parseClause q of
-		Left err	-> do
-			iputStrLn err
-			return ()
-		Right r'	-> do
-			iputStrLn $ "Query " ++ q ++ " loaded."
-			let r = r'
-			let rt = rew p r []
-			liftIO . displayRewTree depth $ rt  --rew p r []
-			--iputStrLn . show . (head 20) $ loops' rt
-	)
-
-drawTrans :: Int -> [Integer] -> String -> CoALP ()
-drawTrans depth var q = whenProgram (
-	\prog -> case parseClause q of
-		Left err	-> do
-			iputStrLn err
-			return ()
-		Right r		-> do
-			iputStrLn $ "Query " ++ q ++ " loaded."
-			let rt = rew prog r []
-			let tt = fst $ foldl (trans prog . fst) (rt, Nothing) (fmap mkVar var)
-			--let tt = trans prog rt (mkVar $ head var)
-			liftIO . displayRewTree depth $ tt 
-			--iputStrLn . show . (head 20) $ loops' rt
-	)
-
-drawDer :: Int -> Int -> String -> CoALP ()
-drawDer depD depR q = whenProgram (
-	\prog -> case parseClause q of
-		Left err	-> do
-			iputStrLn err
-			return ()
-		Right r		-> do
-			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayDerTree depD depR $ der prog r 
-			--iputStrLn . show . (head 20) $ loops' rt
-	)
-
-
-verbPutStrLn :: String -> CoALP ()
-verbPutStrLn str = do
-	s <- get
-	let verbosity = optVerbosity $ caOptions s
-	when (verbosity >= VVerbose) $ iputStrLn str
-
-
-whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
-whenProgram f = maybe (iputStrLn "No program loaded") f
-	=<< program <$> get
-		
 
 

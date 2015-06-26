@@ -7,6 +7,7 @@ module CoALPj.CmdOpts (
 	, optVerbose
 	, optVVerbose
 	, optQuiet
+	, optGC3
 	, optDummy1
 	, optDdumpLexer
 	, optDdumpParser
@@ -34,11 +35,12 @@ runArgParser = execParser ( info parser (fullDesc
 	where
 		caHeader   = PP.hsep [
 		 	  PP.text "CoALPj version"
-			, PP.text ver, PP.text ", (C) 2015"
+			, PP.text ver, PP.text ", (C) 2014 - 2015"
 			]
 		caProgDesc = PP.vsep [
 		 	  PP.empty
-			, PP.text "TODO some nice description here"
+			, PP.text ("Haskell implementation of coalgebraic logic programming. " ++ 
+				"Experimental,\n\t development version.")
 			]
 		caFooter    = PP.vsep [
 			  PP.text "See the GitHub repo"
@@ -52,6 +54,7 @@ data CmdOpts = CmdOpts {
 	  optVerbose :: Bool   		-- | verbose
 	, optVVerbose :: Bool  		-- | very verbose
 	, optQuiet :: Bool		-- | quiet
+	, optGC3 :: Maybe String	-- | GC3 <program>
 	--, optVersion :: Bool
 	, optDummy1 :: Int
 	, optDdumpLexer :: Bool	-- | parser debugging output
@@ -85,6 +88,10 @@ parseOptions = CmdOpts  <$> --many $
 		<> help "Suppres most of the output"
 		)
 	-- <*> switch	(short 'V' <>	long "version" <> help "Show version")
+	<*> option (pure Just <*> str) (
+		long "gc3" 
+		<> help "Guardednes check of program ARG" 
+		<> value Nothing)
 	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)
 	<*> switch (
 		long "ddump-lexer"

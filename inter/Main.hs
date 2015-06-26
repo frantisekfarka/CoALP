@@ -1,11 +1,13 @@
 module Main where
 
+import Control.Monad.Trans.State (get, put)
 --import Prelude () 
 import System.Exit (exitWith, ExitCode(ExitSuccess))
 
-import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1, optVerbose, optVVerbose, optQuiet)
-import CoALPj.REPL (runMain, CoALP, runIO, caMain)
-import CoALPj.InternalState (defaultCoALPOptions, optVerbosity, Verbosity(..))
+import CoALPj.Actions (loadFile, checkGuard3)
+import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1, optVerbose, optVVerbose, optQuiet, optGC3)
+import CoALPj.REPL (runMain, caMain)
+import CoALPj.InternalState (defaultCoALPOptions, optVerbosity, Verbosity(..), CoALP, runIO, REPLState(..))
 
 main :: IO ()
 main = do 
@@ -29,8 +31,17 @@ runCoALPj opts = do
 			runIO $ putStrLn "Dummy Bye Bye ..."
 			runIO $ exitWith ExitSuccess
 		_  -> return ()
+	case optGC3 opts of
+		Just fp  -> do
+			silence
+			loadFile fp
+			checkGuard3
+			runIO $ exitWith ExitSuccess
+		Nothing -> return ()
 	caMain caOpts
 	where
+		silence = get >>= \x -> put (
+			x { caOptions = (caOptions x) { optVerbosity = Quiet}} )
 		caOpts = defaultCoALPOptions {
 			  optVerbosity = verb
 			}
