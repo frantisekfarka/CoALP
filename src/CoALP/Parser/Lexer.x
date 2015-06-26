@@ -11,7 +11,7 @@ import Data.Map as M (Map,empty,insert, lookup)
 --import CoALP.Error (Err(ParserErr))
 import CoALP.Program (
 	  Ident
-	-- , Constant
+	, Constant
 	, Variable
 	)
 
@@ -55,7 +55,7 @@ tokens :-
   "?"				{ \_ _ -> return TQuery }
 
   -- read numeric constant
---  $digit+			{ \a len -> return $ TInt (read $ tokenStr a len) }
+  $digit+			{ \a len -> return $ TInt (read $ tokenStr a len) }
 
   -- read variable name
   $upper [$alphanum \_ \' ]*	{ \a len -> return $ TVarId (tokenStr a len) }
@@ -108,7 +108,7 @@ clearVars = Alex $ \s@AlexState{alex_ust=ust}
 -- | The token type:
 data Token =
 	TFunId Ident    |
---	TInt Constant   | -- lets keep it out for now
+	TInt Constant   | 
 	TVarId Ident    |
 	TLPar           |
 	TRPar           |
@@ -148,7 +148,7 @@ alexSynError tok = do
 	where
 		ppTok (TVarId s) = "variable " ++ s
 		ppTok (TFunId s) = "function identifier '" ++ s ++ "'"
---		ppTok (TInt i) = "constant " ++ show i
+		ppTok (TInt i) = "constant " ++ show i
 		ppTok TQuery = "token '?'" 
 		ppTok TLPar = "opening (" 
 		ppTok TRPar = "closing )"
@@ -156,7 +156,7 @@ alexSynError tok = do
 
 		len (TVarId s) = length s
 		len (TFunId s) = length s
---		len (TInt i) = length . show $ i
+		len (TInt i) = length . show $ i
 		len TQuery = 1
 		len TLPar = 1
 		len TRPar = 1
