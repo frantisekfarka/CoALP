@@ -3,7 +3,7 @@ name:          CoALP
 --             | ,----- pre-release
 --             | | ,--- fixes and new functionality
 --             | | |
-version:       0.0.3
+version:       0.0.4
 license:       LGPL-3
 author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
                Jónathan Heras <joheras@gmail.com>,
