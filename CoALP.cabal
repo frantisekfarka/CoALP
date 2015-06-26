@@ -6,10 +6,10 @@ name:          CoALP
 version:       0.0.4
 license:       LGPL-3
 author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
-               Jónathan Heras <joheras@gmail.com>,
                František Farka <ffarka@gmail.com>
+               Jónathan Heras <joheras@gmail.com>,
 
-maintainer:    Vladimir Komendantskiy <komendantsky@gmail.com>
+maintainer:    František Farka <ffarka@gmail.com>
 category:      CoALP
 synopsis:      Coalgebraic logic programming library
 stability:     experimental
@@ -23,14 +23,12 @@ source-repository head
 
 -- Event logs conflict with profiling. Hence a special flag to turn event logs
 -- on and to turn profiling off.
-flag eventlog
-  description: Allows to generate event logs for ThreadScope.
-  default:     False
-
+--flag eventlog
+--  description: Allows to generate event logs for ThreadScope.
+--  default:     False
 
 library
   hs-source-dirs:   src 
-  --, lib
 
   default-language: Haskell2010
 
@@ -43,27 +41,16 @@ library
                     CoALP.Render
                     CoALP.RewTree
                     CoALP.DerTree
-                    CoALP.Guards2
+                    CoALP.Guards
                     CoALP.Unify
---                    CoALP.UI
 
   other-modules:    CoALP.FreshVar
                     CoALP.Reductions
-  --other-modules:    CoALP.Tree
-  --                  CoALP.Subst
-  --                  CoALP.Clause
-  --                  CoALP.Term
-  --                  CoALP.Mode
-  --                  CoALP.Guards
-  --                  CoALP.UI.Dot
-  --                  CoALP.UI.Parser
-  --                  CoALP.UI.Printer
-   --                 CoALP.FreshVar
 
-  if flag(eventlog)
-    ghc-options:    -Wall -rtsopts -eventlog
-  else
-    ghc-options:    -Wall -rtsopts -auto-all -caf-all
+  --if flag(eventlog)
+  --  ghc-options:    -Wall -rtsopts -eventlog
+  --else
+  --  ghc-options:    -Wall -rtsopts -auto-all -caf-all
 
   build-depends:    base                 >= 4.6,
                     containers           >= 0.5,
@@ -81,37 +68,8 @@ library
 
   build-tools:      alex, happy
 
---executable CoALPi
---  hs-source-dirs:   interpreter
-
---  main-is:          CoALPi.hs
-
---  other-modules:    CoALP.Interpreter.Options
-
---  default-language: Haskell2010
-
---  if flag(eventlog)
---    ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
---  else
---    ghc-options:    -O2 -Wall -rtsopts -threaded -auto-all -caf-all
-
---  build-depends:    base                 >= 4.6,
---                    CoALP                >= 0.0.1,
---                    containers           >= 0.5,
---                    mtl                  >= 2.1,
---                    old-locale,
---                    time                 >= 1.4,
---                    transformers         >= 0.3,
---                    parsec               >= 3.1,
---                    deepseq,
---                    process              >= 1.1,
---                    unordered-containers >= 0.2.3,
---                    optparse-applicative >= 0.7 
-
---  default-extensions: BangPatterns
-
 executable CoALPj
-  hs-source-dirs:   ref-int
+  hs-source-dirs:   inter
   main-is:          Main.hs
   other-modules:    CoALPj.CmdOpts
 
@@ -122,7 +80,9 @@ executable CoALPj
   default-language: Haskell2010
 
   build-depends:    base                 >= 4.7,
-                    CoALP                >= 0.0.1,
+                    CoALP                >= 0.0.4,
+                    process              >= 1.0.0,
+
                     transformers         >= 0.3,
                     optparse-applicative >= 0.11,
                     text                 >= 1.2,

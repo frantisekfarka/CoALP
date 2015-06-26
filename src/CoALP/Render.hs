@@ -19,7 +19,7 @@ import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTr
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
 
-import CoALP.Guards2 (gcRewTree,derToObs,depthOT)
+import CoALP.Guards (gcRewTree,derToObs,depthOT)
 
 import Debug.Trace
 

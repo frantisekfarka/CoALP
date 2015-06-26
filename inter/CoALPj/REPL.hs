@@ -45,7 +45,7 @@ import CoALPj.REPL.Parser(
 import CoALP.Error (Err(..))
 
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree)
-import CoALP.Guards2 (gc1,gc2,gc3,gc3one)
+import CoALP.Guards (gc1,gc2,gc3,gc3one)
 import CoALP.Program (Program1)
 
 import CoALP.RewTree (rew)

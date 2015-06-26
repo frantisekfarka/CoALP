@@ -1,6 +1,6 @@
 # CoALP
 
-:copyright: 2014: CoALP project, University of Dundee
+:copyright: 2014 - 2015: CoALP project, University of Dundee
 
 License: LGPL v3
 
