@@ -9,11 +9,14 @@ module CoALP.Guards (
 	, gc3one
 	, derToObs
 	, depthOT
+	, guardingContext
 ) where
 
-import Control.Arrow ((***))
+--import Control.Arrow ((***))
 --import Data.Functor ((<$>))
---import Data.Maybe (catMaybes)
+import Data.Foldable (asum)
+import Data.List (nub)
+import Data.Maybe (maybeToList)
 import Data.Traversable (sequenceA,traverse)
 
 import CoALP.Program (Program, Clause(..), Term(..),
@@ -28,8 +31,9 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	)
 
 import CoALP.FreshVar (Freshable,apartL,apartR)
-import CoALP.RewTree (rew)
+import CoALP.RewTree (rew, loops)
 import CoALP.DerTree (der,clauseProj)
+import CoALP.Unify (match)
 
 import Debug.Trace
 
@@ -73,23 +77,26 @@ gc1 = all guardedClause
 --
 -- TODO heads to tree lang projections?
 guardedClause :: Clause a b c -> Bool
-guardedClause (Clause h b) = all (guardedTerm h) $ filter (sameHead h) b
+guardedClause (Clause h b) = all (isJust . guardedTerm h) $ filter (sameHead h) b
 	where
 		sameHead (Fun p1 _) (Fun p2 _) 	= p1 == p2
 		sameHead (Var v1) (Var v2)	= v1 == v2
 		sameHead _ _			= False
+		isJust (Just _)	= True
+		isJust _	= False
 
 -- | reflects definitoon 5.1
 --
 -- we ensure 2) by recursion on Term
-guardedTerm :: Term a b c -> Term a b c -> Bool
-guardedTerm (Fun p1 s1) (Fun p2 s2)	= p1 == p2 && -- should hold from recursive hypothesis
-	any (uncurry guardedTerm) [
-		(t1,t2) | t1 <- s1, t2 <- s2
-	] 
-guardedTerm (Fun _ []) (Var _)		= False
-guardedTerm (Fun _ _) (Var _)		= True	-- ^ this is the constructor guarding productivity
-guardedTerm _ _				= False
+guardedTerm :: Term a b c -> Term a b c -> Maybe (Term a b c)
+guardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive hypothesis
+		then (asum $ fmap (uncurry guardedTerm) [
+			(t1,t2) | t1 <- s1, t2 <- s2
+			])
+		else Nothing
+guardedTerm (Fun _ []) (Var _)		= Nothing
+guardedTerm t@(Fun _ _) (Var _)		= Just t	-- ^ this is the constructor guarding productivity
+guardedTerm _ _				= Nothing
 
 
 -- | repeated definition 5.1 for recursive contraction
@@ -113,38 +120,9 @@ gc2 p c = gcRewTree (rew p' c' [])
 		c' = mapClause apartR c
 
 gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
-gcRewTree rt = all (uncurry recGuardedTerm) $ (loops (rt))
-
--- TODO Freshable!
--- TODO
--- 	rewrite, I believe that the following is better:
---
--- 	go from the top, accumulate (clause head, origin in P)
--- 	when encountered new clause, compare with head, if forms loop, 
--- 	push loop on loop stack, push (head, origin) on accumulator
-loops :: RewTree a b c Integer -> [(Term a b c, Term a b c)]
-loops rt = snd (loops' rt)
-
--- | recursively build loops
-loops' :: Freshable d => RewTree a b c d -> ([(Term a b c,Int)],[(Term a b c, Term a b c)])
-loops' RTEmpty = ([],[])
-loops' (RT _ _ ands) = (id *** concat.concat) $ sequenceA $ fmap f ands
+gcRewTree rt = all (uncurry recGuardedTerm . g) $ (loops (rt))
 	where
-		f (AndNode _ ors) = sequenceA $ zipWith loopsO [1..] ors
-
-loopsA :: Int -> AndNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
-loopsA pari (AndNode f@(Fun fid _) ors) = (id *** concat) $
-				sequenceA $ ([(f,pari)],newLoops) : boundLower
-	where
-		boundLower = zipWith loopsO [1..] ors
-		newLoops = [(f, f') | (f'@(Fun fid' _), pari')  <- concatMap fst boundLower,
-			fid == fid' && pari == pari'
-			]
-loopsA _ (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [1..] ors
-
-loopsO :: Int -> OrNode (Clause a b c) (Term a b c) d -> ([(Term a b c, Int)],[(Term a b c, Term a b c)])
-loopsO _ (OrNodeEmpty _) = ([],[])
-loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
+		g (t1,t2,_) = (t1,t2)
 
 
 
@@ -159,15 +137,14 @@ gc3 p = all (gc3one p ) p
 gc3one p c = gcDerTree [] $ der p c
 
 --gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
-gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
-	where
+gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans rt gcs) trs
 
 --gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
-gcTrans gcs (Trans p _ cx dt) = case cp `elem` gcs of
+gcTrans rt gcs (Trans p _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> True
-		False	-> gcDerTree (cp:gcs) dt
+		False	-> gcDerTree (gc:gcs) dt
 	where
-		cp = clauseProj p cx 
+		gc = guardingContext p rt cx 
 
 
 derToObs :: DerTree1 -> OTree1
@@ -176,15 +153,15 @@ derToObs dt = derToObs' [] dt
 derToObs' :: [GuardingContext1] -> DerTree1 -> OTree1
 derToObs' gcs (DT rt trs) = case gcRewTree rt of
 	False	-> UNRT rt
-	True	-> ODT rt $ map (transToObs gcs) trs
+	True	-> ODT rt $ map (transToObs rt gcs) trs
 
 
-transToObs :: [GuardingContext1] -> Trans1 -> OTrans1
-transToObs gcs (Trans p v cx dt) = case cp `elem` gcs of
-		True	-> GTrans v gcs cp
-		False	-> OTrans p v cx $ derToObs'(cp:gcs) dt
+transToObs :: RewTree1 -> [GuardingContext1] -> Trans1 -> OTrans1
+transToObs rt gcs (Trans p v cx dt) = case gc `elem` gcs of
+		True	-> GTrans v gcs gc
+		False	-> OTrans p v cx $ derToObs'(gc:gcs) dt
 	where
-		cp = clauseProj p cx 
+		gc = guardingContext p rt cx 
 
 
 depthOT :: OTree1 -> Int
@@ -195,6 +172,25 @@ depthOT (UNRT _)	= 0
 depthTrs :: OTrans1 -> Int
 depthTrs (OTrans _ _ _ ot)	= depthOT ot
 depthTrs (GTrans _ _ _) 	= 0
+
+
+
+
+--guardingContext :: (Eq a, Ord b, Freshable d) =>
+--	Program a b c -> RewTree a b c d -> Maybe (Int, Subst a b c, Term a b c) 
+--	-> GuardingContext a b c
+guardingContext p rt cx	= nub [(pkt', t', v) |
+		(pkt', t', v) <- clauseProj p cx
+		, (t1, t2, pkt'') <- (loops rt)
+		, t'' <- maybeToList $ guardedTerm t1 t2
+		, pkt' == pkt'' && isJust (t' `match` t'')
+		--, pkt' == pkt'' && (traceShow (pkt', pkt'', t', t'') $ isJust (t' `match` t''))
+		]
+	where
+		isJust (Just _) = True
+		isJust _	= False
+
+
 
 
 

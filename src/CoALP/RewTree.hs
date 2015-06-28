@@ -3,10 +3,12 @@
 module CoALP.RewTree (
 	    rew
 	  , getVrs
+	  , loops
 ) where
 
+import Control.Arrow ((***))
 import Data.Functor ((<$>))
-import Data.Traversable (sequenceA)
+import Data.Traversable (sequenceA,traverse)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
 import CoALP.Unify (match, applySubst, composeSubst, stripFreeVars)
@@ -24,7 +26,7 @@ rew p c@(Clause h b) si = flip evalFresh initFresh $ do
 			--(Clause h' b') s' ands
 	where
 		c = Clause h b
-		si' = si `stripFreeVars` c
+		si' = si -- `stripFreeVars` c
 		h' = h -- free vars are stripped, no need to apply si'
 		bsi' = map (si' `applySubst`) b
 		csi' = Clause h' bsi'
@@ -51,7 +53,7 @@ mkOrNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 mkOrNode p si t c@(Clause h b)  = case (h `match` t) of
 		Just th ->	do
 			let	thb = map (applySubst th) b
-			let	si' = si `stripFreeVars` (Clause t thb)
+			let	si' = si -- `stripFreeVars` (Clause t thb)
 			let	sithb' = map (applySubst si') thb
 			ands <- sequenceA ((mkAndNode p si) <$> sithb')
 			return $ OrNode (Clause t sithb') ands
@@ -76,4 +78,42 @@ getVrs (RT _ _ ands) = concatMap getAndVrs ands
 		getAndVrs (AndNode _ os) = concatMap getOrVrs os
 		getOrVrs (OrNodeEmpty c) = [c]
 		getOrVrs (OrNode _ as) = concatMap getAndVrs as
+
+
+-- TODO Freshable!
+-- TODO
+-- 	rewrite, I believe that the following is better:
+--
+-- 	go from the top, accumulate (clause head, origin in P)
+-- 	when encountered new clause, compare with head, if forms loop, 
+-- 	push loop on loop stack, push (head, origin) on accumulator
+loops :: (Freshable d) =>
+	RewTree a b c d -> [(Term a b c, Term a b c, Int)]
+loops rt = snd (loops' rt)
+
+-- | recursively build loops
+loops' :: Freshable d =>
+	RewTree a b c d -> ([(Term a b c,Int)],[(Term a b c, Term a b c, Int)])
+loops' RTEmpty = ([],[])
+loops' (RT _ _ ands) = (id *** concat.concat) $ sequenceA $ fmap f ands
+	where
+		f (AndNode _ ors) = sequenceA $ zipWith loopsO [0..] ors
+
+loopsA :: Int -> AndNode (Clause a b c) (Term a b c) d 
+	-> ([(Term a b c, Int)],[(Term a b c, Term a b c, Int)])
+loopsA pari (AndNode f@(Fun fid _) ors) = (id *** concat) $
+				sequenceA $ ([(f,pari)],newLoops) : boundLower
+	where
+		boundLower = zipWith loopsO [0..] ors
+		newLoops = [(f, f', pari) | 
+			(f'@(Fun fid' _), pari')  <- concatMap fst boundLower,
+			fid == fid' && pari == pari'
+			]
+loopsA _ (AndNode (Var _) ors) = (id *** concat) $ sequenceA $ zipWith loopsO [0..] ors
+
+loopsO :: Int -> OrNode (Clause a b c) (Term a b c) d
+	-> ([(Term a b c, Int)],[(Term a b c, Term a b c, Int)])
+loopsO _ (OrNodeEmpty _) = ([],[])
+loopsO pari (OrNode _  ands) = (id *** concat) $ traverse (loopsA pari) ands
+
 

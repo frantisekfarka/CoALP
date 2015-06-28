@@ -6,9 +6,10 @@ module CoALP.DerTree (
 	, clauseProj
 ) where
 
+import Data.List (nub)
 import Data.Maybe (maybeToList)
 
-import CoALP.RewTree (rew, getVrs)
+import CoALP.RewTree (rew, getVrs,loops)
 import CoALP.FreshVar (Freshable)
 import CoALP.Unify (unify, applySubst, composeSubst, match)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
@@ -16,6 +17,9 @@ import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 	GuardingContext
 	)
 import CoALP.Reductions (isVarReductOf,nvPropSub)
+
+
+import Debug.Trace
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
@@ -25,7 +29,7 @@ trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
 trans _ RTEmpty _ = (RTEmpty, Nothing)
 trans p (RT cl s ands) vr = case ms' of
 		Just s'	-> (rew p cl (s `composeSubst` s'), Just (pIx, s', term)) 
-		Nothing 	-> (RTEmpty, Nothing)
+		Nothing -> (RTEmpty, Nothing)
 	where
 		ms' = unify term (cHead (p !! pIx))
 		(_var, pIx, term):_ = (filter ((== vr).fst') $
@@ -77,17 +81,14 @@ clauseProj p gc@(Just (ix, s, t)) = trace ("GC: \n" ++
 		subs = nvPropSub headC
 -}
 clauseProj :: (Eq a, Ord b) => 
-	Program a b c -> Maybe (Int, Subst a b c, Term a b c) -> GuardingContext a b c
+	Program a b c -> Maybe (Int, Subst a b c, Term a b c) 
+	-> GuardingContext a b c
 clauseProj _ Nothing 		= []
-clauseProj p (Just (ix, s, t))
-	| Just t'' <- t `isVarReductOf` (s `applySubst` t),
-	  Clause h _ <- p !! ix = do
+clauseProj p (Just (pk, si, t))
+	| Just t'' <- t `isVarReductOf` (si `applySubst` t),
+	  Clause h _ <- p !! pk = do
 			(t', v) <- nvPropSub h 
 			_ <- maybeToList $ match t' t'' 
-			return (ix, t', v) 
+			return (pk, t', v) 
 	| otherwise	= []
-
-
-
-
 

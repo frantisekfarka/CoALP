@@ -12,7 +12,7 @@ module CoALP.Unify (
 import Control.Monad (join)
 import Control.Applicative((<*>))
 import Data.Functor ((<$>))
-import Data.List (sortBy)
+import Data.List (sortBy, nub)
 
 import CoALP.Program
 import CoALP.FreshVar
@@ -20,7 +20,7 @@ import CoALP.FreshVar
 --import Debug.Trace
 
 combineSubst :: (Eq a, Eq b, Ord b) => Subst a b c -> Subst a b c -> Maybe (Subst a b c)
-combineSubst s1 s2 = c' (sortBy cmp s1) (sortBy cmp s2)
+combineSubst s1 s2 = nub <$> c' (sortBy cmp s1) (sortBy cmp s2)
 	where
 		cmp a b = fst a `compare` fst b
 		c' [] s = Just s
@@ -43,17 +43,12 @@ applySubst s (Var v) = case lookup v s of
 	Just st	-> st
 	Nothing	-> Var v
 
-composeSubst :: Eq b => Subst a b c -> Subst a b c -> Subst a b c
-composeSubst s1 s2 = prune $ filter neq $ (fmap f s1) ++ s2
+composeSubst :: (Eq a, Eq b) => Subst a b c -> Subst a b c -> Subst a b c
+composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2
 	where
 		f (v,t) = (v, applySubst s2 t)
 		neq (v,Fun _ _) = True
 		neq (v,Var v') = v /= v'
-		--prune [] = []
-		--prune (x:xs) = x:(prune (pruneEl x xs))
-		--pruneEl (v, _) [] = []
-		--pruneEl v (w:ws) = if fst v == fst w then ws else v:(pruneEl v ws)
-		prune = id
 
 renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
 renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
@@ -62,6 +57,8 @@ renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
 		freshMap f (Fun n ts) = Fun n $ fmap (freshMap f) ts
 
 -- TODO proper matching¡
+--
+-- in a sense ``isMatchedTo''
 match :: (Ord b, Eq a, Eq b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
 match (Var x1) 		(Var x2)	= Just $ (x1, Var x2):[] -- ? should be fresh?
 match (Fun id1 ts1)	(Fun id2 ts2)	= if id1 == id2 && length ts1 == length ts2
@@ -91,7 +88,7 @@ unify t1 t2 = fmap snd $ fmap separateSubst $ collapseS $ unifyImpl [apartTerms 
 --
 -- http://en.wikipedia.org/wiki/Unification_%28computer_science%29#A_unification_algorithm
 --
-unifyImpl :: (Eq b, Freshable b) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
+unifyImpl :: (Eq a, Eq b, Freshable b) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
 unifyImpl [] = Just []
 unifyImpl ((t1, t2):ts )
 	-- bind vars
