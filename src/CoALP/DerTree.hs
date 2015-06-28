@@ -10,11 +10,11 @@ import Data.List (nub)
 import Data.Maybe (maybeToList)
 
 import CoALP.RewTree (rew, getVrs,loops)
-import CoALP.FreshVar (Freshable)
+import CoALP.FreshVar (Freshable, apartR, apartL)
 import CoALP.Unify (unify, applySubst, composeSubst, match)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),mkVar, Trans(..),
-	GuardingContext
+	GuardingContext, mapClause, mapTerm, mapSubst
 	)
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
@@ -23,16 +23,20 @@ import Debug.Trace
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
-trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
-	=> Program a b c -> RewTree a b c d -> Vr d ->
-	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
+--trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
+--	=> Program a b c -> RewTree a b c d -> Vr d ->
+--	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
 trans _ RTEmpty _ = (RTEmpty, Nothing)
-trans p (RT cl s ands) vr = case ms' of
+trans p' (RT cl' os ands) vr = case ms' of
 		Just s'	-> (rew p cl (s `composeSubst` s'), Just (pIx, s', term)) 
 		Nothing -> (RTEmpty, Nothing)
 	where
-		ms' = unify term (cHead (p !! pIx))
-		(_var, pIx, term):_ = (filter ((== vr).fst') $
+		p = map (mapClause apartL) p'
+		cl = mapClause apartR cl'
+		s = mapSubst apartR os
+
+		ms' = unify (term) ((cHead (p !! pIx)))
+		(_var, pIx, term):_ = map apr $ (filter ((== vr).fst') $
 			concatMap processAnd ands)
 		
 		processAnd :: AndNode e (Term a b c) (Vr d) -> [(Vr d,Int,Term a b c)]
@@ -48,16 +52,17 @@ trans p (RT cl s ands) vr = case ms' of
 
 		fst' (a,_,_) = a
 		cHead (Clause h _) = h
+		apr (v, i, t) = (v, i, mapTerm apartR t)
 
 
 
 
-der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
-	Program a b c -> Clause a b c -> DerTree a b c d
+--der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
+--	Program a b c -> Clause a b c -> DerTree a b c d
 der p c = (derT p $ rew p c [])
 
-derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
-	Program a b c -> RewTree a b c d -> DerTree a b c d
+--derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
+--	Program a b c -> RewTree a b c d -> DerTree a b c d
 derT p rt = DT rt $ fmap toTrans (getVrs rt)
 	where
 		toTrans v = let (rt', cp) = trans p rt v in Trans p v cp  $ derT p rt' -- $ derT p rt'

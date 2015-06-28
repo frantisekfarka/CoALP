@@ -40,6 +40,9 @@ module CoALP.Program (
 	, mapTerm
 	, mapSubst
 	, mapClause
+	, Loop
+	, Loop1
+	, subtermof
 ) where
 
 import Data.List (intersperse)
@@ -213,6 +216,8 @@ data OTrans a b c d = OTrans (Program a b c) (Vr d) (Maybe (Int, Subst a b c, Te
 	| GTrans (Vr d) [GuardingContext a b c] (GuardingContext a b c)
 type OTrans1 = OTrans Ident Variable Constant VariableRew 
 
+type Loop a b c = (Term a b c, Term a b c, Int)
+type Loop1 = Loop Ident Variable Constant 
 
 -- | Just Helper
 -- TOOD: remove
@@ -228,6 +233,7 @@ mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 fixTerm :: Term a Int c -> Term a Int c
 fixTerm (Var v) = Var (v + 981)
 fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
+
 
 fixQuery :: Query1 -> Query1
 fixQuery (Query ts) = Query $ fmap fixTerm ts
@@ -247,4 +253,9 @@ mapClause :: (Eq b', Eq b) =>
 	(b -> b') -> Clause a b c -> Clause a b' c
 mapClause f (Clause h b) = Clause (mapTerm f h) (map (mapTerm f) b)
 
+
+-- is subterm of
+subtermof :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
+subtermof t1 t2@(Var _) = t1 == t2
+subtermof t1 t2@(Fun _ t2ts) = t1 == t2 || any (subtermof t1) t2ts
 

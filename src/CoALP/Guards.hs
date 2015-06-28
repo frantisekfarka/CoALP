@@ -27,11 +27,13 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	RewTree(..),
 	RewTree(..),
 	mapClause,
-	RewTree1,Term1
+	RewTree1,Term1,Program1,Clause1,
+	Loop,Loop1,
+	subtermof
 	)
 
 import CoALP.FreshVar (Freshable,apartL,apartR)
-import CoALP.RewTree (rew, loops)
+import CoALP.RewTree (rew)
 import CoALP.DerTree (der,clauseProj)
 import CoALP.Unify (match)
 
@@ -102,27 +104,32 @@ guardedTerm _ _				= Nothing
 -- | repeated definition 5.1 for recursive contraction
 --
 --   the direction is v -> v (w is a prefix of v)
-recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
+--recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
+recGuardedTerm :: Term1 -> Term1 -> Bool
+--recGuardedTerm f@(Fun _ _) v@(Var _)	= trace ("Case 1:" ++ show (f,v, v `subtermof` f)) $ v `subtermof` f
 recGuardedTerm f@(Fun _ _) v@(Var _)	= v `subtermof` f
+--recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= trace ("Case 2") $ c `subtermof` f
 recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= c `subtermof` f
 recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= p1 == p2 && -- should hold from recursive hypothesis
 		(or $ zipWith recGuardedTerm s1 s2)
 recGuardedTerm _ _			= False
 
-subtermof :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
-subtermof t1 t2@(Var v2) = t1 == t2
-subtermof t1 t2@(Fun _ t2ts) = t1 == t2 || any (subtermof t1) t2ts
-
-gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+--gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+gc2 :: Program1 -> Clause1 -> Bool
 gc2 p c = gcRewTree (rew p' c' [])
 	where
 		p' = map (mapClause apartL) p
 		c' = mapClause apartR c
 
-gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
-gcRewTree rt = all (uncurry recGuardedTerm . g) $ (loops (rt))
+--gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
+gcRewTree :: RewTree1 -> Bool
+gcRewTree RTEmpty	= True
+gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTerm . g) $  (loops (rt))
 	where
 		g (t1,t2,_) = (t1,t2)
+		f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" ++
+			(show $ take 1 $ dropWhile 
+			(uncurry recGuardedTerm . g) x)) x
 
 
 
@@ -157,7 +164,7 @@ derToObs' gcs (DT rt trs) = case gcRewTree rt of
 
 
 transToObs :: RewTree1 -> [GuardingContext1] -> Trans1 -> OTrans1
-transToObs rt gcs (Trans p v cx dt) = case gc `elem` gcs of
+transToObs rt gcs (Trans p v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> GTrans v gcs gc
 		False	-> OTrans p v cx $ derToObs'(gc:gcs) dt
 	where
@@ -184,13 +191,54 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 		, (t1, t2, pkt'') <- (loops rt)
 		, t'' <- maybeToList $ guardedTerm t1 t2
 		, pkt' == pkt'' && isJust (t' `match` t'')
-		--, pkt' == pkt'' && (traceShow (pkt', pkt'', t', t'') $ isJust (t' `match` t''))
+		--, pkt' == pkt'' && (
+		--	traceShow (pkt', pkt'', t', t'', isJust (t' `match` t'')) $
+		--	isJust (t' `match` t''))
 		]
 	where
 		isJust (Just _) = True
 		isJust _	= False
 
 
+-- TODO
+-- check, whether  we can use slightly different version here
+-- in out version: loops are all pairs of terms in a branch that
+-- originate from the same clause
+--
+-- in the paper, loops are pairs of therms, that
+--	1/ are in the same branch (w prefix of v)
+--	2/ have same head
+--	3/ parents can be matched to the same program clause
+--
+--loops :: RewTree a b c d -> [Loop a b c] 
+loops (RTEmpty)	= []
+loops (RT _ _ ands) = concatMap loops0 ands
+	where
+		loops0 (AndNode t ors) = concat $ zipWith (oLoops []) [0..] ors
+
+	
+
+
+aLoops :: [(Term a b c, (Int, Int))]
+	-> Int -- ^ parent clause ix
+	-> Int -- ^ term ix
+	-> AndNode (Clause a b c) (Term a b c) d
+	-> [Loop a b c]
+aLoops tws pci ti (AndNode t ors) = concatMap f tws ++
+		(concat $ zipWith (oLoops ((t, (pci, ti)):tws)) [0..] ors)
+	where
+		f (t', (pci', ti')) = if pci' == pci && eqs t t'
+			then [(t', t, pci)]
+			else []
+		eqs (Fun t1 _)	(Fun t2 _)	= t1 == t2
+		eqs _		_		= False
+
+oLoops :: [(Term a b c, (Int, Int))]
+	-> Int -- ^ clause ix
+	-> OrNode (Clause a b c) (Term a b c) d
+	-> [Loop a b c]
+oLoops _	_	(OrNodeEmpty _) = []
+oLoops tws	ci	(OrNode _ ands) = concat $ zipWith (aLoops tws ci) [0..] ands 
 
 
 

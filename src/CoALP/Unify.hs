@@ -5,17 +5,18 @@ module CoALP.Unify (
 	, applySubst
 	, composeSubst
 	, unifyImpl
-	, renameApart
+	--, renameApart
 	, stripFreeVars
 ) where
 
+import Control.Arrow((***))
 import Control.Monad (join)
 import Control.Applicative((<*>))
 import Data.Functor ((<$>))
 import Data.List (sortBy, nub)
 
 import CoALP.Program
-import CoALP.FreshVar
+--import CoALP.FreshVar
 
 --import Debug.Trace
 
@@ -50,11 +51,11 @@ composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2
 		neq (v,Fun _ _) = True
 		neq (v,Var v') = v /= v'
 
-renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
-renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
-	where
-		freshMap f (Var i) = Var (f i)
-		freshMap f (Fun n ts) = Fun n $ fmap (freshMap f) ts
+--renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
+--renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
+--	where
+--		freshMap f (Var i) = Var (f i)
+--		freshMap f (Fun n ts) = Fun n $ fmap (freshMap f) ts
 
 -- TODO proper matching¡
 --
@@ -71,57 +72,64 @@ match (Var x) 		(Fun id1 ts)	= Just $ (x, Fun id1 ts):[]
 match _ 		_		= Nothing
 
 
-unify :: (Ord b, Eq a, Eq b, Freshable b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
-unify t1 t2 = fmap snd $ fmap separateSubst $ collapseS $ unifyImpl [apartTerms t1 t2]
-	where
-		-- TODO fix 99 :-)
-		collapseS (Just x) = Just $ foldr f x (take 99 (repeat x))
-		collapseS x = x
-		f x y = g $ composeSubst x y
-		g [] = []
-		g (x:xs) = x:(g (elim x xs))
-		elim _ [] = []
-		elim x (y:ys) = if (x == y) then ys else y:(elim x ys)
+-- TODO is this OK?
+--
+-- it the algorithm we never actualy unify two terms, we always check, whether a
+-- term is unifiable with another, and then apply the substitution
+--
 
+--unifyWith :: (Ord b, Eq a, Eq b, Freshable b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
+--unify t1 t2 = fmap snd $ fmap separateSubst $ collapseS $ unifyImpl [apartTerms t1 t2]
+unify t1 t2 = unifyImpl [(t1,t2)]
 
 -- | Wiki, yay!
 --
 -- http://en.wikipedia.org/wiki/Unification_%28computer_science%29#A_unification_algorithm
 --
-unifyImpl :: (Eq a, Eq b, Freshable b) => [(Term a b c, Term a b c)] -> Maybe (Subst a b c)
+--unifyImpl :: (Eq a, Eq b, Freshable b) =>
+--	[(Term a b c, Term a b c)] 
+--	-> Maybe (Subst a b c)
 unifyImpl [] = Just []
 unifyImpl ((t1, t2):ts )
-	-- bind vars
-	| Var v1 <- t1,
-	  Var v2 <- t2			= Just (composeSubst ( 
-	  					composeSubst [(v1, Var $ apart v1 v2)]
-							[(v2, Var $ apart v1 v2)])
-					) <*> unifyImpl ts
-	-- drop constant, coul be actualy droped due to the next rule
-	| Fun id1 [] <- t1,
-	  Fun id2 [] <- t2,
-	  id1 == id2			= unifyImpl ts
+	-- delete
+	| t1 == t2 			= unifyImpl ts
 	-- decompose
 	| Fun id1 ts1 <- t1,
 	  Fun id2 ts2 <- t2,
 	  id1 == id2,
-	  length ts1 == length ts2	= unifyImpl $ ts ++ zip ts1 ts2
+	  length ts1 == length ts2	= unifyImpl $ zip ts1 ts2 ++ ts
 	-- conflict
-	| Fun id1 _ <- t1,
-	  Fun id2 _ <- t2,
-	  id1 /= id2			= Nothing
+	| Fun id1 ts1 <- t1,
+	  Fun id2 ts2 <- t2,
+	  (id1 /= id2 ||
+	  length ts1 /= length ts2)	= Nothing
 	-- swap
 	| Fun id1 ts1 <- t1,
 	  Var _ <- t2			= unifyImpl $ (t2,t1):ts
-	-- eliminate
+	-- eliminate 
 	| Var v <- t1,
-	  Fun _ _ <- t2			= Just (composeSubst [(v, t2)]) <*> unifyImpl ts
-	  --occursCheck v t2		= 
-	-- occurscheck fails
-	| _ <- t1, _ <- t2, 
-		otherwise			= Nothing
+	  -- Fun _ _ <- t2, 
+	  (not $ t1 `subtermof` t2),
+	  t1 `inVars`  ts		= unifyImpl $ let
+			s = [(v,t2)] 
+			aps = applySubst s
+	  	in (t1,t2):(fmap (aps *** aps) ts)
+	-- occurscheck 
+	| Var _ <- t1,
+	  -- Fun _ _ <- t2,
+	  (t1 `subtermof` t2)		= Nothing
+	-- equation is already solved
+	| Var v <- t1,
+	  -- Fun _ _ <- t2,
+	  (not $ t1 `subtermof` t2),
+	  (not $ t1 `inVars`  ts)	= Just ((v,t2):) <*> unifyImpl ts
+	| otherwise			= error $ "Wtf? Impssible " 
+		-- impossible branch
 
+	where
+		inVars t ts = any (\x -> t1 `subtermof` (fst x) || t1 `subtermof` (snd x)) ts
 
+{-
 -- | Separate two terms by renaming apart
 apartTerms :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
 apartTerms t1 t2 = (mapVar (apartR) t1, mapVar (apartL) t2)
@@ -132,7 +140,7 @@ separateSubst s = (map f $ filter (isL . fst) s
 	)
 	where
 		f (a, b) = (unpart a, mapVar (apart a) b)
-
+-}
 
 
 stripFreeVars :: Eq b =>  Subst a b c -> Clause a b c -> Subst a b c

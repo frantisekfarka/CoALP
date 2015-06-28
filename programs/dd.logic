@@ -1,3 +1,5 @@
 eq(char,c).
 eq(d(X),f(A1,A2)) :- eq(X,A1),eq(d(d(X)),A2).
 
+%eq(char).
+%eq(d(X)) :- eq(X),eq(d(d(X))).

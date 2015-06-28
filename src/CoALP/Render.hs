@@ -39,7 +39,7 @@ displayDerTree :: Int -> Int -> DerTree1 -> IO ()
 displayDerTree depD depR dt = do
 	--putStrLn $ "Tree depth: " ++ show (depthOT ot)
 	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
-	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
+	--writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	where
