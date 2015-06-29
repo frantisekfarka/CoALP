@@ -8,12 +8,13 @@ module CoALP.Guards (
 	, gcRewTree
 	, gc3one
 	, derToObs
+	, derToUnc
 	, depthOT
 	, guardingContext
 ) where
 
 --import Control.Arrow ((***))
---import Data.Functor ((<$>))
+import Data.Functor ((<$>))
 import Data.Foldable (asum)
 import Data.List (nub)
 import Data.Maybe (maybeToList)
@@ -170,6 +171,32 @@ transToObs rt gcs (Trans p v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 	where
 		gc = guardingContext p rt cx 
 
+derToUnc :: Integer -> DerTree1 -> DerTree1
+derToUnc n dt@(DT rt trs) = case derToUnc' n [] dt of
+	Just dt'	-> dt'
+	Nothing		-> DT rt []
+	
+
+derToUnc' :: Integer -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
+derToUnc' 0 gcs (DT rt trs) = Just $ DT rt []
+derToUnc' n gcs (DT rt trs) = case gcRewTree rt of
+		False	-> Nothing -- we found unguarded tree and thus we can finish
+		True	-> (DT rt) <$> (altseq $ map (transToUnc (n-1) rt gcs) trs)
+	where
+		altseq xs = let r = altseq' xs in if null r then Nothing else Just r
+		altseq' ((Just x):xs) = [x] -- :(altseq' xs)
+		altseq' (Nothing:xs) = altseq' xs
+		altseq' [] = []
+
+transToUnc n rt gcs (Trans p v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+		True	-> Nothing -- guarded trs
+		False	-> (Trans p v cx) <$> derToUnc' n (gc:gcs) dt
+	where
+		gc = guardingContext p rt cx 
+
+
+
+
 
 depthOT :: OTree1 -> Int
 depthOT (ODT _ [])	= 1 
@@ -227,7 +254,7 @@ aLoops :: [(Term a b c, (Int, Int))]
 aLoops tws pci ti (AndNode t ors) = concatMap f tws ++
 		(concat $ zipWith (oLoops ((t, (pci, ti)):tws)) [0..] ors)
 	where
-		f (t', (pci', ti')) = if pci' == pci && eqs t t'
+		f (t', (pci', ti')) = if {-pci' == pci &&-} eqs t t'
 			then [(t', t, pci)]
 			else []
 		eqs (Fun t1 _)	(Fun t2 _)	= t1 == t2

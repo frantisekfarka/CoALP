@@ -43,7 +43,7 @@ ppQuery (Query ts) = "? :- " ++ ppTerms ts
 ppSubst :: (Show a, Show b, Show c) => Subst a b c -> String
 ppSubst s = "{ " ++ (concat . intersperse ", " . map f) s ++ " }"
 	where
-		f (v,t) = ppTerm t ++ " / " ++ show v
+		f (v,t) = ppTerm t ++ " / V_" ++ show v
 
 
 

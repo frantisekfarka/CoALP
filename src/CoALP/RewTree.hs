@@ -11,7 +11,7 @@ import Data.Functor ((<$>))
 import Data.Traversable (sequenceA,traverse)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Unify (match, applySubst, composeSubst, stripFreeVars)
+import CoALP.Unify (match, applySubst, composeSubst, stripVars)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),
 	mapTerm,mapClause,mapSubst
@@ -25,9 +25,8 @@ rew p c@(Clause h b) si = flip evalFresh initFresh $ do
 		return $ RT csi' si ands
 			--(Clause h' b') s' ands
 	where
-		c = Clause h b
-		si' = si -- `stripFreeVars` c
-		h' = h -- free vars are stripped, no need to apply si'
+		si' = si `stripVars` h 
+		h' = si' `applySubst` h -- free vars are stripped, no need to apply si'
 		bsi' = map (si' `applySubst`) b
 		csi' = Clause h' bsi'
 
@@ -53,7 +52,8 @@ mkOrNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 mkOrNode p si t c@(Clause h b)  = case (h `match` t) of
 		Just th ->	do
 			let	thb = map (applySubst th) b
-			let	si' = si -- `stripFreeVars` (Clause t thb)
+			let	thh = applySubst th h
+			let	si' = si `stripVars` thh
 			let	sithb' = map (applySubst si') thb
 			ands <- sequenceA ((mkAndNode p si) <$> sithb')
 			return $ OrNode (Clause t sithb') ands
@@ -68,16 +68,22 @@ subst s (Var x)		= maybe (Var x) id (x `lookup` s)
 subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
 
 
--- get Vr variables in rew tree
--- TODO breath first search - thus we can show finite subtrees of infinitely
--- branching DerTrees
-getVrs :: RewTree a b c d -> [Vr d]
-getVrs RTEmpty = []
-getVrs (RT _ _ ands) = concatMap getAndVrs ands
-	where 
-		getAndVrs (AndNode _ os) = concatMap getOrVrs os
-		getOrVrs (OrNodeEmpty c) = [c]
-		getOrVrs (OrNode _ as) = concatMap getAndVrs as
+-- | Get Transiotion Variables in breath-first search manner
+--
+-- for GC3 is fine to proceed in DFS, however for displaying the search
+-- up-to-depth n the BFS is necessary
+--
+getVrs :: RewTree a b c d -> [(Vr d, Term a b c, Int)]
+getVrs RTEmpty 		= []
+getVrs (RT _ _ ands) 	= concatMap processAnd ands
+	where
+		processAnd (AndNode t ors) 		= 
+			(concat $ zipWith (processOr t) ors [0..]) ++
+			concatMap continueOr ors
+		processOr _ (OrNode _ _) 	_ 	= []
+		processOr t (OrNodeEmpty d)	pi	= [(d, t, pi)]
+		continueOr (OrNode _ ands)		= concatMap processAnd ands
+		continueOr _ 				= []
 
 
 -- TODO Freshable!

@@ -27,34 +27,21 @@ import Debug.Trace
 --	=> Program a b c -> RewTree a b c d -> Vr d ->
 --	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
 trans _ RTEmpty _ = (RTEmpty, Nothing)
-trans p' (RT cl' os ands) vr = case ms' of
-		Just s'	-> (rew p cl (s `composeSubst` s'), Just (pIx, s', term)) 
+trans p' rt@(RT cl' osi' ands') vr = case term `unify` h of
+		Just si	-> (mkRew si, Just (pi, si', term)) 
 		Nothing -> (RTEmpty, Nothing)
 	where
-		p = map (mapClause apartL) p'
-		cl = mapClause apartR cl'
-		s = mapSubst apartR os
-
-		ms' = unify (term) ((cHead (p !! pIx)))
-		(_var, pIx, term):_ = map apr $ (filter ((== vr).fst') $
-			concatMap processAnd ands)
-		
-		processAnd :: AndNode e (Term a b c) (Vr d) -> [(Vr d,Int,Term a b c)]
-		processAnd (AndNode t ors) = (concat $ zipWith (processOr t) ors [0..]) ++ 
-			concatMap continueOr ors
-
-		processOr :: Term a b c -> OrNode e (Term a b c) (Vr d) -> Int -> [(Vr d, Int, Term a b c)]
-		processOr _ (OrNode _ _) _ = []
-		processOr t (OrNodeEmpty d) c = [(d, c, t)]
-
-		continueOr (OrNode _ ands') = concatMap processAnd ands'
-		continueOr _ = []
-
+		mkRew th = rew p (th `lap` cl) (th `composeSubst` si')
+		(_, term', pi):_ = filter ((== vr).fst') $ getVrs rt
 		fst' (a,_,_) = a
-		cHead (Clause h _) = h
-		apr (v, i, t) = (v, i, mapTerm apartR t)
+		lap th (Clause h b) = Clause (th `applySubst` h) (map (applySubst th) b)
 
-
+		p = p' --  map (mapClause apartL) p'
+		cl = cl' -- mapClause apartR cl'
+		si' = osi' -- mapSubst apartR os
+		ands = ands'
+		term = term'
+		Clause h _ = p !! pi
 
 
 --der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
@@ -63,9 +50,10 @@ der p c = (derT p $ rew p c [])
 
 --derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 --	Program a b c -> RewTree a b c d -> DerTree a b c d
-derT p rt = DT rt $ fmap toTrans (getVrs rt)
+derT p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt)
 	where
 		toTrans v = let (rt', cp) = trans p rt v in Trans p v cp  $ derT p rt' -- $ derT p rt'
+		fst' (a, _, _) = a
 
 {-
 clauseProj p gc@Nothing = trace "GC: no guarding context" Nothing

@@ -27,8 +27,6 @@ module CoALP.Program (
 	, Vr1
 	, mkVar
 	, mapVar
-	, fixTerm
-	, fixQuery
 	, Trans(..)
 	, Trans1
 	, GuardingContext
@@ -122,7 +120,7 @@ type Ident = String
 -- numbers. When arbitrary terms are printed, each variable is denoted by a name
 -- starting from @X_@ followed by the number of that variable.
 --
-type Variable = Int
+type Variable = Integer
 
 -- | Type of Rew Tree Variable
 --
@@ -230,13 +228,10 @@ mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 
 -- | Renaming hack
 -- TODO remove
-fixTerm :: Term a Int c -> Term a Int c
-fixTerm (Var v) = Var (v + 981)
-fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
+--fixTerm :: Term a Int c -> Term a Int c
+--fixTerm (Var v) = Var (v + 981)
+--fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
 
-
-fixQuery :: Query1 -> Query1
-fixQuery (Query ts) = Query $ fmap fixTerm ts
 
 -- TODO make Term (bi)functor
 mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c

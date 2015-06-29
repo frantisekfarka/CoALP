@@ -14,9 +14,9 @@ data Command
 	| GC3
 	| GC3One String
 	| DrawProgram
-	| DrawRew Int String
-	| DrawTrans Int [Integer] String
-	| DrawDer Int Int String
+	| DrawRew Integer String
+	| DrawTrans Integer [Integer] String
+	| DrawDer Integer Integer String
 	| Help
 	| Empty
 	deriving Show

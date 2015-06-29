@@ -6,7 +6,7 @@ module CoALP.Unify (
 	, composeSubst
 	, unifyImpl
 	--, renameApart
-	, stripFreeVars
+	, stripVars
 ) where
 
 import Control.Arrow((***))
@@ -143,12 +143,12 @@ separateSubst s = (map f $ filter (isL . fst) s
 -}
 
 
-stripFreeVars :: Eq b =>  Subst a b c -> Clause a b c -> Subst a b c
-stripFreeVars s (Clause h _) = foldr (\x -> filter ((x ==) . fst)) s (frees h)
+stripVars :: Eq b =>  Subst a b c -> Term a b c -> Subst a b c
+stripVars s t = foldr (\x -> filter ((x /=) . fst)) s (vars t)
 	where
-		frees :: Term a b c -> [b]
-		frees (Fun _ ts)	= concatMap frees ts
-		frees (Var i)		= [i]
+		vars :: Term a b c -> [b]
+		vars (Fun _ ts)	= concatMap vars ts
+		vars (Var i)		= [i]
 
 
 
