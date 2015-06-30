@@ -38,6 +38,8 @@ module CoALP.Program (
 	, mapTerm
 	, mapSubst
 	, mapClause
+	, mapRT
+	, mapProg
 	, Loop
 	, Loop1
 	, subtermof
@@ -204,14 +206,16 @@ instance (Show a, Show b, Show c, Show d, Integral d) => Show (RewTree a b c d) 
 data DerTree a b c d = DT (RewTree a b c d) [Trans a b c d]
 type DerTree1 = DerTree Ident Variable Constant VariableRew
 
-data Trans a b c d = Trans (Program a b c) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
+data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
 type Trans1 = Trans Ident Variable Constant VariableRew 
 
 data OTree a b c d = ODT (RewTree a b c d) [OTrans a b c d] | UNRT (RewTree a b c d)
 type OTree1 = OTree Ident Variable Constant VariableRew
 
-data OTrans a b c d = OTrans (Program a b c) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (OTree a b c d)
+data OTrans a b c d 
+	= OTrans (Program a b c) (RewTree a b c d) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (OTree a b c d)
 	| GTrans (Vr d) [GuardingContext a b c] (GuardingContext a b c)
+
 type OTrans1 = OTrans Ident Variable Constant VariableRew 
 
 type Loop a b c = (Term a b c, Term a b c, Int)
@@ -226,12 +230,12 @@ mapVar :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
 mapVar f (Var v)	= Var $ f v
 mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 
--- | Renaming hack
--- TODO remove
---fixTerm :: Term a Int c -> Term a Int c
---fixTerm (Var v) = Var (v + 981)
---fixTerm (Fun f ts) = Fun f $ fmap fixTerm ts
 
+mapRT f (RT c s ands)	= RT (mapClause f c) (mapSubst f s) $ map (mapAnd f) ands
+mapRT f rt@(RTEmpty)	= rt
+mapAnd f (AndNode t ors) = AndNode (mapTerm f t) $ map (mapOr f) ors
+mapOr  f (OrNode c ands) = OrNode (mapClause f c) $ map (mapAnd f) ands
+mapOr  _ empty = empty
 
 -- TODO make Term (bi)functor
 mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
@@ -248,6 +252,9 @@ mapClause :: (Eq b', Eq b) =>
 	(b -> b') -> Clause a b c -> Clause a b' c
 mapClause f (Clause h b) = Clause (mapTerm f h) (map (mapTerm f) b)
 
+mapProg :: (Eq b', Eq b) =>
+	(b -> b') -> Program a b c -> Program a b' c
+mapProg f p = map (mapClause f) p
 
 -- is subterm of
 subtermof :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool

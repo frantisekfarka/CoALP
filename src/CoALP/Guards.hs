@@ -125,12 +125,12 @@ gc2 p c = gcRewTree (rew p' c' [])
 --gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
 gcRewTree :: RewTree1 -> Bool
 gcRewTree RTEmpty	= True
-gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTerm . g) $  (loops (rt))
+gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTerm . g) $ (loops (rt)) 
 	where
 		g (t1,t2,_) = (t1,t2)
-		f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" ++
-			(show $ take 1 $ dropWhile 
-			(uncurry recGuardedTerm . g) x)) x
+		--f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" ++
+		--	(show $ take 1 $ dropWhile 
+		--	(uncurry recGuardedTerm . g) x)) x
 
 
 
@@ -145,14 +145,16 @@ gc3 p = all (gc3one p ) p
 gc3one p c = gcDerTree [] $ der p c
 
 --gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
-gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans rt gcs) trs
+gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 
 --gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
-gcTrans rt gcs (Trans p _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+gcTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> True
 		False	-> gcDerTree (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
+		--gc = trace ("GC: " ++ show gc' ++ "\n\t" ++ show gcs ++
+		--	"\n\t" ++ show (gc' `elem` gcs)) gc'
 
 
 derToObs :: DerTree1 -> OTree1
@@ -161,13 +163,13 @@ derToObs dt = derToObs' [] dt
 derToObs' :: [GuardingContext1] -> DerTree1 -> OTree1
 derToObs' gcs (DT rt trs) = case gcRewTree rt of
 	False	-> UNRT rt
-	True	-> ODT rt $ map (transToObs rt gcs) trs
+	True	-> ODT rt $ map (transToObs gcs) trs
 
 
-transToObs :: RewTree1 -> [GuardingContext1] -> Trans1 -> OTrans1
-transToObs rt gcs (Trans p v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+transToObs :: [GuardingContext1] -> Trans1 -> OTrans1
+transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> GTrans v gcs gc
-		False	-> OTrans p v cx $ derToObs'(gc:gcs) dt
+		False	-> OTrans p rt v cx $ derToObs'(gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
 
@@ -181,16 +183,16 @@ derToUnc' :: Integer -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
 derToUnc' 0 gcs (DT rt trs) = Just $ DT rt []
 derToUnc' n gcs (DT rt trs) = case gcRewTree rt of
 		False	-> Nothing -- we found unguarded tree and thus we can finish
-		True	-> (DT rt) <$> (altseq $ map (transToUnc (n-1) rt gcs) trs)
+		True	-> (DT rt) <$> (altseq $ map (transToUnc (n-1) gcs) trs)
 	where
 		altseq xs = let r = altseq' xs in if null r then Nothing else Just r
 		altseq' ((Just x):xs) = [x] -- :(altseq' xs)
 		altseq' (Nothing:xs) = altseq' xs
 		altseq' [] = []
 
-transToUnc n rt gcs (Trans p v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+transToUnc n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> Nothing -- guarded trs
-		False	-> (Trans p v cx) <$> derToUnc' n (gc:gcs) dt
+		False	-> (Trans p rt v cx) <$> derToUnc' n (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
 
@@ -204,7 +206,7 @@ depthOT (ODT _ trs)	= 1 + (maximum $ map depthTrs trs)
 depthOT (UNRT _)	= 0
 
 depthTrs :: OTrans1 -> Int
-depthTrs (OTrans _ _ _ ot)	= depthOT ot
+depthTrs (OTrans _ _ _ _ ot)	= depthOT ot
 depthTrs (GTrans _ _ _) 	= 0
 
 
@@ -219,8 +221,9 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 		, t'' <- maybeToList $ guardedTerm t1 t2
 		, pkt' == pkt'' && isJust (t' `match` t'')
 		--, pkt' == pkt'' && (
+		--,
 		--	traceShow (pkt', pkt'', t', t'', isJust (t' `match` t'')) $
-		--	isJust (t' `match` t''))
+		--	True)
 		]
 	where
 		isJust (Just _) = True

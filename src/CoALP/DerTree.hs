@@ -14,7 +14,10 @@ import CoALP.FreshVar (Freshable, apartR, apartL)
 import CoALP.Unify (unify, applySubst, composeSubst, match)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),mkVar, Trans(..),
-	GuardingContext, mapClause, mapTerm, mapSubst
+	GuardingContext, mapClause, mapTerm, mapSubst,
+	Program1,RewTree1,Subst1,Term1,
+	mapProg,mapRT
+
 	)
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
@@ -23,59 +26,46 @@ import Debug.Trace
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
+--
+-- TODO moce makeVrs to derT
+--
 --trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
 --	=> Program a b c -> RewTree a b c d -> Vr d ->
 --	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
+trans :: Program1 -> RewTree1 -> Vr Integer -> (RewTree1, Maybe (Int, Subst1, Term1))
 trans _ RTEmpty _ = (RTEmpty, Nothing)
-trans p' rt@(RT cl' osi' ands') vr = case term `unify` h of
-		Just si	-> (mkRew si, Just (pi, si', term)) 
+trans p rt@(RT cl si' ands) vr = case term `unify` h of
+		Just si	-> (mkRew si, Just (pi, si `composeSubst` si', term))  -- TODO comopse necessary?
 		Nothing -> (RTEmpty, Nothing)
 	where
 		mkRew th = rew p (th `lap` cl) (th `composeSubst` si')
-		(_, term', pi):_ = filter ((== vr).fst') $ getVrs rt
+		(_, term, pi):_ = filter ((== vr).fst') $ getVrs rt
 		fst' (a,_,_) = a
 		lap th (Clause h b) = Clause (th `applySubst` h) (map (applySubst th) b)
-
-		p = p' --  map (mapClause apartL) p'
-		cl = cl' -- mapClause apartR cl'
-		si' = osi' -- mapSubst apartR os
-		ands = ands'
-		term = term'
 		Clause h _ = p !! pi
 
 
 --der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 --	Program a b c -> Clause a b c -> DerTree a b c d
-der p c = (derT p $ rew p c [])
+der p c = (derT p p' $ rew p' c' [])
+	where
+		p' = mapProg apartL p
+		c' = mapClause apartR c
 
 --derT :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
 --	Program a b c -> RewTree a b c d -> DerTree a b c d
-derT p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt)
+derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
 	where
-		toTrans v = let (rt', cp) = trans p rt v in Trans p v cp  $ derT p rt' -- $ derT p rt'
+		
+		toTrans v = let (rt'', cp) = trans p' rt' v 
+			in Trans p0 rt' v cp  $ derT p0 p' rt'' 
 		fst' (a, _, _) = a
+		p' = mapProg apartL p
+		rt' = mapRT apartR rt
 
-{-
-clauseProj p gc@Nothing = trace "GC: no guarding context" Nothing
-clauseProj p gc@(Just (ix, s, t)) = trace ("GC: \n" ++
-		"\thead(P(k)) = " ++ show headC ++ "\n" ++
-		"\tt = " ++ show t ++ "\n" ++
-		"\tsigma = " ++ show s ++ "\n" ++
-		"\tsigma(t) = " ++ show st ++ "\n" ++
-		"\tt'' -- t is variable reduct of sigma(t): " ++ show isVR ++ "\n" ++
-		"\tt's -- nonvar prop subterms: " ++ show subs ++ "\n" ++
-		"\tmatchers: " ++ show (fmap (\u -> map ((match u) . fst)  subs) isVR) ++ "\n" ++
-		"\tRES: " ++ show (res p gc)
-	) gc
-	where
-		Clause headC _ = p !! ix
-		isVR = t `isVarReductOf` st
-		st = s `applySubst` t
-		subs = nvPropSub headC
--}
-clauseProj :: (Eq a, Ord b) => 
-	Program a b c -> Maybe (Int, Subst a b c, Term a b c) 
-	-> GuardingContext a b c
+--clauseProj :: (Eq a, Ord b) => 
+--	Program a b c -> Maybe (Int, Subst a b c, Term a b c) 
+--	-> GuardingContext a b c
 clauseProj _ Nothing 		= []
 clauseProj p (Just (pk, si, t))
 	| Just t'' <- t `isVarReductOf` (si `applySubst` t),
@@ -84,4 +74,10 @@ clauseProj p (Just (pk, si, t))
 			_ <- maybeToList $ match t' t'' 
 			return (pk, t', v) 
 	| otherwise	= []
+
+	where
+		f x = if pk == 2 then (
+			trace ("ClauseProj of \n\t" ++ show t ++ "\n\t" ++ show si ++
+			"\n\ttrying " ++ show (si `applySubst` t))  x
+			) else x
 

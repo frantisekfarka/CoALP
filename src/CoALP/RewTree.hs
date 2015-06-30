@@ -30,13 +30,6 @@ rew p c@(Clause h b) si = flip evalFresh initFresh $ do
 		bsi' = map (si' `applySubst`) b
 		csi' = Clause h' bsi'
 
-		{-p = map (mapClause f) p0
-		b = fmap (mapTerm (f)) b0
-		h = mapTerm apartR h0
-		si = mapSubst f si0
-		f = id
-		-}
-
 -- | AndNode aka Term node
 mkAndNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) => 
 	Program a b c -> Subst a b c -> Term a b c -> 

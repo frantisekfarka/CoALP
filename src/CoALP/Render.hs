@@ -19,6 +19,7 @@ import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTr
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
 
 import CoALP.Guards (gcRewTree,derToObs,depthOT,guardingContext,derToUnc)
+import CoALP.DerTree (clauseProj)
 
 import Debug.Trace
 
@@ -38,9 +39,9 @@ displayRewTree depth rt = do
 displayDerTree :: Integer -> Integer -> DerTree1 -> IO ()
 displayDerTree depD depR dt = do
 	--putStrLn $ "Tree depth: " ++ show (depthOT ot)
-	--writeFile "/tmp/test.dot" (renderObsT depD depR ot)
+	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
 	--writeFile "/tmp/test.dot" (renderDerT depD depR dt)
-	writeFile "/tmp/test.dot" (renderDerT depD depR ut)
+	--writeFile "/tmp/test.dot" (renderDerT depD depR ut)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	where
@@ -193,13 +194,14 @@ renderDer depD depR n (DT rt trans) = --case gcRewTree rt of
 		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] trans) 
 
 renderTrans :: Integer -> Integer -> Integer -> Integer -> RewTree1 -> Trans1 -> String
-renderTrans sn depD depR n rt (Trans p vr gc dt) =
+renderTrans sn depD depR n rt (Trans p _ vr gc dt) =  
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
 	show n ++ "-> root" ++ show (100*n) ++ ";\n"
 	where
-		lbl = "gc: {" ++ (f $ guardingContext p rt gc) ++ "}"
+		--lbl = "gc: {" ++ (f $ guardingContext p rt gc) ++ "}"
+		lbl = "gc: {" ++ (f $ clauseProj p gc) ++ "}"
 		f a = concatMap g a
 		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
@@ -213,10 +215,10 @@ renderObs depD depR n (UNRT rt ) =
 	renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
 renderObs depD depR n (ODT rt trans) = 
 	renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
-	concat (zipWith (\x -> renderOTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] trans) 
+	concat (zipWith (\x -> renderOTrans (10*n) (depD - 1) depR x) [10*n + i | i <- [1..]] trans) 
 
-renderOTrans :: Integer -> Integer -> Integer -> Integer -> RewTree1 -> OTrans1 -> String
-renderOTrans sn depD depR n _ (GTrans vr gcs gc) = 
+renderOTrans :: Integer -> Integer -> Integer -> Integer -> OTrans1 -> String
+renderOTrans sn depD depR n (GTrans vr gcs gc) = 
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n"
 	where
@@ -224,7 +226,7 @@ renderOTrans sn depD depR n _ (GTrans vr gcs gc) =
 		f a = concatMap g a
 		g (ix, t, v) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
-renderOTrans sn depD depR n rt (OTrans p vr gc dt) =
+renderOTrans sn depD depR n (OTrans p rt vr gc dt) =
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderObs depD depR (10*n) dt ++
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
