@@ -67,7 +67,8 @@ dCmd = toCmdDescr [
 	), (
 		":cgc3"
 		, spaces *> (GC3One <$> many anyChar)
-		, "\n\t:gc3\n\t\tGuardedness check 3 for a clause\n"
+		, "\n\t:cgc3\n\t\tGuardedness check 3 for a clause of the form\n" ++
+		"\t\t'? :- BODY . '\n"
 	), (
 		":gc3"
 		, spaces *> (pure GC3)
@@ -101,6 +102,24 @@ dCmd = toCmdDescr [
 		<*> (read <$> digits1 <* spaces1) 
 		<*> many anyChar)
 		, "\n\t:drawDer <depthDer> <depthRew> <query>\n\t\tDraw derivation tree, depth is an integer, and query has the form\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
+		":drawInf"
+		, spaces *> (DrawInf
+		<$> (read <$> digits1 <* spaces1) 
+		<*> (read <$> digits1 <* spaces1) 
+		<*> many anyChar)
+		, "\n\t:drawInf <depthDer> <depthRew> <query>\n\t\tDraw the branch of the derivation tree " ++
+		"that is not closed in the\n\t\tdepth depthDer. Depth is an integer, and query has the form\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
+		":drawUng"
+		, spaces *> (DrawUng
+		<$> (read <$> digits1 <* spaces1) 
+		<*> (read <$> digits1 <* spaces1) 
+		<*> many anyChar)
+		, "\n\t:drawUng <depthDer> <depthRew> <query>\n\t\tDraw a branch of the derivation tree " ++
+		"that has an unguarded\n\t\tRewTree in depthD. Depth is an integer, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
 		":help"
