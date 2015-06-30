@@ -10,7 +10,7 @@ import Data.List (nub)
 import Data.Maybe (maybeToList)
 
 import CoALP.RewTree (rew, getVrs,loops)
-import CoALP.FreshVar (Freshable, apartR, apartL)
+import CoALP.FreshVar (Freshable, apartR, apartL,unpart)
 import CoALP.Unify (unify, applySubst, composeSubst, match)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),mkVar, Trans(..),
@@ -35,14 +35,17 @@ import Debug.Trace
 trans :: Program1 -> RewTree1 -> Vr Integer -> (RewTree1, Maybe (Int, Subst1, Term1))
 trans _ RTEmpty _ = (RTEmpty, Nothing)
 trans p rt@(RT cl si' ands) vr = case term `unify` h of
-		Just si	-> (mkRew si, Just (pi, si `composeSubst` si', term))  -- TODO comopse necessary?
+		Just si	-> (mkRew (si `composeSubst` upds si)
+			, Just (pi, si' `composeSubst` (si `composeSubst` upds si)
+			, term))  -- TODO comopse necessarily?
 		Nothing -> (RTEmpty, Nothing)
 	where
-		mkRew th = rew p (th `lap` cl) (th `composeSubst` si')
+		mkRew th = rew p (th `claps` cl) (th `composeSubst` si')
 		(_, term, pi):_ = filter ((== vr).fst') $ getVrs rt
 		fst' (a,_,_) = a
-		lap th (Clause h b) = Clause (th `applySubst` h) (map (applySubst th) b)
+		claps th (Clause h b) = Clause (th `applySubst` h) (map (applySubst th) b)
 		Clause h _ = p !! pi
+		upds th = mapSubst (apartL . unpart) th
 
 
 --der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>

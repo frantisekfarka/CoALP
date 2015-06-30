@@ -11,7 +11,7 @@ import Data.Functor ((<$>))
 import Data.Traversable (sequenceA,traverse)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Unify (match, applySubst, composeSubst, stripVars)
+import CoALP.Unify (match, applySubst, stripVars)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),
 	mapTerm,mapClause,mapSubst

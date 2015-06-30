@@ -1,7 +1,17 @@
 automaton(cons(X,T), S) :- trans(S, X, NS), automaton(T, NS).
+%a(cs(X,T), S) :- t(S, X, NS), a(T, NS).
+%t(s0, z, s0).
+%t(s1, z, s0).
 
 trans(s0, a, s1). 
 trans(s1, b, s2).
 trans(s2, c, s3). 
 trans(s3, d, s0).
 trans(s2, e, s0).
+
+%
+% s0 -> s1 -> s2 -> s3
+% ^^__________/     |
+% \________________ /
+%
+%

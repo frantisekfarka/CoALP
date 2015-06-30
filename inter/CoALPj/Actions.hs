@@ -10,6 +10,8 @@ module CoALPj.Actions (
 	, drawRew
 	, drawTrans
 	, drawDer
+	, drawInf
+	, drawUng
 	) where
 
 import Control.Monad (when)
@@ -32,8 +34,8 @@ import CoALPj.InternalState (
 	)
 
 -- TODO refactor
-import CoALP.Render (displayProgram,displayRewTree,displayDerTree)
-import CoALP.Guards (gc1,gc2,gc3,gc3one)
+import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
+import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs)
 import CoALP.Program (Program1)
 import CoALP.Parser.Parser (parse,parseClause)
 import CoALP.Parser.PrettyPrint (ppProgram)
@@ -145,6 +147,29 @@ drawDer depD depR q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
+drawInf :: Integer -> Integer -> String -> CoALP ()
+drawInf depD depR q = whenProgram (
+	\prog -> case parseClause q of
+		Left err	-> do
+			iputStrLn err
+			return ()
+		Right r		-> do
+			iputStrLn $ "Query " ++ q ++ " loaded."
+			liftIO . displayDerTree depD depR $ derToUnc depD $ der prog r 
+			--iputStrLn . show . (head 20) $ loops' rt
+	)
+
+drawUng :: Integer -> Integer -> String -> CoALP ()
+drawUng depD depR q = whenProgram (
+	\prog -> case parseClause q of
+		Left err	-> do
+			iputStrLn err
+			return ()
+		Right r		-> do
+			iputStrLn $ "Query " ++ q ++ " loaded."
+			liftIO . displayObsTree depD depR $ derToObs $ der prog r 
+			--iputStrLn . show . (head 20) $ loops' rt
+	)
 
 verbPutStrLn :: String -> CoALP ()
 verbPutStrLn str = do

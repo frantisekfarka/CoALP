@@ -4,6 +4,7 @@ module CoALP.Render (
 	, displayProgram
 	, displayRewTree
 	, displayDerTree
+	, displayObsTree
 ) where
 
 --import Data.Foldable
@@ -18,7 +19,7 @@ import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTr
 	)
 import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
 
-import CoALP.Guards (gcRewTree,derToObs,depthOT,guardingContext,derToUnc)
+import CoALP.Guards (gcRewTree,depthOT,guardingContext)
 import CoALP.DerTree (clauseProj)
 
 import Debug.Trace
@@ -38,15 +39,15 @@ displayRewTree depth rt = do
 	
 displayDerTree :: Integer -> Integer -> DerTree1 -> IO ()
 displayDerTree depD depR dt = do
-	--putStrLn $ "Tree depth: " ++ show (depthOT ot)
-	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
-	--writeFile "/tmp/test.dot" (renderDerT depD depR dt)
-	--writeFile "/tmp/test.dot" (renderDerT depD depR ut)
+	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
-	where
-		ot = derToObs dt
-		ut = derToUnc depD dt
+	
+displayObsTree :: Integer -> Integer -> OTree1 -> IO ()
+displayObsTree depD depR ot = do
+	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
+	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+	return ()
 	
 saveProgram :: Program1 -> FilePath -> IO ()
 saveProgram p f = writeFile f (renderProgram p)
@@ -200,8 +201,9 @@ renderTrans sn depD depR n rt (Trans p _ vr gc dt) =
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
 	show n ++ "-> root" ++ show (100*n) ++ ";\n"
 	where
-		--lbl = "gc: {" ++ (f $ guardingContext p rt gc) ++ "}"
-		lbl = "gc: {" ++ (f $ clauseProj p gc) ++ "}"
+		lbl = "gc: {" ++ (f $ guardingContext p rt gc) ++ "}" 
+			++ ", cp: {" ++ (f $ clauseProj p gc) ++ "}"
+		--lbl = "gc: {" ++ (f $ clauseProj p gc) ++ "}"
 		f a = concatMap g a
 		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 

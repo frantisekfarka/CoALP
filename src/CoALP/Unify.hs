@@ -47,7 +47,7 @@ applySubst s (Var v) = case lookup v s of
 composeSubst :: (Eq a, Eq b) => Subst a b c -> Subst a b c -> Subst a b c
 composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2
 	where
-		f (v,t) = (v, applySubst s2 t)
+		f = id *** (applySubst s2)
 		neq (v,Fun _ _) = True
 		neq (v,Var v') = v /= v'
 
