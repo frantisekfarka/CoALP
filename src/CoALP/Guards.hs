@@ -217,7 +217,7 @@ depthTrs (GTrans _ _ _) 	= 0
 --	-> GuardingContext a b c
 guardingContext p rt cx	= nub [(pkt', t', v) |
 		(pkt', t', v) <- clauseProj p cx
-		, (t1, t2, pkt'') <- (loops rt)
+		, (t1, t2, pkt'') <- traceShowId (loops rt)
 		, t'' <- maybeToList $ guardedTerm t1 t2
 		, pkt' == pkt'' && isJust (t' `match` t'')
 		--, pkt' == pkt'' && (
