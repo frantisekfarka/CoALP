@@ -109,7 +109,7 @@ unifyImpl ((t1, t2):ts )
 	-- eliminate 
 	| Var v <- t1,
 	  -- Fun _ _ <- t2, 
-	  (not $ t1 `subtermof` t2),
+	  (not $ t1 `subtermOf` t2),
 	  t1 `inVars`  ts		= unifyImpl $ let
 			s = [(v,t2)] 
 			aps = applySubst s
@@ -117,17 +117,17 @@ unifyImpl ((t1, t2):ts )
 	-- occurscheck 
 	| Var _ <- t1,
 	  -- Fun _ _ <- t2,
-	  (t1 `subtermof` t2)		= Nothing
+	  (t1 `subtermOf` t2)		= Nothing
 	-- equation is already solved
 	| Var v <- t1,
 	  -- Fun _ _ <- t2,
-	  (not $ t1 `subtermof` t2),
+	  (not $ t1 `subtermOf` t2),
 	  (not $ t1 `inVars`  ts)	= Just ((v,t2):) <*> unifyImpl ts
 	| otherwise			= error $ "Wtf? Impssible " 
 		-- impossible branch
 
 	where
-		inVars t ts = any (\x -> t1 `subtermof` (fst x) || t1 `subtermof` (snd x)) ts
+		inVars t ts = any (\x -> t1 `subtermOf` (fst x) || t1 `subtermOf` (snd x)) ts
 
 {-
 -- | Separate two terms by renaming apart

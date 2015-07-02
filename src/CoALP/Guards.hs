@@ -11,6 +11,7 @@ module CoALP.Guards (
 	, derToUnc
 	, depthOT
 	, guardingContext
+	, guardedTerm, recGuardedTerm
 ) where
 
 --import Control.Arrow ((***))
@@ -30,7 +31,7 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	mapClause,
 	RewTree1,Term1,Program1,Clause1,
 	Loop,Loop1,
-	subtermof
+	subtermOf,propSubtermOf
 	)
 
 import CoALP.FreshVar (Freshable,apartL,apartR)
@@ -110,13 +111,13 @@ guardedTerm _ _				= Nothing
 --recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
 recGuardedTerm :: Term1 -> Term1 -> Maybe Term1
 --recGuardedTerm f@(Fun _ _) v@(Var _)	= trace ("Case 1:" ++ show (f,v, v `subtermof` f)) $ v `subtermof` f
-recGuardedTerm f@(Fun _ _) v@(Var _)	= case v `subtermof` f of
+recGuardedTerm f@(Fun _ _) v@(Var _)	= case v `subtermOf` f of
 	--True	-> Just f
 	True	-> Just f
 	False	-> Nothing
 
 --recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= trace ("Case 2") $ c `subtermof` f
-recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= case c `subtermof` f of
+recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= case c `propSubtermOf` f of
 	True	-> Just f
 	False	-> Nothing
 
@@ -152,12 +153,13 @@ gc2 p c = gcRewTree (rew p' c' [])
 --gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
 gcRewTree :: RewTree1 -> Bool
 gcRewTree RTEmpty	= True
-gcRewTree rt@(RT c _ _) = all (uncurry guardedTermB . g) $ (loops (rt)) 
+gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTermB . g) $ (loops rt)
 	where
 		g (t1,t2,_) = (t1,t2)
-		--f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" ++
-		--	(show $ take 1 $ dropWhile 
-		--	(uncurry recGuardedTerm . g) x)) x
+		f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" 
+			-- ++ (show $ take 1 $ dropWhile 
+			-- (uncurry recGuardedTermB . g) x)
+			) x
 
 
 

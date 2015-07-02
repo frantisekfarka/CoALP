@@ -42,7 +42,8 @@ module CoALP.Program (
 	, mapProg
 	, Loop
 	, Loop1
-	, subtermof
+	, subtermOf
+	, propSubtermOf
 ) where
 
 import Data.List (intersperse)
@@ -257,7 +258,13 @@ mapProg :: (Eq b', Eq b) =>
 mapProg f p = map (mapClause f) p
 
 -- is subterm of
-subtermof :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
-subtermof t1 t2@(Var _) = t1 == t2
-subtermof t1 t2@(Fun _ t2ts) = t1 == t2 || any (subtermof t1) t2ts
+subtermOf :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
+subtermOf t1 t2@(Var _) = t1 == t2
+subtermOf t1 t2@(Fun _ t2ts) = t1 == t2 || any (subtermOf t1) t2ts
+
+
+propSubtermOf :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
+propSubtermOf t1 t2 = t1 /= t2 && t1 `subtermOf` t2
+
+
 
