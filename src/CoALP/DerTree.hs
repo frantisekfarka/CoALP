@@ -22,7 +22,7 @@ import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree
@@ -45,7 +45,7 @@ trans p rt@(RT cl si' ands) vr = case term `unify` h of
 		fst' (a,_,_) = a
 		claps th (Clause h b) = Clause (th `applySubst` h) (map (applySubst th) b)
 		Clause h _ = p !! pi
-		upds th = mapSubst (apartL . unpart) th
+		upds th = mapSubst (unpart) th
 
 
 --der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
@@ -63,7 +63,7 @@ derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
 		toTrans v = let (rt'', cp) = trans p' rt' v 
 			in Trans p0 rt' v cp  $ derT p0 p' rt'' 
 		fst' (a, _, _) = a
-		p' = mapProg apartL p
+		p' = p -- mapProg apartL p
 		rt' = mapRT apartR rt
 
 --clauseProj :: (Eq a, Ord b) => 
@@ -71,16 +71,18 @@ derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
 --	-> GuardingContext a b c
 clauseProj _ Nothing 		= []
 clauseProj p (Just (pk, si, t))
-	| Just t'' <- t `isVarReductOf` (si `applySubst` t),
-	  Clause h _ <- p !! pk = do
+	| Just t'' <- -- traceShow (t, si `applySubst` t) $  traceShowId $ 
+		t `isVarReductOf` (si `applySubst` t),
+	  Clause h _ <- p !! pk = [ (pk, t', v) |
 			(t', v) <- nvPropSub h 
-			_ <- maybeToList $ match t' t'' 
-			return (pk, t', v) 
+			, _ <- maybeToList $ match t' t'' 
+			]
 	| otherwise	= []
 
 	where
-		f x = if pk == 2 then (
+		{- f x = if pk == 2 then (
 			trace ("ClauseProj of \n\t" ++ show t ++ "\n\t" ++ show si ++
 			"\n\ttrying " ++ show (si `applySubst` t))  x
 			) else x
+		-}
 

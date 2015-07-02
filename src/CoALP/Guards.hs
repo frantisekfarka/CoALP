@@ -98,7 +98,9 @@ guardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive 
 			])
 		else Nothing
 guardedTerm (Fun _ []) (Var _)		= Nothing
-guardedTerm t@(Fun _ _) (Var _)		= Just t	-- ^ this is the constructor guarding productivity
+guardedTerm t@(Fun _ s) (Var _)		= if length s > 0 
+		then Just t	-- ^ this is the constructor guarding productivity
+		else Nothing
 guardedTerm _ _				= Nothing
 
 
@@ -106,14 +108,34 @@ guardedTerm _ _				= Nothing
 --
 --   the direction is v -> v (w is a prefix of v)
 --recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
-recGuardedTerm :: Term1 -> Term1 -> Bool
+recGuardedTerm :: Term1 -> Term1 -> Maybe Term1
 --recGuardedTerm f@(Fun _ _) v@(Var _)	= trace ("Case 1:" ++ show (f,v, v `subtermof` f)) $ v `subtermof` f
-recGuardedTerm f@(Fun _ _) v@(Var _)	= v `subtermof` f
+recGuardedTerm f@(Fun _ _) v@(Var _)	= case v `subtermof` f of
+	--True	-> Just f
+	True	-> Just f
+	False	-> Nothing
+
 --recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= trace ("Case 2") $ c `subtermof` f
-recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= c `subtermof` f
-recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= p1 == p2 && -- should hold from recursive hypothesis
-		(or $ zipWith recGuardedTerm s1 s2)
-recGuardedTerm _ _			= False
+recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= case c `subtermof` f of
+	True	-> Just f
+	False	-> Nothing
+
+recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive hypothesis
+		then (f $ fmap (uncurry recGuardedTerm) [
+			(t1,t2) | t1 <- s1, t2 <- s2
+			])
+		else Nothing
+	where
+		-- asum?
+		f [] = Nothing
+		f ((Just t):_) = Just t
+		f (Nothing:xs) = f xs
+recGuardedTerm _ _			= Nothing
+
+-- TODO
+recGuardedTermB t1 t2 = case recGuardedTerm t1 t2 of
+	Just _	-> True
+	Nothing	-> False
 
 --gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
 gc2 :: Program1 -> Clause1 -> Bool
@@ -125,7 +147,7 @@ gc2 p c = gcRewTree (rew p' c' [])
 --gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
 gcRewTree :: RewTree1 -> Bool
 gcRewTree RTEmpty	= True
-gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTerm . g) $ (loops (rt)) 
+gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTermB . g) $ (loops (rt)) 
 	where
 		g (t1,t2,_) = (t1,t2)
 		--f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" ++
@@ -216,10 +238,13 @@ depthTrs (GTrans _ _ _) 	= 0
 --	Program a b c -> RewTree a b c d -> Maybe (Int, Subst a b c, Term a b c) 
 --	-> GuardingContext a b c
 guardingContext p rt cx	= nub [(pkt', t', v) |
-		(pkt', t', v) <- clauseProj p cx
+		(pkt', t', v) <- -- trace "\n\nnextcmp" $ traceShowId $
+			clauseProj p cx
 		, (t1, t2, pkt'') <- (loops rt)
-		, t'' <- maybeToList $ guardedTerm t1 t2
-		, pkt' == pkt'' && isJust (t' `match` t'')
+		, t'' <- --trace ("loop:\n\t" ++ show t1  ++ "\n\t" ++ show t2) $
+			maybeToList $ recGuardedTerm t1 t2
+		, -- trace "It's guarded!" $ traceShow t'' $ 
+			pkt' == pkt'' && isJust (t' `match` t'')
 		--, pkt' == pkt'' && (
 		--,
 		--	traceShow (pkt', pkt'', t', t'', isJust (t' `match` t'')) $
@@ -228,6 +253,8 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 	where
 		isJust (Just _) = True
 		isJust _	= False
+		thr (_,_,i) = i
+		-- f i ls = trace (show $ filter ((i ==) . thr) ls) ls
 
 
 -- TODO
@@ -249,7 +276,7 @@ loops (RT _ _ ands) = concatMap loops0 ands
 	
 
 
-aLoops :: [(Term a b c, (Int, Int))]
+aLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
 	-> Int -- ^ parent clause ix
 	-> Int -- ^ term ix
 	-> AndNode (Clause a b c) (Term a b c) d
@@ -263,7 +290,7 @@ aLoops tws pci ti (AndNode t ors) = concatMap f tws ++
 		eqs (Fun t1 _)	(Fun t2 _)	= t1 == t2
 		eqs _		_		= False
 
-oLoops :: [(Term a b c, (Int, Int))]
+oLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
 	-> Int -- ^ clause ix
 	-> OrNode (Clause a b c) (Term a b c) d
 	-> [Loop a b c]
