@@ -247,7 +247,8 @@ depthTrs (GTrans _ _ _) 	= 0
 guardingContext p rt cx	= nub [(pkt', t', v) |
 		(pkt', t', v) <- -- trace "\n\nnextcmp" $ traceShowId $
 			clauseProj p cx
-		, (t1, t2, pkt'') <- (loops rt)
+		, (t1, t2, pkt'') <- -- f t' $
+			(loops rt)
 		, t'' <- --trace ("loop:\n\t" ++ show t1  ++ "\n\t" ++ show t2) $
 			maybeToList $ recGuardedTerm t1 t2
 		, -- trace "It's guarded!" $ traceShow t'' $ 
@@ -262,6 +263,7 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 		isJust _	= False
 		thr (_,_,i) = i
 		-- f i ls = trace (show $ filter ((i ==) . thr) ls) ls
+		f t' l = trace ("Loops of " ++ show t' ++ "\n\t" ++ show l) l
 
 
 -- TODO

@@ -46,7 +46,7 @@ trans p rt@(RT cl si' ands) vr = case term `unify` h of
 		fst' (a,_,_) = a
 		claps th (Clause h b) = Clause (th `applySubst` h) (map (applySubst th) b)
 		Clause h _ = p !! pi
-		upds th = mapSubst (apartL . unpart) th
+		upds th = [] -- mapSubst (apartL . unpart) th
 
 
 --der :: (Eq a, Eq b, Eq d, Ord b, Freshable b, Freshable d) =>
@@ -64,8 +64,8 @@ derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
 		toTrans v = let (rt'', cp) = trans p' rt' v 
 			in Trans p0 rt' v cp  $ derT p0 p' rt'' 
 		fst' (a, _, _) = a
-		p' = mapProg apartL p
-		rt' = mapRT apartR rt
+		p' = p -- mapProg apartL p
+		rt' = rt -- mapRT apartR rt
 
 --clauseProj :: (Eq a, Ord b) => 
 --	Program a b c -> Maybe (Int, Subst a b c, Term a b c) 
