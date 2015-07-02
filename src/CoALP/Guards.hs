@@ -137,6 +137,11 @@ recGuardedTermB t1 t2 = case recGuardedTerm t1 t2 of
 	Just _	-> True
 	Nothing	-> False
 
+-- TODO
+guardedTermB t1 t2 = case guardedTerm t1 t2 of
+	Just _	-> True
+	Nothing	-> False
+
 --gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
 gc2 :: Program1 -> Clause1 -> Bool
 gc2 p c = gcRewTree (rew p' c' [])
@@ -147,7 +152,7 @@ gc2 p c = gcRewTree (rew p' c' [])
 --gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
 gcRewTree :: RewTree1 -> Bool
 gcRewTree RTEmpty	= True
-gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTermB . g) $ (loops (rt)) 
+gcRewTree rt@(RT c _ _) = all (uncurry guardedTermB . g) $ (loops (rt)) 
 	where
 		g (t1,t2,_) = (t1,t2)
 		--f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" ++
