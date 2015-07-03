@@ -16,7 +16,7 @@ import Data.Functor ((<$>))
 import Data.List (sortBy, nub)
 
 import CoALP.Program
---import CoALP.FreshVar
+import CoALP.FreshVar (Freshable)
 
 --import Debug.Trace
 
@@ -48,7 +48,7 @@ composeSubst :: (Eq a, Eq b) => Subst a b c -> Subst a b c -> Subst a b c
 composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2
 	where
 		f = id *** (applySubst s2)
-		neq (v,Fun _ _) = True
+		neq (_,Fun _ _) = True
 		neq (v,Var v') = v /= v'
 
 --renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
@@ -78,8 +78,7 @@ match _ 		_		= Nothing
 -- term is unifiable with another, and then apply the substitution
 --
 
---unifyWith :: (Ord b, Eq a, Eq b, Freshable b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
---unify t1 t2 = fmap snd $ fmap separateSubst $ collapseS $ unifyImpl [apartTerms t1 t2]
+unify :: (Ord b, Eq a, Eq b, Freshable b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
 unify t1 t2 = unifyImpl [(t1,t2)]
 
 -- | Wiki, yay!
@@ -104,7 +103,7 @@ unifyImpl ((t1, t2):ts )
 	  (id1 /= id2 ||
 	  length ts1 /= length ts2)	= Nothing
 	-- swap
-	| Fun id1 ts1 <- t1,
+	| Fun _ _ <- t1,
 	  Var _ <- t2			= unifyImpl $ (t2,t1):ts
 	-- eliminate 
 	| Var v <- t1,
@@ -127,7 +126,7 @@ unifyImpl ((t1, t2):ts )
 		-- impossible branch
 
 	where
-		inVars t ts = any (\x -> t1 `subtermOf` (fst x) || t1 `subtermOf` (snd x)) ts
+		inVars _ ts' = any (\x -> t1 `subtermOf` (fst x) || t1 `subtermOf` (snd x)) ts'
 
 {-
 -- | Separate two terms by renaming apart

@@ -126,7 +126,7 @@ renderRewT' pref depth rt@(RT c s os) n = pref ++ " {\n" ++
 		"\tstyle=dashed;color=grey;\n" ++
 		"\tnode [fontname=\"Monospace\"];\n" ++
 		"\t" ++ nid ++ "[shape=box,color=blue,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++
-		concat (zipWith (renderRewAnd n nid (1)) [10*n + i  | i <- [1..]] os) ++
+		concat (zipWith (renderRewAnd n nid (depth - 1)) [10*n + i  | i <- [1..]] os) ++
 		"}\n"
 	where
 		lbl = "unguarded\\n" ++ ppClause c ++ " | " ++ ppSubst s 
@@ -188,10 +188,9 @@ renderDer :: Integer -> Integer -> Integer -> DerTree1 -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
-renderDer depD depR n (DT rt trans) = --case gcRewTree rt of
-	--False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
-	--True	-> 
-	renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+renderDer depD depR n (DT rt trans) = case gcRewTree rt of
+	False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
+	True	-> renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
 		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] trans) 
 
 renderTrans :: Integer -> Integer -> Integer -> Integer -> RewTree1 -> Trans1 -> String

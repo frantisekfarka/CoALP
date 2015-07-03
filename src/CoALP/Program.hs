@@ -47,7 +47,7 @@ module CoALP.Program (
 ) where
 
 import Data.List (intersperse)
-import Data.Set (Set)
+-- import Data.Set (Set)
 import Numeric (showHex) -- ,showIntAtBase)
 
 -- | Type of term for any type of functional symbol and any type of variable.
@@ -70,7 +70,7 @@ instance (Show a, Show b, Show c) => Show (Term a b c) where
 
 -- | Type of clause
 data Clause a b c where
-	Clause :: Term a b c -> [Term a b c] -> Clause a b c
+	Clause :: (Term a b c) -> ([Term a b c]) -> Clause a b c
 
 instance (Show a, Show b, Show c) => Show (Clause a b c) where
 	show (Clause h bs) = show h ++ " :- " ++ 
@@ -199,7 +199,7 @@ instance (Show a, Show b, Show c, Show d, Integral d) => Show (RewTree a b c d) 
 		where
 			showAnd n (AndNode b ors) = pref n ++ show b ++ "\n" ++
 				concatMap (showOr (n+1)) ors 
-			showOr n (OrNodeEmpty c) = pref n ++ show c ++ "\n"
+			showOr n (OrNodeEmpty c') = pref n ++ show c' ++ "\n"
 			showOr n (OrNode a as) = pref n ++ show a ++ "\n" ++
 				(if (n < 5) then concatMap (showAnd (n+1)) as else "")
 			pref n = take n $ repeat ' '
@@ -231,10 +231,22 @@ mapVar :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
 mapVar f (Var v)	= Var $ f v
 mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 
-
+mapRT :: Eq b =>
+	(b -> b) -> RewTree a b c d -> RewTree a b c d
 mapRT f (RT c s ands)	= RT (mapClause f c) (mapSubst f s) $ map (mapAnd f) ands
-mapRT f rt@(RTEmpty)	= rt
+mapRT _ rt@(RTEmpty)	= rt
+
+mapAnd :: Eq b' =>
+	(b' -> b')
+	-> AndNode (Clause a1 b' c2) (Term a b' c) c1
+	-> AndNode (Clause a1 b' c2) (Term a b' c) c1
 mapAnd f (AndNode t ors) = AndNode (mapTerm f t) $ map (mapOr f) ors
+
+
+mapOr :: Eq b' =>
+	(b' -> b')
+	-> OrNode (Clause a1 b' c2) (Term a b' c) c1
+	-> OrNode (Clause a1 b' c2) (Term a b' c) c1
 mapOr  f (OrNode c ands) = OrNode (mapClause f c) $ map (mapAnd f) ands
 mapOr  _ empty = empty
 

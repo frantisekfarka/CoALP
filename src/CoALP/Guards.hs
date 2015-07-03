@@ -277,8 +277,9 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 --	3/ parents can be matched to the same program clause
 --
 --loops :: RewTree a b c d -> [Loop a b c] 
+loops :: RewTree1 -> [Loop1] 
 loops (RTEmpty)	= []
-loops (RT _ _ ands) = concatMap loops0 ands
+loops (RT _ _ ands) = concat $ concatMap loops0 ands
 	where
 		loops0 (AndNode t ors) = concat $ zipWith (oLoops []) [0..] ors
 
@@ -289,8 +290,8 @@ aLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
 	-> Int -- ^ parent clause ix
 	-> Int -- ^ term ix
 	-> AndNode (Clause a b c) (Term a b c) d
-	-> [Loop a b c]
-aLoops tws pci ti (AndNode t ors) = concatMap f tws ++
+	-> [[Loop a b c]]
+aLoops tws pci ti (AndNode t ors) = (concatMap f tws) : 
 		(concat $ zipWith (oLoops ((t, (pci, ti)):tws)) [0..] ors)
 	where
 		f (t', (pci', ti')) = if {-pci' == pci &&-} eqs t t'
@@ -302,7 +303,7 @@ aLoops tws pci ti (AndNode t ors) = concatMap f tws ++
 oLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
 	-> Int -- ^ clause ix
 	-> OrNode (Clause a b c) (Term a b c) d
-	-> [Loop a b c]
+	-> [[Loop a b c]]
 oLoops _	_	(OrNodeEmpty _) = []
 oLoops tws	ci	(OrNode _ ands) = concat $ zipWith (aLoops tws ci) [0..] ands 
 

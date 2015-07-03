@@ -14,13 +14,13 @@ import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
 import CoALP.Unify (match, applySubst, stripVars)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),
-	mapTerm,mapClause,mapSubst
+	--mapTerm,mapClause,mapSubst
 	)
 
 
---rew :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
---	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
-rew p c@(Clause h b) si = flip evalFresh initFresh $ do
+rew :: (Eq a, Ord b, Freshable b, Freshable d) =>
+	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
+rew p (Clause h b) si = flip evalFresh initFresh $ do
 		ands <- sequenceA $ fmap (mkAndNode p si) bsi'
 		return $ RT csi' si ands
 			--(Clause h' b') s' ands
@@ -42,7 +42,7 @@ mkAndNode p si' t = do
 mkOrNode :: (Eq a, Eq b, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Subst a b c -> Term a b c -> Clause a b c -> 
 	FreshVar d (OrNode (Clause a b c) (Term a b c) (Vr d))
-mkOrNode p si t c@(Clause h b)  = case (h `match` t) of
+mkOrNode p si t (Clause h b)  = case (h `match` t) of
 		Just th ->	do
 			let	thb = map (applySubst th) b
 			let	thh = applySubst th h
@@ -56,9 +56,9 @@ mkOrNode p si t c@(Clause h b)  = case (h `match` t) of
 
 
 -- | apply substitution to the term tree
-subst :: Subst a b c -> Term a b c -> Term a b c
-subst s (Var x)		= maybe (Var x) id (x `lookup` s)
-subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
+--subst :: Subst a b c -> Term a b c -> Term a b c
+--subst s (Var x)		= maybe (Var x) id (x `lookup` s)
+--subst s (Fun idnt ts)	= Fun idnt (subst s <$> ts)
 
 
 -- | Get Transiotion Variables in breath-first search manner
@@ -71,11 +71,12 @@ getVrs RTEmpty 		= []
 getVrs (RT _ _ ands) 	= concatMap processAnd ands
 	where
 		processAnd (AndNode t ors) 		= 
-			(concat $ zipWith (processOr t) ors [0..]) ++
-			concatMap continueOr ors
+			(concat $ zipWith (processOr t) ors [0..])
+			++ concatMap continueOr ors
 		processOr _ (OrNode _ _) 	_ 	= []
+		--processOr _ (OrNode _ ands') 	_ 	= concatMap processAnd ands'
 		processOr t (OrNodeEmpty d)	pi	= [(d, t, pi)]
-		continueOr (OrNode _ ands)		= concatMap processAnd ands
+		continueOr (OrNode _ ands')		= concatMap processAnd ands'
 		continueOr _ 				= []
 
 
