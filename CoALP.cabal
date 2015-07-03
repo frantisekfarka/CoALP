@@ -3,8 +3,9 @@ name:          CoALP
 --             | ,----- pre-release
 --             | | ,--- fixes and new functionality
 --             | | |
-version:       0.0.4
+version:       0.0.5
 license:       LGPL-3
+license-file:  LICENSE
 author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
                František Farka <ffarka@gmail.com>
                Jónathan Heras <joheras@gmail.com>,
@@ -12,6 +13,7 @@ author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
 maintainer:    František Farka <ffarka@gmail.com>
 category:      CoALP
 synopsis:      Coalgebraic logic programming library
+description:   Library and command line interface implmenting CoALP
 stability:     experimental
 build-type:    Custom
 cabal-version: >= 1.16
@@ -47,13 +49,12 @@ library
   other-modules:    CoALP.FreshVar
                     CoALP.Reductions
 
-  ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
   --if flag(eventlog)
   --  ghc-options:    -Wall -rtsopts -eventlog
   --else
   --  ghc-options:    -Wall -rtsopts -auto-all -caf-all
 
-  build-depends:    base                 >= 4.6,
+  build-depends:    base                 >= 4.6 && < 5,
                     containers           >= 0.5,
                     mtl                  >= 2.1,
                     directory,
