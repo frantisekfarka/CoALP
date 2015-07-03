@@ -14,15 +14,13 @@ import System.Process
 import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
 	AndNode(..),OrNode(..),Vr1,
 	DerTree1,DerTree(..),Trans(..),Trans1,
-	GuardingContext,
-	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,GuardingContext1
+	-- GuardingContext,
+	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,
 	)
-import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppQuery,ppSubst)
+import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppSubst)
 
-import CoALP.Guards (gcRewTree,depthOT,guardingContext)
+import CoALP.Guards (gcRewTree,guardingContext)
 import CoALP.DerTree (clauseProj)
-
-import Debug.Trace
 
 -- | TODO refactor! -- use tree language!
 displayProgram :: Program1 -> IO ()
@@ -31,19 +29,19 @@ displayProgram p = do
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 
-displayRewTree :: Integer -> RewTree1 -> IO ()
+displayRewTree :: Int -> RewTree1 -> IO ()
 displayRewTree depth rt = do
 	writeFile "/tmp/test.dot" (renderRewT "digraph G" depth rt 1)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	
-displayDerTree :: Integer -> Integer -> DerTree1 -> IO ()
+displayDerTree :: Int -> Int -> DerTree1 -> IO ()
 displayDerTree depD depR dt = do
 	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	
-displayObsTree :: Integer -> Integer -> OTree1 -> IO ()
+displayObsTree :: Int -> Int -> OTree1 -> IO ()
 displayObsTree depD depR ot = do
 	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
@@ -102,7 +100,7 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
 	
-renderRewT :: String -> Integer -> RewTree1 -> Integer -> String
+renderRewT :: String -> Int -> RewTree1 -> Integer -> String
 renderRewT pref _ RTEmpty n = 
 	pref ++ " {\n" ++ 
 	"\tstyle=dashed;color=grey;\n" ++
@@ -121,8 +119,13 @@ renderRewT pref depth (RT q s os) n =
 		nid = "root" ++ show n
 
 
-renderRewT' :: String -> Integer -> RewTree1 -> Integer -> String
-renderRewT' pref depth rt@(RT c s os) n = pref ++ " {\n" ++ 
+renderRewT' :: String -> Int -> RewTree1 -> Integer -> String
+renderRewT' pref _ (RTEmpty) n = pref ++ " {\n" ++ 
+	"\tstyle=dashed;color=grey;\n" ++
+	"\tnode [fontname=\"Monospace\"];\n" ++
+	"\troot" ++ show n ++ "[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
+	"}\n"
+renderRewT' pref depth (RT c s os) n = pref ++ " {\n" ++ 
 		"\tstyle=dashed;color=grey;\n" ++
 		"\tnode [fontname=\"Monospace\"];\n" ++
 		"\t" ++ nid ++ "[shape=box,color=blue,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++
@@ -132,7 +135,7 @@ renderRewT' pref depth rt@(RT c s os) n = pref ++ " {\n" ++
 		lbl = "unguarded\\n" ++ ppClause c ++ " | " ++ ppSubst s 
 		nid = "root" ++ show n
 
-renderRewAnd :: Integer -> String -> Integer -> Integer -> AndNode Clause1 Term1 Vr1 -> String
+renderRewAnd :: Integer -> String -> Int -> Integer -> AndNode Clause1 Term1 Vr1 -> String
 renderRewAnd _ par 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"..." ++ "\",fixedsize=true];\n" ++
@@ -146,7 +149,7 @@ renderRewAnd sn par depth n (AndNode t ors) =
 	par ++ " -> " ++ show n ++ ";\n" ++
 	""
 
-renderRewOr :: Integer -> String -> Integer -> Integer -> OrNode Clause1 Term1 Vr1 -> String
+renderRewOr :: Integer -> String -> Int -> Integer -> OrNode Clause1 Term1 Vr1 -> String
 renderRewOr _sn par 0 n _ = 
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"..." ++ "\",fixedsize=true];\n" ++
@@ -172,19 +175,19 @@ lh s = show ( fromIntegral (length s) * (0.15 :: Float) )
 
 
 	
-renderDerT :: Integer -> Integer -> DerTree1 -> String
+renderDerT :: Int -> Int -> DerTree1 -> String
 renderDerT depD depR dt = 
 	"digraph D {\n" ++ 
 	renderDer depD depR 1 dt ++
 	"}\n"
 
-renderObsT :: Integer -> Integer -> OTree1 -> String
+renderObsT :: Int -> Int -> OTree1 -> String
 renderObsT depD depR dt = 
 	"digraph D {\n" ++ 
 	renderObs depD depR 1 dt ++
 	"}\n"
 
-renderDer :: Integer -> Integer -> Integer -> DerTree1 -> String
+renderDer :: Int -> Int -> Integer -> DerTree1 -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
@@ -193,7 +196,7 @@ renderDer depD depR n (DT rt trans) = case gcRewTree rt of
 	True	-> renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
 		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] trans) 
 
-renderTrans :: Integer -> Integer -> Integer -> Integer -> RewTree1 -> Trans1 -> String
+renderTrans :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
 renderTrans sn depD depR n rt (Trans p _ vr gc dt) =  
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
@@ -208,18 +211,18 @@ renderTrans sn depD depR n rt (Trans p _ vr gc dt) =
 
 
 
-renderObs :: Integer -> Integer -> Integer -> OTree1 -> String
+renderObs :: Int -> Int -> Integer -> OTree1 -> String
 renderObs 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
-renderObs depD depR n (UNRT rt ) = 
+renderObs _depD depR n (UNRT rt ) = 
 	renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
 renderObs depD depR n (ODT rt trans) = 
 	renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
 	concat (zipWith (\x -> renderOTrans (10*n) (depD - 1) depR x) [10*n + i | i <- [1..]] trans) 
 
-renderOTrans :: Integer -> Integer -> Integer -> Integer -> OTrans1 -> String
-renderOTrans sn depD depR n (GTrans vr gcs gc) = 
+renderOTrans :: Integer -> Int -> Int -> Integer -> OTrans1 -> String
+renderOTrans sn _depD _depR n (GTrans vr _ gc) = 
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n"
 	where

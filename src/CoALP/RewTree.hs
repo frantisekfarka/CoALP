@@ -75,7 +75,7 @@ getVrs (RT _ _ ands) 	= concatMap processAnd ands
 			++ concatMap continueOr ors
 		processOr _ (OrNode _ _) 	_ 	= []
 		--processOr _ (OrNode _ ands') 	_ 	= concatMap processAnd ands'
-		processOr t (OrNodeEmpty d)	pi	= [(d, t, pi)]
+		processOr t (OrNodeEmpty d)	pk	= [(d, t, pk)]
 		continueOr (OrNode _ ands')		= concatMap processAnd ands'
 		continueOr _ 				= []
 

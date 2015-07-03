@@ -14,11 +14,11 @@ data Command
 	| GC3
 	| GC3One String
 	| DrawProgram
-	| DrawRew Integer String
-	| DrawTrans Integer [Integer] String
-	| DrawDer Integer Integer String
-	| DrawInf Integer Integer String
-	| DrawUng Integer Integer String
+	| DrawRew Int String
+	| DrawTrans Int [Integer] String
+	| DrawDer Int Int String
+	| DrawInf Int Int String
+	| DrawUng Int Int String
 	| Help
 	| Empty
 	deriving Show

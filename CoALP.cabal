@@ -47,6 +47,7 @@ library
   other-modules:    CoALP.FreshVar
                     CoALP.Reductions
 
+  ghc-options:    -O2 -Wall -rtsopts -threaded -eventlog
   --if flag(eventlog)
   --  ghc-options:    -Wall -rtsopts -eventlog
   --else

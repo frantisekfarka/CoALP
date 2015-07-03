@@ -85,9 +85,9 @@ unify t1 t2 = unifyImpl [(t1,t2)]
 --
 -- http://en.wikipedia.org/wiki/Unification_%28computer_science%29#A_unification_algorithm
 --
---unifyImpl :: (Eq a, Eq b, Freshable b) =>
---	[(Term a b c, Term a b c)] 
---	-> Maybe (Subst a b c)
+unifyImpl :: (Eq a, Eq b) =>
+	[(Term a b c, Term a b c)] 
+	-> Maybe (Subst a b c)
 unifyImpl [] = Just []
 unifyImpl ((t1, t2):ts )
 	-- delete

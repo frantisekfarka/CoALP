@@ -106,7 +106,7 @@ checkGuard3One c = whenProgram (
 drawProgram :: CoALP ()
 drawProgram = whenProgram (liftIO . displayProgram)
 
-drawRew :: Integer -> String -> CoALP ()
+drawRew :: Int -> String -> CoALP ()
 drawRew depth q = whenProgram (
 	\p -> case parseClause q of
 		Left err	-> do
@@ -120,7 +120,7 @@ drawRew depth q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-drawTrans :: Integer -> [Integer] -> String -> CoALP ()
+drawTrans :: Int -> [Integer] -> String -> CoALP ()
 drawTrans depth var q = whenProgram (
 	\prog -> case parseClause q of
 		Left err	-> do
@@ -135,7 +135,7 @@ drawTrans depth var q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-drawDer :: Integer -> Integer -> String -> CoALP ()
+drawDer :: Int -> Int -> String -> CoALP ()
 drawDer depD depR q = whenProgram (
 	\prog -> case parseClause q of
 		Left err	-> do
@@ -147,7 +147,7 @@ drawDer depD depR q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-drawInf :: Integer -> Integer -> String -> CoALP ()
+drawInf :: Int -> Int -> String -> CoALP ()
 drawInf depD depR q = whenProgram (
 	\prog -> case parseClause q of
 		Left err	-> do
@@ -159,7 +159,7 @@ drawInf depD depR q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-drawUng :: Integer -> Integer -> String -> CoALP ()
+drawUng :: Int -> Int -> String -> CoALP ()
 drawUng depD depR q = whenProgram (
 	\prog -> case parseClause q of
 		Left err	-> do

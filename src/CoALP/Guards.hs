@@ -19,7 +19,7 @@ import Data.Functor ((<$>))
 import Data.Foldable (asum)
 import Data.List (nub)
 import Data.Maybe (maybeToList)
-import Data.Traversable (sequenceA,traverse)
+-- import Data.Traversable (sequenceA,traverse)
 
 import CoALP.Program (Program, Clause(..), Term(..),
 	AndNode(..),OrNode(..),RewTree(..),
@@ -29,8 +29,7 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	RewTree(..),
 	RewTree(..),
 	mapClause,
-	RewTree1,Term1,Program1,Clause1,
-	Loop,Loop1,
+	Loop,Subst,
 	subtermOf,propSubtermOf
 	)
 
@@ -38,8 +37,6 @@ import CoALP.FreshVar (Freshable,apartL,apartR)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,clauseProj)
 import CoALP.Unify (match)
-
-import Debug.Trace
 
 -- | GC1 -- guardendes on cluases
 -- GQ 1 requires that:
@@ -108,15 +105,12 @@ guardedTerm _ _				= Nothing
 -- | repeated definition 5.1 for recursive contraction
 --
 --   the direction is v -> v (w is a prefix of v)
---recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
-recGuardedTerm :: Term1 -> Term1 -> Maybe Term1
---recGuardedTerm f@(Fun _ _) v@(Var _)	= trace ("Case 1:" ++ show (f,v, v `subtermof` f)) $ v `subtermof` f
+recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Maybe (Term a b c)
 recGuardedTerm f@(Fun _ _) v@(Var _)	= case v `subtermOf` f of
 	--True	-> Just f
 	True	-> Just f
 	False	-> Nothing
 
---recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= trace ("Case 2") $ c `subtermof` f
 recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= case c `propSubtermOf` f of
 	True	-> Just f
 	False	-> Nothing
@@ -134,49 +128,37 @@ recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursi
 recGuardedTerm _ _			= Nothing
 
 -- TODO
+recGuardedTermB :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
 recGuardedTermB t1 t2 = case recGuardedTerm t1 t2 of
 	Just _	-> True
 	Nothing	-> False
 
--- TODO
-guardedTermB t1 t2 = case guardedTerm t1 t2 of
-	Just _	-> True
-	Nothing	-> False
-
---gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
-gc2 :: Program1 -> Clause1 -> Bool
-gc2 p c = gcRewTree (rew p' c' [])
+gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+gc2 p c = gcRewTree (rew p' c' []) 
 	where
 		p' = map (mapClause apartL) p
 		c' = mapClause apartR c
 
---gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
-gcRewTree :: RewTree1 -> Bool
+gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
 gcRewTree RTEmpty	= True
-gcRewTree rt@(RT c _ _) = all (uncurry recGuardedTermB . g) $ (loops rt)
+gcRewTree rt@(RT _ _ _) = all (uncurry recGuardedTermB . g) $ (loops rt)
 	where
 		g (t1,t2,_) = (t1,t2)
-		f x = trace ("ung loops:\t" ++ (show $ take 10 $ x) ++ "\n\t" 
-			-- ++ (show $ take 1 $ dropWhile 
-			-- (uncurry recGuardedTermB . g) x)
-			) x
 
-
-
---gc3 :: (Freshable b, Ord b, Eq a) =>
---	Program a b c -> Bool
+gc3 :: (Freshable b, Ord b, Eq a) =>
+	Program a b c -> Bool
 gc3 p = all (gc3one p ) p
 	
 
 
---gc3one :: (Freshable b, Ord b, Eq a) =>
---	Program a b c -> Clause a b c -> Bool
+gc3one :: (Freshable b, Ord b, Eq a) =>
+	Program a b c -> Clause a b c -> Bool
 gc3one p c = gcDerTree [] $ der p c
 
---gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
 gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 
---gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
 gcTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> True
 		False	-> gcDerTree (gc:gcs) dt
@@ -202,23 +184,24 @@ transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 	where
 		gc = guardingContext p rt cx 
 
-derToUnc :: Integer -> DerTree1 -> DerTree1
-derToUnc n dt@(DT rt trs) = case derToUnc' n [] dt of
+derToUnc :: Int -> DerTree1 -> DerTree1
+derToUnc n dt@(DT rt _) = case derToUnc' n [] dt of
 	Just dt'	-> dt'
 	Nothing		-> DT rt []
 	
 
-derToUnc' :: Integer -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
-derToUnc' 0 gcs (DT rt trs) = Just $ DT rt []
+derToUnc' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
+derToUnc' 0 _   (DT rt _) = Just $ DT rt []
 derToUnc' n gcs (DT rt trs) = case gcRewTree rt of
 		False	-> Nothing -- we found unguarded tree and thus we can finish
 		True	-> (DT rt) <$> (altseq $ map (transToUnc (n-1) gcs) trs)
 	where
 		altseq xs = let r = altseq' xs in if null r then Nothing else Just r
-		altseq' ((Just x):xs) = [x] -- :(altseq' xs)
+		altseq' ((Just x):_) = [x] -- :(altseq' xs)
 		altseq' (Nothing:xs) = altseq' xs
 		altseq' [] = []
 
+transToUnc :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
 transToUnc n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> Nothing -- guarded trs
 		False	-> (Trans p rt v cx) <$> derToUnc' n (gc:gcs) dt
@@ -241,9 +224,11 @@ depthTrs (GTrans _ _ _) 	= 0
 
 
 
---guardingContext :: (Eq a, Ord b, Freshable d) =>
---	Program a b c -> RewTree a b c d -> Maybe (Int, Subst a b c, Term a b c) 
---	-> GuardingContext a b c
+guardingContext :: (Eq a, Ord b) =>
+	Program a b c
+	-> RewTree a b c d
+	-> Maybe (Int, Subst a b c, Term a b c) 
+	-> GuardingContext a b c
 guardingContext p rt cx	= nub [(pkt', t', v) |
 		(pkt', t', v) <- -- trace "\n\nnextcmp" $ traceShowId $
 			clauseProj p cx
@@ -261,9 +246,6 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 	where
 		isJust (Just _) = True
 		isJust _	= False
-		thr (_,_,i) = i
-		-- f i ls = trace (show $ filter ((i ==) . thr) ls) ls
-		f t' l = trace ("Loops of " ++ show t' ++ "\n\t" ++ show l) l
 
 
 -- TODO
@@ -276,17 +258,17 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 --	2/ have same head
 --	3/ parents can be matched to the same program clause
 --
---loops :: RewTree a b c d -> [Loop a b c] 
-loops :: RewTree1 -> [Loop1] 
+loops :: RewTree a b c d -> [Loop a b c] 
 loops (RTEmpty)	= []
 loops (RT _ _ ands) = concat $ concatMap loops0 ands
 	where
-		loops0 (AndNode t ors) = concat $ zipWith (oLoops []) [0..] ors
+		loops0 (AndNode _ ors) = concat $ zipWith (oLoops []) [0..] ors
 
 	
 
 
-aLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
+aLoops :: 
+	[(Term a b c, (Int, Int))]
 	-> Int -- ^ parent clause ix
 	-> Int -- ^ term ix
 	-> AndNode (Clause a b c) (Term a b c) d
@@ -294,13 +276,14 @@ aLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
 aLoops tws pci ti (AndNode t ors) = (concatMap f tws) : 
 		(concat $ zipWith (oLoops ((t, (pci, ti)):tws)) [0..] ors)
 	where
-		f (t', (pci', ti')) = if {-pci' == pci &&-} eqs t t'
+		f (t', (pci', _ti')) = if pci' == pci && eqs t t'
 			then [(t', t, pci)]
 			else []
 		eqs (Fun t1 _)	(Fun t2 _)	= t1 == t2
 		eqs _		_		= False
 
-oLoops :: (Show a, Show b, Show c) => [(Term a b c, (Int, Int))]
+oLoops :: 
+	[(Term a b c, (Int, Int))]
 	-> Int -- ^ clause ix
 	-> OrNode (Clause a b c) (Term a b c) d
 	-> [[Loop a b c]]
