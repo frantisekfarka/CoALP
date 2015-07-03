@@ -63,7 +63,7 @@ composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2
 match :: (Ord b, Eq a, Eq b) => Term a b c -> Term a b c -> Maybe (Subst a b c)
 match (Var x1) 		(Var x2)	= Just $ (x1, Var x2):[] -- ? should be fresh?
 match (Fun id1 ts1)	(Fun id2 ts2)	= if id1 == id2 && length ts1 == length ts2
-	then foldr combineMSubst (Just []) (zipWith match ts1 ts2) -- ^ TODO it is neccessary to combine
+	then foldr combineMSubst (Just []) (zipWith match ts1 ts2) -- TODO it is neccessary to combine
 	-- the partial matches properly, this is buggy
 	else Nothing
 -- Just $ id1 == id2 && (all (== True) $ zipWith match t1 t2)

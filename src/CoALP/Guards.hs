@@ -2,9 +2,9 @@
 -- | This module provides guardednes checks
 --
 module CoALP.Guards (
-	  gc1 -- ^ guardenes on clauses
-	, gc2 -- ^ guardenes on rew trees
-	, gc3 -- ^ guardenes on der trees
+	  gc1 -- guardenes on clauses
+	, gc2 -- guardenes on rew trees
+	, gc3 -- guardenes on der trees
 	, gcRewTree
 	, gc3one
 	, derToObs
@@ -97,7 +97,7 @@ guardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive 
 		else Nothing
 guardedTerm (Fun _ []) (Var _)		= Nothing
 guardedTerm t@(Fun _ s) (Var _)		= if length s > 0 
-		then Just t	-- ^ this is the constructor guarding productivity
+		then Just t	-- this is the constructor guarding productivity
 		else Nothing
 guardedTerm _ _				= Nothing
 

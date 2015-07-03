@@ -53,9 +53,9 @@ import Numeric (showHex) -- ,showIntAtBase)
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
 data Term a b c where
-	Var :: Eq b => b -> Term a b c              -- ^ a variable
-	Fun :: Eq a => a -> [Term a b c] -> Term a b c   -- ^ a function
---	| Const c            -- ^ a integral constant -- keep out for now
+	Var :: Eq b => b -> Term a b c              -- a variable
+	Fun :: Eq a => a -> [Term a b c] -> Term a b c   -- a function
+--	| Const c            -- an integral constant -- keep out for now
 
 
 instance (Eq a, Eq b) => Eq (Term a b c) where
