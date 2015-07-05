@@ -16,7 +16,7 @@ synopsis:      Coalgebraic logic programming library
 description:   Library and command line interface implmenting CoALP
 stability:     experimental
 build-type:    Custom
-cabal-version: >= 1.16
+cabal-version: >= 1.18
 
 source-repository head
   type:     git
@@ -49,6 +49,7 @@ library
   other-modules:    CoALP.FreshVar
                     CoALP.Reductions
 
+
   --if flag(eventlog)
   --  ghc-options:    -Wall -rtsopts -eventlog
   --else
@@ -56,17 +57,18 @@ library
 
   build-depends:    base                 >= 4.6 && < 5,
                     containers           >= 0.5,
-                    mtl                  >= 2.1,
-                    directory,
-                    hashable,
-                    deepseq,
-                    text                 >= 1.2,
-                    parsec               >= 3.1,
+                    -- mtl                  >= 2.1,
+                    -- directory,
+                    -- hashable,
+                    -- deepseq,
+                    -- text                 >= 1.2,
+                    -- parsec               >= 3.1,
                     process              >= 1.0,
                     transformers         >= 0.3,
-                    unordered-containers >= 0.2.3,
+                    -- unordered-containers >= 0.2.3,
                     -- my dependencies
-                    array                >= 0.5
+                    array                >= 0.5,
+                    deepseq              >= 1.3
 
   build-tools:      alex, happy
 
@@ -76,23 +78,22 @@ executable CoALPj
   other-modules:    CoALPj.CmdOpts
 
   other-extensions: FlexibleInstances
-  ghc-options:      -Wall -fwarn-incomplete-patterns 
+  -- ghc-options:      -Wall -fwarn-incomplete-patterns 
+  --ghc-options:      -fprof-auto -threaded -Wall -fwarn-incomplete-patterns 
 
 
   default-language: Haskell2010
 
   build-depends:    base                 >= 4.7,
-                    CoALP                >= 0.0.4,
-                    process              >= 1.0.0,
-
+                    CoALP                >= 0.0.5,
                     transformers         >= 0.3,
                     optparse-applicative >= 0.11,
-                    text                 >= 1.2,
                     ansi-wl-pprint       >= 0.6.7,
                     mtl                  >= 2.2.1,
                     haskeline            >= 0.7.2,
                     parsec               >= 3.1.7,
-                    containers           >= 0.5
+                    containers           >= 0.5,
+                    array                >= 0.5
 
 --executable CoALP-benchmark-fibs
 --  hs-source-dirs:   benchmarks
