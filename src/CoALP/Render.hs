@@ -7,6 +7,7 @@ module CoALP.Render (
 	, displayObsTree
 ) where
 
+import Debug.Trace 
 --import Data.Foldable
 --import Numeric (showHex)
 import System.Process
@@ -36,7 +37,7 @@ displayRewTree depth rt = do
 	return ()
 	
 displayDerTree :: Int -> Int -> DerTree1 -> IO ()
-displayDerTree depD depR dt = do
+displayDerTree depD depR dt = trace "Display der tree ... " $ do
 	writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
@@ -107,7 +108,7 @@ renderRewT pref _ RTEmpty n =
 	"\tnode [fontname=\"Monospace\"];\n" ++
 	"\troot" ++ show n ++ "[shape=box,color=blue,width=2,label=\"_|_\",fixedsize=false];\n" ++
 	"}\n"
-renderRewT pref depth (RT q s os) n = 
+renderRewT pref depth (RT q s os) n = trace "Render Rew ..." $ 
 	pref ++ " {\n" ++ 
 	"\tstyle=dashed;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
@@ -136,13 +137,13 @@ renderRewT' pref depth (RT c s os) n = pref ++ " {\n" ++
 		nid = "root" ++ show n
 
 renderRewAnd :: Integer -> String -> Int -> Integer -> AndNode Clause1 Term1 Vr1 -> String
-renderRewAnd _ par 0 n _ = 
+renderRewAnd _ par 0 n _ = trace ("Render and in 0") $
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"..." ++ "\",fixedsize=true];\n" ++
 	par ++ " -> " ++ show n ++ ";\n" ++
 	""
 
-renderRewAnd sn par depth n (AndNode t ors) = 
+renderRewAnd sn par depth n (AndNode t ors) = trace ("Render and in " ++ show depth) $
 	"\t" ++ show n ++ "[shape=box,color=white,width=" ++ lh (ppTerm t) ++ ",label=\"" ++ 
 	ppTerm t ++ "\",fixedsize=true];\n" ++
 	concat (zipWith (renderRewOr sn (show n) (depth - 1)) [10*n + i | i <- [1..]] ors) ++
@@ -150,7 +151,7 @@ renderRewAnd sn par depth n (AndNode t ors) =
 	""
 
 renderRewOr :: Integer -> String -> Int -> Integer -> OrNode Clause1 Term1 Vr1 -> String
-renderRewOr _sn par 0 n _ = 
+renderRewOr _sn par 0 n _ = trace ("Render or in 0")
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"..." ++ "\",fixedsize=true];\n" ++
 	par ++ " -> " ++ show n ++ ";\n" ++
@@ -160,7 +161,7 @@ renderRewOr sn par _depth _n (OrNodeEmpty x) =
 	show x ++  "\",fixedsize=true];\n" ++
 	par ++ " -> " ++ show x ++ "_" ++ show sn ++ ";\n" ++
 	""
-renderRewOr sn par depth n (OrNode c ands) = 
+renderRewOr sn par depth n (OrNode c ands) = trace ("Render or in " ++ show depth)
 	"\t" ++ nid ++ "[shape=box,color=white,width=" ++ lh (ppClause c) ++ ",label=\"" ++ 
 	ppClause c ++ "\",fixedsize=true];\n" ++
 	concat (zipWith (renderRewAnd sn nid (depth - 1)) [10*n + i  | i <- [1..]] ands) ++
@@ -191,10 +192,10 @@ renderDer :: Int -> Int -> Integer -> DerTree1 -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
-renderDer depD depR n (DT rt trans) = case gcRewTree rt of
+renderDer depD depR n (DT rt trans) = case True {-gcRewTree rt-} of
 	False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
 	True	-> renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
-		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] trans) 
+		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take 10 trans))
 
 renderTrans :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
 renderTrans sn depD depR n rt (Trans p _ vr gc dt) =  

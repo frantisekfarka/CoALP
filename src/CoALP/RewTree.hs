@@ -6,23 +6,28 @@ module CoALP.RewTree (
 	  , loops
 ) where
 
+--import Control.DeepSeq (deepseq, force)
+
 import Control.Arrow ((***))
 import Data.Functor ((<$>))
 import Data.Traversable (sequenceA,traverse)
+import Data.Foldable (foldMap)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
 import CoALP.Unify (match, applySubst, stripVars)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),
-	--mapTerm,mapClause,mapSubst
+	--mapTerm,mapClause,mapSubstm
 	)
+
+import Debug.Trace
 
 
 rew :: (Eq a, Ord b, Freshable b, Freshable d) =>
 	Program a b c -> Clause a b c -> Subst a b c -> RewTree a b c d
 rew p (Clause h b) si = flip evalFresh initFresh $ do
 		ands <- sequenceA $ fmap (mkAndNode p si) bsi'
-		return $ RT csi' si ands
+		return $ RT csi' si ands 
 			--(Clause h' b') s' ands
 	where
 		si' = si `stripVars` h 
@@ -50,7 +55,7 @@ mkOrNode p si t (Clause h b)  = case (h `match` t) of
 			let	sithb' = map (applySubst si') thb
 			ands <- sequenceA ((mkAndNode p si) <$> sithb')
 			return $ OrNode (Clause t sithb') ands
-		Nothing	->	getFresh >>= return . OrNodeEmpty . Vr
+		Nothing	->	getFresh >>= return . OrNodeEmpty . Vr 
 
 	where
 
@@ -68,7 +73,7 @@ mkOrNode p si t (Clause h b)  = case (h `match` t) of
 --
 getVrs :: RewTree a b c d -> [(Vr d, Term a b c, Int)]
 getVrs RTEmpty 		= []
-getVrs (RT _ _ ands) 	= concatMap processAnd ands
+getVrs (RT _ _ ands) 	= (concatMap processAnd ands)
 	where
 		processAnd (AndNode t ors) 		= 
 			(concat $ zipWith (processOr t) ors [0..])
@@ -78,7 +83,6 @@ getVrs (RT _ _ ands) 	= concatMap processAnd ands
 		processOr t (OrNodeEmpty d)	pk	= [(d, t, pk)]
 		continueOr (OrNode _ ands')		= concatMap processAnd ands'
 		continueOr _ 				= []
-
 
 -- TODO Freshable!
 -- TODO

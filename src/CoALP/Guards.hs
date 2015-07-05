@@ -11,12 +11,12 @@ module CoALP.Guards (
 	, derToUnc
 	, depthOT
 	, guardingContext
-	, guardedTerm, recGuardedTerm
+	, guardedTerm, recGuardedTerm, recGuardedTermB
 ) where
 
 --import Control.Arrow ((***))
 import Data.Functor ((<$>))
-import Data.Foldable (asum)
+import Data.Foldable (asum,foldMap)
 import Data.List (nub)
 import Data.Maybe (maybeToList)
 -- import Data.Traversable (sequenceA,traverse)
@@ -30,13 +30,17 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	RewTree(..),
 	mapClause,
 	Loop,Subst,
-	subtermOf,propSubtermOf
+	subtermOf,propSubtermOf,
+	Program1,Clause1,RewTree1,DerTree1
 	)
 
 import CoALP.FreshVar (Freshable,apartL,apartR)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,clauseProj)
 import CoALP.Unify (match)
+
+import Control.DeepSeq (force)
+import Debug.Trace
 
 -- | GC1 -- guardendes on cluases
 -- GQ 1 requires that:
@@ -116,9 +120,11 @@ recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= case c `propSubtermOf` f of
 	False	-> Nothing
 
 recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive hypothesis
-		then (f $ fmap (uncurry recGuardedTerm) [
-			(t1,t2) | t1 <- s1, t2 <- s2
-			])
+		then (f $ fmap (uncurry recGuardedTerm) 
+			(zip s1 s2)) -- TODO check with paper
+			--[
+			--(t1,t2) | t1 <- s1, t2 <- s2
+			--])
 		else Nothing
 	where
 		-- asum?
@@ -133,32 +139,34 @@ recGuardedTermB t1 t2 = case recGuardedTerm t1 t2 of
 	Just _	-> True
 	Nothing	-> False
 
-gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
-gc2 p c = gcRewTree (rew p' c' []) 
+--gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
+gc2 :: Program1 -> Clause1 -> Bool
+gc2 p c = gcRewTree ((rew p' c' []) :: RewTree1)
 	where
-		p' = map (mapClause apartL) p
-		c' = mapClause apartR c
+		p' = force $ map (mapClause apartL) p
+		c' = force $ mapClause apartR c
 
-gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
+--gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
 gcRewTree RTEmpty	= True
 gcRewTree rt@(RT _ _ _) = all (uncurry recGuardedTermB . g) $ (loops rt)
 	where
 		g (t1,t2,_) = (t1,t2)
+		--f x = traceShow (take 1 x) x
 
-gc3 :: (Freshable b, Ord b, Eq a) =>
-	Program a b c -> Bool
+--gc3 :: (Freshable b, Ord b, Eq a) =>
+--	Program a b c -> Bool
 gc3 p = all (gc3one p ) p
 	
 
 
-gc3one :: (Freshable b, Ord b, Eq a) =>
-	Program a b c -> Clause a b c -> Bool
-gc3one p c = gcDerTree [] $ der p c
+--gc3one :: (Freshable b, Ord b, Eq a) =>
+--	Program a b c -> Clause a b c -> Bool
+gc3one p c = gcDerTree [] $ ((der p c) :: DerTree1)
 
-gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+--gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
 gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 
-gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+--gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
 gcTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> True
 		False	-> gcDerTree (gc:gcs) dt

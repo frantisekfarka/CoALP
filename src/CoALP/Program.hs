@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts #-}
 
 -- | 
 -- * Basic program datatypes
@@ -46,9 +46,13 @@ module CoALP.Program (
 	, propSubtermOf
 ) where
 
+import Data.Functor(fmap)
+import Data.Foldable (Foldable,foldMap)
 import Data.List (intersperse)
 -- import Data.Set (Set)
 import Numeric (showHex) -- ,showIntAtBase)
+
+import Control.DeepSeq (deepseq, NFData(..))
 
 -- | Type of term for any type of functional symbol and any type of variable.
 -- TODO decide which fields should be strict
@@ -66,7 +70,7 @@ instance (Eq a, Eq b) => Eq (Term a b c) where
 --
 instance (Show a, Show b, Show c) => Show (Term a b c) where
 	show (Var x) = "_v" ++ show x
-	show (Fun f ts) = shows f "(" ++ (concat . intersperse ", " . map show $ ts) ++ ")"
+	show (Fun f ts) = shows f "(" ++ (concat . intersperse ", " . fmap show $ ts) ++ ")"
 
 -- | Type of clause
 data Clause a b c where
@@ -74,7 +78,7 @@ data Clause a b c where
 
 instance (Show a, Show b, Show c) => Show (Clause a b c) where
 	show (Clause h bs) = show h ++ " :- " ++ 
-		(concat . intersperse ", " . map show $ bs) ++ "."
+		(concat . intersperse ", " . fmap show $ bs) ++ "."
 
 -- | Type of Query Clause
 data Query a b c 
@@ -82,7 +86,7 @@ data Query a b c
 
 instance (Show a, Show b, Show c) => Show (Query a b c) where
 	show (Query ts ) = "? :- " ++ 
-		(concat . intersperse ", " . map show $ ts) ++ "."
+		(concat . intersperse ", " . fmap show $ ts) ++ "."
 
 -- | Type of Program
 type Program a b c = [Clause a b c]
@@ -233,37 +237,37 @@ mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 
 mapRT :: Eq b =>
 	(b -> b) -> RewTree a b c d -> RewTree a b c d
-mapRT f (RT c s ands)	= RT (mapClause f c) (mapSubst f s) $ map (mapAnd f) ands
+mapRT f (RT c s ands)	= RT (mapClause f c) (mapSubst f s) (fmap (mapAnd f) ands)
 mapRT _ rt@(RTEmpty)	= rt
 
 mapAnd :: Eq b' =>
 	(b' -> b')
 	-> AndNode (Clause a1 b' c2) (Term a b' c) c1
 	-> AndNode (Clause a1 b' c2) (Term a b' c) c1
-mapAnd f (AndNode t ors) = AndNode (mapTerm f t) $ map (mapOr f) ors
+mapAnd f (AndNode t ors) = AndNode (mapTerm f t) $ fmap (mapOr f) ors
 
 
 mapOr :: Eq b' =>
 	(b' -> b')
 	-> OrNode (Clause a1 b' c2) (Term a b' c) c1
 	-> OrNode (Clause a1 b' c2) (Term a b' c) c1
-mapOr  f (OrNode c ands) = OrNode (mapClause f c) $ map (mapAnd f) ands
+mapOr  f (OrNode c ands) = OrNode (mapClause f c) $ fmap (mapAnd f) ands
 mapOr  _ empty = empty
 
 -- TODO make Term (bi)functor
 mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
-mapTerm f (Fun idn ts) = Fun idn $ map (mapTerm f) ts
+mapTerm f (Fun idn ts) = Fun idn $ fmap (mapTerm f) ts
 mapTerm f (Var a) = Var $ f a
 
 mapSubst :: (Eq b', Eq b) =>
 	(b -> b') -> [(b, Term a b c)] -> [(b', Term a b' c)]
-mapSubst f s = map oneS s
+mapSubst f s = fmap oneS s
 	where
 		oneS (b, t) = (f b, mapTerm f t)
 
 mapClause :: (Eq b', Eq b) =>
 	(b -> b') -> Clause a b c -> Clause a b' c
-mapClause f (Clause h b) = Clause (mapTerm f h) (map (mapTerm f) b)
+mapClause f (Clause h b) = Clause (mapTerm f h) (fmap (mapTerm f) b)
 
 mapProg :: (Eq b', Eq b) =>
 	(b -> b') -> Program a b c -> Program a b' c
@@ -278,5 +282,30 @@ subtermOf t1 t2@(Fun _ t2ts) = t1 == t2 || any (subtermOf t1) t2ts
 propSubtermOf :: (Eq a, Eq b) => Term a b c -> Term a b c -> Bool
 propSubtermOf t1 t2 = t1 /= t2 && t1 `subtermOf` t2
 
+
+instance (NFData (Term a b c)) => NFData (AndNode (Clause a b c) (Term a b c) (Vr d)) where
+	rnf (AndNode t ors) = deepseq t $ deepseq ors $ ()
+	
+instance NFData (OrNode (Clause a b c) (Term a b c) (Vr d)) where
+	rnf (OrNode c ands) = deepseq c $ deepseq ands $ ()
+	rnf (OrNodeEmpty d) = d `seq` ()
+
+instance NFData (Term a b c) where
+	rnf (Fun f ts)	= seq f $ deepseq ts $ ()
+	rnf (Var v)	= seq v ()
+	
+instance NFData (Clause a b c) where
+	rnf (Clause h b) = deepseq h $ deepseq b $ ()
+
+instance NFData (Vr d) where
+	rnf (Vr v) = v `seq` ()
+
+
+instance Foldable (AndNode (Clause a b c) (Term a b c)) where
+	foldMap f (AndNode _ ors) = foldMap (foldMap f) ors
+
+instance Foldable (OrNode (Clause a b c) (Term a b c)) where
+	foldMap f (OrNode _ ands) = foldMap (foldMap f) ands
+	foldMap f (OrNodeEmpty d) = f d
 
 

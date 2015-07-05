@@ -20,7 +20,7 @@ import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
 
---import Debug.Trace
+import Debug.Trace
 
 -- | compute the rew tree transition
 -- TODO make sure this works for infinite tree

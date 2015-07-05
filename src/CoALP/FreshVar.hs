@@ -23,7 +23,9 @@ module CoALP.FreshVar (
 	, Freshable
 ) where
 
-import Prelude (Int, Integer, Bool, not, ($), fst, (+))
+--import GHC.Base()
+
+--import Prelude (Int, Integer, Bool, not, ($), fst, (+))
 import Control.Applicative (Applicative, pure, (<*>))
 import Control.Monad (Monad (..))
 

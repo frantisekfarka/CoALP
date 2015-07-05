@@ -117,7 +117,7 @@ unifyImpl ((t1, t2):ts )
 	| Var _ <- t1,
 	  -- Fun _ _ <- t2,
 	  (t1 `subtermOf` t2)		= Nothing
-	-- equation is already solved
+	--  equation is already solved
 	| Var v <- t1,
 	  -- Fun _ _ <- t2,
 	  (not $ t1 `subtermOf` t2),
