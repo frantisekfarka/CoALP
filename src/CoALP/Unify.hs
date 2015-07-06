@@ -45,11 +45,13 @@ applySubst s (Var v) = case lookup v s of
 	Nothing	-> Var v
 
 composeSubst :: (Eq a, Eq b) => Subst a b c -> Subst a b c -> Subst a b c
-composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2
+composeSubst s1 s2 = nub $ filter neq $ (fmap f s1) ++ s2'
 	where
 		f = id *** (applySubst s2)
 		neq (_,Fun _ _) = True
 		neq (v,Var v') = v /= v'
+		s1vs = fmap fst s1
+		s2' = filter (\x -> not (fst x `elem` s1vs)) s2
 
 --renameApart :: (Eq b, Freshable b) => Term a b c -> Term a b c -> (Term a b c, Term a b c)
 --renameApart t1 t2 = (freshMap apartL t1, freshMap apartR t2)
