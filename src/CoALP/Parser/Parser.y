@@ -1,6 +1,7 @@
 {
 module CoALP.Parser.Parser (
 	  parse
+	, parseWithCount
 	, parseClause
 ) where
 
@@ -9,7 +10,16 @@ import Control.Monad.Trans.Except (Except, throwE)
 import CoALP.Error (Err(ParserErr))
 
 --TODO refactor
-import CoALP.Parser.Lexer
+import CoALP.Parser.Lexer (
+	  Alex
+	, Token (..)
+	, runAlex
+	, runAlex'
+	, getVar
+	, scanTokens
+	, clearVars
+	, alexSynError
+	)
 import CoALP.Program
 
 import Data.Char
@@ -71,9 +81,14 @@ parseError :: Token -> Alex a
 parseError t = alexSynError t
 
 
+-- | Parse program
 parse :: String -> Either String Program1
 parse s = runAlex s main
 
+-- | Parse program
+-- obtain next variable counter 
+parseWithCount :: String -> Either String (Program1, Integer)
+parseWithCount s = runAlex' s main
 
 parseClause :: String -> Either String Clause1 
 parseClause s = runAlex s clause 

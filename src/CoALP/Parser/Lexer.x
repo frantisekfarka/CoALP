@@ -1,9 +1,15 @@
 {
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
-module CoALP.Parser.Lexer {-(
-	  scanTokens
+module CoALP.Parser.Lexer (
+	  Alex
 	, Token (..)
-	) -} where
+	, runAlex
+	, runAlex'
+	, getVar
+	, scanTokens
+	, clearVars
+	, alexSynError
+	) where
 
 --import Control.Monad.Trans.Except (Except, throwE)
 import Data.Map as M (Map,empty,insert, lookup) 
@@ -162,6 +168,14 @@ alexSynError tok = do
 		len TRPar = 1
 		len t = length . show $ t
 
-
+runAlex' :: String -> Alex a -> Either String (a, Integer)
+runAlex' input (Alex f) = case f (AlexState {alex_pos = alexStartPos,
+		alex_inp = input,       
+		alex_chr = '\n',
+		alex_bytes = [],
+		alex_ust = alexInitUserState,
+		alex_scd = 0}) of
+			Left msg -> Left msg
+			Right ( s, a ) -> Right (a, counter . alex_ust $ s)
 
 }
