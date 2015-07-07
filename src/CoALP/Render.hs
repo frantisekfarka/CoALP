@@ -192,7 +192,7 @@ renderDer :: Int -> Int -> Integer -> DerTree1 -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
-renderDer depD depR n (DT rt trans) = case True {-gcRewTree rt-} of
+renderDer depD depR n (DT rt trans) = case gcRewTree rt of
 	False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n)
 	True	-> renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
 		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take 10 trans))

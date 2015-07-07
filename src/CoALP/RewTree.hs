@@ -99,7 +99,7 @@ substRT th	(RT c si ands)	= RT thc thsi thands
 		thc = th `asc` c
 		asc rho (Clause h b) = Clause (rho `applySubst` h)
 			(fmap (rho `applySubst`) b)
-		thsi = th -- `composeSubst` si
+		thsi = th `composeSubst` si
 		thands = fmap (substAnd th) ands
 		substAnd rho (AndNode t ors) 	= AndNode (rho `applySubst` t)
 			(fmap (substOr th) ors)

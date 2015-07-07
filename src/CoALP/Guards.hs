@@ -9,6 +9,7 @@ module CoALP.Guards (
 	, gc3one
 	, derToObs
 	, derToUnc
+	, derToUng
 	, depthOT
 	, guardingContext
 	, guardedTerm, recGuardedTerm, recGuardedTermB
@@ -151,7 +152,9 @@ gcRewTree RTEmpty	= True
 gcRewTree rt@(RT _ _ _) = all (uncurry recGuardedTermB . g) $ (loops rt)
 	where
 		g (t1,t2,_) = (t1,t2)
-		--f x = traceShow (take 1 x) x
+		f x = traceShow (take 20 x) $ 
+			traceShow (take 20 $ map (uncurry recGuardedTermB . g) x) $
+			x
 
 --gc3 :: (Freshable b, Ord b, Eq a) =>
 --	Program a b c -> Bool
@@ -193,30 +196,56 @@ transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		gc = guardingContext p rt cx 
 
 derToUnc :: Int -> DerTree1 -> DerTree1
-derToUnc n dt@(DT rt _) = case derToUnc' n [] dt of
+derToUnc n dt@(DT rt _) = case derToUnc' [] n [] dt 0 of
 	Just dt'	-> dt'
 	Nothing		-> DT rt []
 	
 
-derToUnc' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
-derToUnc' 0 _   (DT rt _) = Just $ DT rt []
-derToUnc' n gcs (DT rt trs) = case gcRewTree rt of
-		False	-> Nothing -- we found unguarded tree and thus we can finish
-		True	-> (DT rt) <$> (altseq $ map (transToUnc (n-1) gcs) trs)
+derToUnc' :: [Int] -> Int -> [GuardingContext1] -> DerTree1 -> Int -> Maybe DerTree1
+derToUnc' path 0 _   (DT rt _) _ = Just $ DT rt []
+derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
+		False	-> -- trace ("Unguarded tree at " ++ (show $ reverse (tix:path))) $
+			Nothing -- we found unguarded tree and thus we can finish
+		True	-> -- trace ("Continue " ++ (show $ reverse $ tix:path)) 
+			(DT rt) <$> (altseq $ zipWith (transToUnc (tix:path) (n-1) gcs) trs [0..])
 	where
 		altseq xs = let r = altseq' xs in if null r then Nothing else Just r
 		altseq' ((Just x):_) = [x] -- :(altseq' xs)
 		altseq' (Nothing:xs) = altseq' xs
 		altseq' [] = []
 
-transToUnc :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
-transToUnc n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
-		True	-> Nothing -- guarded trs
-		False	-> (Trans p rt v cx) <$> derToUnc' n (gc:gcs) dt
+derToUng :: Int -> DerTree1 -> DerTree1
+derToUng depthD dt@(DT rt _) = case derToUng' depthD [] dt of
+	Just dt'	-> dt'
+	Nothing		-> DT RTEmpty []
+
+derToUng' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
+derToUng' 0 _ (DT rt _) = Just (DT rt [])
+derToUng' n gcs (DT rt trs) = case gcRewTree rt of
+		False	-> Just $ DT rt []
+		True	-> (DT rt) <$> (altseq $ map (transToUng (n - 1) gcs) trs)
+	where
+		altseq []		= Nothing
+		altseq ((Just x):_)	= Just [x]
+		altseq (Nothing:xs)	= altseq xs
+
+
+
+transToUnc :: [Int] -> Int -> [GuardingContext1] -> Trans1 ->  Int -> Maybe (Trans1)
+transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
+		True	-> -- trace ("Guarded trans at " ++ (show $ reverse path)) $ 
+			Nothing -- guarded trs
+		False	-> (Trans p rt v cx) <$> derToUnc' path n (gc:gcs) dt pix
 	where
 		gc = guardingContext p rt cx 
 
 
+transToUng :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
+transToUng n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+		True	-> Nothing -- guarded trans
+		False	-> (Trans p rt v cx) <$> derToUng' n (gc:gcs) dt
+	where
+		gc = guardingContext p rt cx 
 
 
 

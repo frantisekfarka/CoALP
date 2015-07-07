@@ -74,7 +74,7 @@ derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
 		toTrans v = let (rt'', cp) = trans' p' rt' v 
 			in Trans p0 rt' v cp  $ derT p0 p' rt'' 
 		fst' (a, _, _) = a
-		p' = mapProg apartL p
+		p' = mapProg apartR p
 		rt' = rt -- mapRTsecond apartR rt
 
 clauseProj :: (Eq a, Ord b) => 

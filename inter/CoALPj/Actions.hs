@@ -35,7 +35,7 @@ import CoALPj.InternalState (
 
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
-import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs)
+import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs,derToUng)
 import CoALP.Program (Program1)
 import CoALP.Parser.Parser (parse,parseClause)
 import CoALP.Parser.PrettyPrint (ppProgram)
@@ -167,7 +167,7 @@ drawUng depD depR q = whenProgram (
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayObsTree depD depR $ derToObs $ der prog r 
+			liftIO . displayDerTree depD depR $ derToUng depD $ der prog r 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
