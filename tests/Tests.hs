@@ -3,8 +3,9 @@
 
 module Main where
 
-import qualified CoALP.Tests.Unit.Subst  as Subst
-import qualified CoALP.Tests.Unit.Guards as Guards
+--import qualified CoALP.Tests.Unit.Subst  as Subst
+--import qualified CoALP.Tests.Unit.Subst  as Subst
+import qualified CoALP.Tests.Unit.Unify as Unify
 
 import Test.Tasty
 
@@ -15,6 +16,7 @@ tests :: TestTree
 tests =
   testGroup "Unit tests"
   [
-    Subst.tests
-  , Guards.tests
+    Unify.tests
+--    Subst.tests
+--  , Guards.tests
   ]

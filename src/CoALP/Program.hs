@@ -38,7 +38,8 @@ module CoALP.Program (
 	, mapTerm
 	, mapSubst
 	, mapClause
-	, mapRT
+	--, mapRTfirst
+	, mapRTsecond
 	, mapProg
 	, Loop
 	, Loop1
@@ -235,10 +236,14 @@ mapVar :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
 mapVar f (Var v)	= Var $ f v
 mapVar f (Fun idn ts)	= Fun idn $ fmap (mapVar f) ts
 
-mapRT :: Eq b =>
+
+--mapRTfirst
+--	(Term a b c -> Term a' b' c') -> RewTree a b c d -> RewTree a' b' c' d
+
+mapRTsecond :: Eq b =>
 	(b -> b) -> RewTree a b c d -> RewTree a b c d
-mapRT f (RT c s ands)	= RT (mapClause f c) (mapSubst f s) (fmap (mapAnd f) ands)
-mapRT _ rt@(RTEmpty)	= rt
+mapRTsecond f (RT c s ands)	= RT (mapClause f c) (mapSubst f s) (fmap (mapAnd f) ands)
+mapRTsecond _ rt@(RTEmpty)	= rt
 
 mapAnd :: Eq b' =>
 	(b' -> b')
@@ -254,7 +259,9 @@ mapOr :: Eq b' =>
 mapOr  f (OrNode c ands) = OrNode (mapClause f c) $ fmap (mapAnd f) ands
 mapOr  _ empty = empty
 
--- TODO make Term (bi)functor
+
+
+-- TODO make Term functor, the same for Clause, Program
 mapTerm :: (Eq b, Eq b') => (b -> b') -> Term a b c -> Term a b' c
 mapTerm f (Fun idn ts) = Fun idn $ fmap (mapTerm f) ts
 mapTerm f (Var a) = Var $ f a

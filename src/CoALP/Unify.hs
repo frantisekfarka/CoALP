@@ -18,6 +18,8 @@ import Data.List (sortBy, nub)
 import CoALP.Program
 import CoALP.FreshVar (Freshable)
 
+import Debug.Trace
+
 --import Debug.Trace
 
 combineSubst :: (Eq a, Eq b, Ord b) => Subst a b c -> Subst a b c -> Maybe (Subst a b c)
@@ -90,8 +92,17 @@ unify t1 t2 = unifyImpl [(t1,t2)]
 unifyImpl :: (Eq a, Eq b) =>
 	[(Term a b c, Term a b c)] 
 	-> Maybe (Subst a b c)
-unifyImpl [] = Just []
-unifyImpl ((t1, t2):ts )
+unifyImpl ts = f <$> unifyImpl' ts 
+	where
+		f s = rewapply [] s
+		rewapply s [] 		= s
+		rewapply s (x:xs)	= rewapply (x:(fmap (id *** (applySubst [x])) s)) xs
+
+unifyImpl' :: (Eq a, Eq b) =>
+	[(Term a b c, Term a b c)] 
+	-> Maybe (Subst a b c)
+unifyImpl' [] = Just []
+unifyImpl' ((t1, t2):ts )
 	-- delete
 	| t1 == t2 			= unifyImpl ts
 	-- decompose

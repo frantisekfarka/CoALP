@@ -2,6 +2,7 @@
 -- | Module that constructs rewriting tree
 module CoALP.RewTree (
 	    rew
+	  , extrew
 	  , getVrs
 	  , loops
 ) where
@@ -14,10 +15,11 @@ import Data.Traversable (sequenceA,traverse)
 import Data.Foldable (foldMap)
 
 import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Unify (match, applySubst, stripVars)
+import CoALP.Unify (match, applySubst, stripVars, composeSubst)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..),
 	AndNode(..),OrNode(..),Term(..),Vr(..),
-	--mapTerm,mapClause,mapSubstm
+	mapTerm,mapClause,mapSubst,
+	mapRTsecond
 	)
 
 import Debug.Trace
@@ -58,6 +60,52 @@ mkOrNode p si t (Clause h b)  = case (h `match` t) of
 		Nothing	->	getFresh >>= return . OrNodeEmpty . Vr 
 
 	where
+
+extrew :: (Eq a, Ord b, Freshable b, Freshable d) =>
+	Program a b c -> RewTree a b c d -> Subst a b c -> RewTree a b c d
+extrew _ rt@RTEmpty 	_ 	= rt
+extrew p rt		si'	= RT c sisi' (fmap (extAndNode p sisi') ands)
+		where
+			(RT c sisi' ands) = substRT si' rt
+
+extAndNode p sisi' (AndNode t ors) 	= AndNode t $ zipWith (extOrNode p sisi' t) ors p
+
+extOrNode p sisi' t (OrNode c ands) _	= OrNode c $ fmap (extAndNode p sisi') ands
+extOrNode p sisi' t ornd@(OrNodeEmpty (Vr v))  c@(Clause h b) 	= case (h `match` t) of
+		Just th	-> flip evalFresh v $ mkOrNode p sisi' t c
+		Nothing	-> ornd
+
+
+	{-flip evalFresh initFresh $ do
+		ands <- sequenceA $ fmap (mkAndNode p si) bsi'
+		return $ RT csi' si ands 
+			--(Clause h' b') s' ands
+	where
+		si' = si `stripVars` h 
+		h' = si' `applySubst` h -- free vars are stripped, no need to apply si'
+		bsi' = map (si' `applySubst`) b
+		csi' = Clause h' bsi'
+	-}
+
+
+
+
+-- TODO - replace by bifunctor ~ bimap + apply
+--
+--substRT :: Subst a b c -> RewTree a b c d -> RewTree a b c d
+substRT _ 	rt@(RTEmpty)	= rt
+substRT th	(RT c si ands)	= RT thc thsi thands
+	where
+		thc = th `asc` c
+		asc rho (Clause h b) = Clause (rho `applySubst` h)
+			(fmap (rho `applySubst`) b)
+		thsi = th -- `composeSubst` si
+		thands = fmap (substAnd th) ands
+		substAnd rho (AndNode t ors) 	= AndNode (rho `applySubst` t)
+			(fmap (substOr th) ors)
+		substOr rho or@(OrNodeEmpty _)	= or
+		substOr rho (OrNode c' ands)	= OrNode (rho `asc` c')
+			(fmap (substAnd rho) ands)
 
 
 -- | apply substitution to the term tree

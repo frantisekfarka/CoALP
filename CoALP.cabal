@@ -139,23 +139,23 @@ executable CoALPj
 --  default-extensions: BangPatterns
 
 
---test-suite CoALP-tests
---  type:             exitcode-stdio-1.0
+test-suite CoALP-tests
+  type:             exitcode-stdio-1.0
 
---  hs-source-dirs:   tests
+  hs-source-dirs:   tests
 
---  main-is:          Tests.hs
+  main-is:          Tests.hs
 
---  other-modules:    CoALP.Tests.Unit.Subst
+  other-modules:    CoALP.Tests.Unit.Unify
 --                    CoALP.Tests.Unit.Guards
 
---  default-language: Haskell2010
+  default-language: Haskell2010
 
---  ghc-options:      -O2 -Wall -rtsopts -threaded
+  ghc-options:      -O2 -Wall -rtsopts -threaded
 
---  build-depends:    base        >= 4.6,
---                    CoALP       >= 0.0.1,
+  build-depends:    base        >= 4.6,
+                    CoALP       >= 0.0.5,
 --                    containers  >= 0.5,
 --                    directory,
---                    tasty       >= 0.3,
---                    tasty-hunit >= 0.2
+                    tasty       >= 0.10,
+                    tasty-hunit >= 0.9
