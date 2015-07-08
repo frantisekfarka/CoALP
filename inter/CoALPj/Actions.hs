@@ -1,6 +1,7 @@
 module CoALPj.Actions (
 	  loadFile
 	, reloadFile
+        , transformFile
 	, printProgram
 	, checkGuard1
 	, checkGuard2
@@ -37,10 +38,13 @@ import CoALPj.InternalState (
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs)
 import CoALP.Program (Program1)
-import CoALP.Parser.Parser (parse,parseClause)
+import CoALP.Parser.Parser (parse,parseWithCount,parseClause)
 import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,mkVar)
+
+import CoALP.Transform (transformProg)
+
 
 -- TODO repeats in REPL.hs, merge to helper module
 iputStrLn :: String -> CoALP ()
@@ -73,6 +77,20 @@ reloadFile = do
 	pp <- programPath <$> get
 	dropProgram 
 	(maybe (iputStrLn "No program loaded")) loadFile pp
+
+transformFile :: FilePath -> CoALP ()
+transformFile file = do
+        cnt <- lift . lift $ readFile file
+        case parseWithCount cnt of
+                Left err         -> do
+                        iputStrLn err
+                        return ()
+                Right (prg, count) -> do
+                        s <- get
+                        put $ s { program = Just transformed, programPath = Just file }
+			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
+				"Program " ++ file ++ " loaded and transformed. With Count " ++ show count)
+                        where transformed = transformProg (reverse prg, count+1)
 
 dropProgram :: CoALP ()
 dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing } ) =<< get

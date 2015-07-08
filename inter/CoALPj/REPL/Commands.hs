@@ -7,6 +7,7 @@ module CoALPj.REPL.Commands (
 data Command
 	= Load FilePath
 	| Reload
+        | Transform FilePath
 	| Print
 	| Quit
 	| GC1

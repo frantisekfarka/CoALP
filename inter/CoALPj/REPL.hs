@@ -29,6 +29,7 @@ import System.IO ( BufferMode(LineBuffering), stdout, hSetBuffering)
 import CoALPj.Actions (
 	  loadFile
 	, reloadFile
+        , transformFile
 	)
 
 import CoALPj.InternalState (
@@ -183,7 +184,8 @@ processInput cmd _origState = do
 			iputStrLn $ show err
 			return ()
 		Right (Load f)	-> loadFile f
-		Right (Reload)	-> reloadFile 
+		Right (Reload)	-> reloadFile
+                Right (Transform f) -> transformFile f 
 		Right (Print)	-> printProgram
 
 		Right (Quit) 	-> do

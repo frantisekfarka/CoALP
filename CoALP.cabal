@@ -45,6 +45,7 @@ library
                     CoALP.DerTree
                     CoALP.Guards
                     CoALP.Unify
+                    CoALP.Transform	
 
   other-modules:    CoALP.FreshVar
                     CoALP.Reductions

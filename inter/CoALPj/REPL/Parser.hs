@@ -48,6 +48,10 @@ dCmd = toCmdDescr [
 		, pure Reload
 		, "\n\t:reload\n\t\tReload the current program\n"
 	), (
+	  	":transform"
+		, spaces *> (Transform <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar)))
+	  	, "\n\t:transform <file>\n\t\tLoad and transform new program\n"
+	), (
 		":print"
 		, pure Print
 		, "\n\t:print\n\t\tPrint contents of the loaded program\n"
