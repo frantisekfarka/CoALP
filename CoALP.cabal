@@ -3,7 +3,7 @@ name:          CoALP
 --             | ,----- pre-release
 --             | | ,--- fixes and new functionality
 --             | | |
-version:       0.0.5
+version:       0.0.6
 license:       LGPL-3
 license-file:  LICENSE
 author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
@@ -25,9 +25,9 @@ source-repository head
 
 -- Event logs conflict with profiling. Hence a special flag to turn event logs
 -- on and to turn profiling off.
---flag eventlog
---  description: Allows to generate event logs for ThreadScope.
---  default:     False
+flag eventlog
+  description: Allows to generate event logs for ThreadScope.
+  default:     False
 
 library
   hs-source-dirs:   src 
@@ -50,10 +50,10 @@ library
                     CoALP.Reductions
 
 
-  --if flag(eventlog)
-  --  ghc-options:    -Wall -rtsopts -eventlog
-  --else
-  --  ghc-options:    -Wall -rtsopts -auto-all -caf-all
+  if flag(eventlog)
+    ghc-options:    -Wall -rtsopts -threaded -eventlog
+  else
+    ghc-options:    -Wall -rtsopts -auto-all -caf-all
 
   build-depends:    base                 >= 4.6 && < 5,
                     containers           >= 0.5,
@@ -78,8 +78,14 @@ executable CoALPj
   other-modules:    CoALPj.CmdOpts
 
   other-extensions: FlexibleInstances
+
   -- ghc-options:      -Wall -fwarn-incomplete-patterns 
   --ghc-options:      -fprof-auto -threaded -Wall -fwarn-incomplete-patterns 
+  if flag(eventlog)
+    ghc-options:    -Wall -rtsopts -threaded -eventlog
+  else
+    ghc-options:    -Wall -rtsopts -auto-all -caf-all
+
 
 
   default-language: Haskell2010

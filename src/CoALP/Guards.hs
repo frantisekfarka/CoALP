@@ -233,7 +233,7 @@ derToUng' n gcs (DT rt trs) = case gcRewTree rt of
 
 transToUnc :: [Int] -> Int -> [GuardingContext1] -> Trans1 ->  Int -> Maybe (Trans1)
 transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
-		True	-> -- trace ("Guarded trans at " ++ (show $ reverse path)) $ 
+		True	-> trace ("Guarded trans at " ++ (show $ reverse path)) $ 
 			Nothing -- guarded trs
 		False	-> (Trans p rt v cx) <$> derToUnc' path n (gc:gcs) dt pix
 	where
