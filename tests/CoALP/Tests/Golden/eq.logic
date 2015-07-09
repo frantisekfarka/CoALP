@@ -1,0 +1,3 @@
+eq(pair(A,B)) :- eq(A), eq(B).
+eq(Char).
+

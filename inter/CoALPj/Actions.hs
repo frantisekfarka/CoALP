@@ -89,7 +89,7 @@ transformFile file = do
                         s <- get
                         put $ s { program = Just transformed, programPath = Just file }
 			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
-				"Program " ++ file ++ " loaded and transformed. With Count " ++ show count)
+				"Program " ++ file ++ " loaded and transformed.")
                         where transformed = transformProg (reverse prg, count+1)
 
 dropProgram :: CoALP ()
