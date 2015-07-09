@@ -148,6 +148,7 @@ test-suite CoALP-tests
   main-is:          Tests.hs
 
   other-modules:    CoALP.Tests.Unit.Unify
+                    CoALP.Tests.Unit.Transform
 --                    CoALP.Tests.Unit.Guards
 
   default-language: Haskell2010

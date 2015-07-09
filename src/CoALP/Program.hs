@@ -81,6 +81,11 @@ instance (Show a, Show b, Show c) => Show (Clause a b c) where
 	show (Clause h bs) = show h ++ " :- " ++ 
 		(concat . intersperse ", " . fmap show $ bs) ++ "."
 
+instance (Eq a, Eq b) => Eq (Clause a b c) where
+        (Clause h1 b1) == (Clause h2 b2) = h1 == h2 && b1 == b2
+        _ == _ = False
+
+
 -- | Type of Query Clause
 data Query a b c 
 	= Query [Term a b c]

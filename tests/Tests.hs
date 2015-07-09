@@ -6,6 +6,7 @@ module Main where
 --import qualified CoALP.Tests.Unit.Subst  as Subst
 --import qualified CoALP.Tests.Unit.Subst  as Subst
 import qualified CoALP.Tests.Unit.Unify as Unify
+import qualified CoALP.Tests.Unit.Transform as Transform
 
 import Test.Tasty
 
@@ -16,7 +17,8 @@ tests :: TestTree
 tests =
   testGroup "Unit tests"
   [
-    Unify.tests
+      Unify.tests
+    , Transform.tests
 --    Subst.tests
 --  , Guards.tests
   ]
