@@ -6,11 +6,9 @@ name:          CoALP
 version:       0.0.6
 license:       LGPL-3
 license-file:  LICENSE
-author:        Vladimir Komendantskiy <komendantsky@gmail.com>,
-               František Farka <ffarka@gmail.com>
-               Jónathan Heras <joheras@gmail.com>,
+author:        Ommited for reviewing
 
-maintainer:    František Farka <ffarka@gmail.com>
+maintainer:    Ommited for reviewing
 category:      CoALP
 synopsis:      Coalgebraic logic programming library
 description:   Library and command line interface implmenting CoALP
@@ -21,10 +19,9 @@ extra-source-files: examples/paper/*.logic
                     examples/guarded/*.logic
                     examples/unguarded/*.logic
 
-source-repository head
-  type:     git
-  location: https://github.com/frantisekfarka/CoALP.git
-  branch:   master
+flag release
+  description: Release version flag
+  default:     True
 
 -- Event logs conflict with profiling. Hence a special flag to turn event logs
 -- on and to turn profiling off.
