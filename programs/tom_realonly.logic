@@ -1,0 +1,5 @@
+
+eq(a1(X)) :- eq(X).
+eq(a2(X)) :- eq(X). 
+eq(a3(X, Y)) :- eq(X), eq(Y).
+eq(a4(X)) :- eq(X).
