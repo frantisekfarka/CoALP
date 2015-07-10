@@ -77,6 +77,11 @@ executable CoALPj
   hs-source-dirs:   inter
   main-is:          Main.hs
   other-modules:    CoALPj.CmdOpts
+                    CoALPj.Actions
+                    CoALPj.REPL
+                    CoALPj.REPL.Commands
+                    CoALPj.REPL.Parser
+                    CoALPj.InternalState
 
   other-extensions: FlexibleInstances
 
