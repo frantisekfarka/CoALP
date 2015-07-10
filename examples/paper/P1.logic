@@ -1,0 +1,2 @@
+nat(n0).
+nat(s(X)) :- nat(X).

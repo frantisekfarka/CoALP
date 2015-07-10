@@ -47,9 +47,12 @@ Run from the project directory:
 
 ## Usage
 
-CoALPj version 0.0.6, (C) 2014 - 2015
+Run the executalble CoALPj with the parameter @--help@ to get the following
+usage description:
 
 ```
+CoALPj version 0.0.6, (C) 2014 - 2015
+
 Usage: CoALPj [-v|--verbose] [-q|--quiet] [--gc3 ARG] [-V|--version]
   
 Available options:
@@ -57,7 +60,21 @@ Available options:
   -q,--quiet               Suppres most of the output
   --gc3 ARG                Guardednes check of program ARG
   -V,--version             Print version information
-  -h,--help                Show this help text
+  -h,--help                Show the help text
 ```
 
+Running the executable without any parameters starts the interactive
+interpreter. Further information can be accessed by typing @:help@
+
+
 ## Example programs
+
+There are example programs in the following directories:
+
+```
+./examples
+./examples/paper       -- programs in the examples in the paper
+./examples/guarded     -- other guarded programs
+./examples/unguarded   -- other unguarded programs
+```
+

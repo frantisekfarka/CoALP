@@ -1,0 +1,1 @@
+stream(scons(0,Y)) :- stream (Y).

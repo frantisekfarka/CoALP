@@ -1,0 +1,2 @@
+str(X) :- str2(f(X)).
+str2(f(X)) :- str(X).

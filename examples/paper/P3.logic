@@ -1,0 +1,1 @@
+from(X,scons(X,Y)) :- from(s(X),Y).
