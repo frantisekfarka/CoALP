@@ -85,12 +85,12 @@ parseOptions = CmdOpts  <$> --many $
 	<*> switch (
 		short 'q'
 		<> long "quiet"
-		<> help "Suppres most of the output"
+		<> help "Suppress most of the output"
 		)
 	-- <*> switch	(short 'V' <>	long "version" <> help "Show version")
 	<*> option (pure Just <*> str) (
 		long "gc3" 
-		<> help "Guardednes check of program ARG" 
+		<> help "Guardedness check of program ARG" 
 		<> value Nothing)
 --	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)
 --	<*> switch (

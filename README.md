@@ -11,7 +11,7 @@ Haskell implementation of coalgebraic logic programming. Experimental,
 development version.
 
 
-## Instalation
+## Installation
 
 ### Dependencies
 
@@ -21,14 +21,14 @@ libraries installed:
 * ImageMagic
 * Graphviz
 
-The utilites @dot@ and @display@ should by visible in $PATH
+The utilities @dot@ and @display@ should by visible in $PATH
 
 ### Developer's installation
 
 Use cabal sandboxing feature:
 
 > cabal sandbox init && cabal install --dependencies-only
-> caba run
+> cabal run
 
 
 ### Standard installation using `cabal`
@@ -47,7 +47,7 @@ Run from the project directory:
 
 ## Usage
 
-Run the executalble CoALPj with the parameter @--help@ to get the following
+Run the executable CoALPj with the parameter @--help@ to get the following
 usage description:
 
 ```
@@ -57,8 +57,8 @@ Usage: CoALPj [-v|--verbose] [-q|--quiet] [--gc3 ARG] [-V|--version]
   
 Available options:
   -v,--verbose             Verbose output
-  -q,--quiet               Suppres most of the output
-  --gc3 ARG                Guardednes check of program ARG
+  -q,--quiet               Suppress most of the output
+  --gc3 ARG                Guardedness check of program ARG
   -V,--version             Print version information
   -h,--help                Show the help text
 ```
@@ -73,7 +73,7 @@ There are example programs in the following directories:
 
 ```
 ./examples
-./examples/paper       -- programs in the examples in the paper
+./examples/paper       -- examples programs in the paper
 ./examples/guarded     -- other guarded programs
 ./examples/unguarded   -- other unguarded programs
 ```
