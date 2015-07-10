@@ -1,5 +1,6 @@
 {
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+-- | Alex the lexer
 module CoALP.Parser.Lexer (
 	  Alex
 	, Token (..)
@@ -11,14 +12,13 @@ module CoALP.Parser.Lexer (
 	, alexSynError
 	) where
 
---import Control.Monad.Trans.Except (Except, throwE)
 import Data.Map as M (Map,empty,insert, lookup) 
 
 --import CoALP.Error (Err(ParserErr))
 import CoALP.Program (
 	  Ident
 	, Constant
-	, Variable
+	, Var
 	)
 
 
@@ -85,17 +85,19 @@ tokens :-
 -- -----------------------------------------------------------------------------
 -- | The User State type:
 data AlexUserState = AlexUserState {
-	  counter :: Variable
-	, vars :: Map Ident Variable
+	  counter :: Var
+	, vars :: Map Ident Var
 	}
 
+-- | Initialize user state
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState {
 	  counter = (1)
 	, vars = empty
 	}
 
-getVar :: Ident -> Alex Variable
+-- | Get var counter from user state
+getVar :: Ident -> Alex Var
 getVar ident = Alex $ \s@AlexState{alex_ust=ust} 
 	-> case (ident `M.lookup` (vars ust)) of
 		Just i  -> Right (s, i)
@@ -103,7 +105,8 @@ getVar ident = Alex $ \s@AlexState{alex_ust=ust}
 			  counter=(counter ust + 1)
 			, vars=(insert ident (counter ust + 1) (vars ust))
 			}}, counter ust + 1)
-			
+	
+-- | Reset var counter
 clearVars :: Alex ()
 clearVars = Alex $ \s@AlexState{alex_ust=ust}
 	-> Right (s{alex_ust=ust{vars=empty}}, ())
@@ -137,13 +140,15 @@ alexGetPos = do
 tokenStr :: AlexInput -> Int -> String
 tokenStr (_, _, _, s) len = take len s
 
+-- | Bind alex monad
 scanTokens :: (Token -> Alex a) -> Alex a
 scanTokens = (alexMonadScan >>=)
 
+-- | EOF token
 alexEOF :: Alex Token
 alexEOF = return TEof
 
--- | Sybtactioc error (unexpected token)
+-- | Syntactic error (unexpected token)
 alexSynError :: Token -> Alex a
 alexSynError tok = do
 	(l, c) <- alexGetPos
@@ -168,6 +173,7 @@ alexSynError tok = do
 		len TRPar = 1
 		len t = length . show $ t
 
+-- | Run alex monad and get user state counter
 runAlex' :: String -> Alex a -> Either String (a, Integer)
 runAlex' input (Alex f) = case f (AlexState {alex_pos = alexStartPos,
 		alex_inp = input,       

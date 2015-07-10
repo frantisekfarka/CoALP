@@ -34,13 +34,12 @@ import CoALPj.InternalState (
 	)
 
 -- TODO refactor
-import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
-import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs,derToUng)
+import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
+import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng)
 import CoALP.Program (Program1)
 import CoALP.Parser.Parser (parse,parseClause)
-import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
-import CoALP.DerTree (der,trans,mkVar)
+import CoALP.DerTree (der,trans,Vr(..))
 
 -- TODO repeats in REPL.hs, merge to helper module
 iputStrLn :: String -> CoALP ()
@@ -129,8 +128,7 @@ drawTrans depth var q = whenProgram (
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
 			let rt = rew prog r []
-			let tt = fst $ foldl (trans prog . fst) (rt, Nothing) (fmap mkVar var)
-			--let tt = trans prog rt (mkVar $ head var)
+			let tt = fst $ foldl (trans prog . fst) (rt, Nothing) (fmap Vr var)
 			liftIO . displayRewTree depth $ tt 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
@@ -171,12 +169,12 @@ drawUng depD depR q = whenProgram (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-verbPutStrLn :: String -> CoALP ()
+{-verbPutStrLn :: String -> CoALP ()
 verbPutStrLn str = do
 	s <- get
 	let verbosity = optVerbosity $ caOptions s
 	when (verbosity >= VVerbose) $ iputStrLn str
-
+-}
 
 whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
 whenProgram f = maybe (iputStrLn "No program loaded") f

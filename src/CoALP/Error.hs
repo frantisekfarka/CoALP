@@ -1,15 +1,14 @@
--- | CoALP error messages and helpers
+-- | CoALP error messages
 module CoALP.Error (
 	Err(..)
 )where
 
 
--- | error messages data type
+-- | Error messages data type
 data Err = EmptyMsg
 	 | Msg String
          | InternalMsg String
 	 | NotImplementedYet String
 	 | ParserErr String
-	 | QuitErr
 	deriving Show
 
