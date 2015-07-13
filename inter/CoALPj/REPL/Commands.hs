@@ -13,6 +13,7 @@ data Command
 	| GC2 String
 	| GC3
 	| GC3One String
+	| GC4One String
 	| DrawProgram
 	| DrawRew Int String
 	| DrawTrans Int [Integer] String

@@ -18,6 +18,9 @@ module CoALP.Guards (
 	, derToObs
 	, derToUnc
 	, derToUng
+
+	-- TODO
+	, recGuardedTerm
 ) where
 
 --import Control.Arrow ((***))
@@ -310,6 +313,7 @@ oLoops :: (Eq a) =>
 	-> [[Loop a b c]]
 oLoops _	_	(OrNodeEmpty _) = []
 oLoops tws	ci	(OrNode _ ands) = concat $ zipWith (aLoops tws ci) [0..] ands 
+
 
 
 

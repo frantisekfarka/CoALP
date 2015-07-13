@@ -6,6 +6,7 @@ module CoALPj.Actions (
 	, checkGuard2
 	, checkGuard3
 	, checkGuard3One
+	, checkGuard4One
 	, drawProgram
 	, drawRew
 	, drawTrans
@@ -35,7 +36,21 @@ import CoALPj.InternalState (
 
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
-import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng)
+import CoALP.Guards (
+	  gc1
+	, gc2
+	, gc3
+	, gc3one
+	, derToUnc
+	, derToUng
+	)
+
+import CoALP.AltGuards (
+	  gc4one
+	, displayRDT
+	, constructRew
+	)
+
 import CoALP.Program (Program1)
 import CoALP.Parser.Parser (parse,parseClause)
 import CoALP.RewTree (rew)
@@ -99,6 +114,16 @@ checkGuard3One c = whenProgram (
 		Left err	-> iputStrLn err
 		Right r		-> iputStrLn . show $ (gc3one p r)
 	)
+			
+checkGuard4One :: String -> CoALP ()
+checkGuard4One c = whenProgram (
+	\p -> case parseClause c of
+		Left err	-> iputStrLn err
+		Right r		-> do
+			iputStrLn . show $ (gc4one p r)
+			liftIO . displayRDT $ constructRew p r
+	)
+			
 			
 			
 			

@@ -70,6 +70,11 @@ dCmd = toCmdDescr [
 		, "\n\t:cgc3\n\t\tGuardedness check 3 for a clause of the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
+		":cgc4"
+		, spaces *> (GC4One <$> many anyChar)
+		, "\n\t:cgc4\n\t\tGuardedness check 4 for a clause of the form\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
 		":gc3"
 		, spaces *> (pure GC3)
 		, "\n\t:gc3\n\t\tGuardedness check 3 for the loaded program\n"

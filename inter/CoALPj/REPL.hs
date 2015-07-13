@@ -57,6 +57,7 @@ import CoALPj.Actions (
 	, checkGuard2
 	, checkGuard3
 	, checkGuard3One
+	, checkGuard4One
 	, drawProgram
 	, drawRew
 	, drawTrans
@@ -195,6 +196,7 @@ processInput cmd _origState = do
 		Right (GC2 c)	-> checkGuard2 c
 		Right (GC3)	-> checkGuard3 
 		Right (GC3One c) -> checkGuard3One c
+		Right (GC4One c) -> checkGuard4One c
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q

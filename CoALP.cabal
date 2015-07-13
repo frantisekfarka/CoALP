@@ -45,6 +45,7 @@ library
                     CoALP.Guards
                     CoALP.Unify
                     CoALP.Reductions
+                    CoALP.AltGuards
 
   other-modules:    CoALP.FreshVar
                     CoALP.Parser.PrettyPrint
