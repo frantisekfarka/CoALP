@@ -46,9 +46,10 @@ library
                     CoALP.Unify
                     CoALP.Transform
                     CoALP.Reductions
+                    CoALP.Parser.PrettyPrint
 
   other-modules:    CoALP.FreshVar
-                    CoALP.Parser.PrettyPrint
+                    
 
 
   if flag(eventlog)

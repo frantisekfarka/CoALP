@@ -6,9 +6,9 @@ module CoALP.Tests.Unit.Transform where
 import System.FilePath.Posix (replaceExtension, takeBaseName, replaceFileName)
 
 import CoALP.Transform
-import CoALP.Program (Program, Program1,Clause1, Clause(..),Term1,Term(..),Subst)
+import CoALP.Program (Program, Program1,Clause1, Clause(..),Term1,Term(..))
 import CoALP.Parser.Parser (parseWithCount)
---import CoALP.Parser.PrettyPrint
+import CoALP.Parser.PrettyPrint
 import Data.List (intersperse)
 
 import Test.Tasty
@@ -145,27 +145,3 @@ transFile source dest = do
 
 ppProg :: (Show a, Show b, Show c) => Program a b c -> String
 ppProg = concat . intersperse "\n" . (map ppClause) 
-
--- | Clause pretty printer
-ppClause :: (Show a, Show b, Show c) => Clause a b c -> String
-ppClause (Clause h (bs@(_:_))) = ppTerm h ++ " :- " ++ ppTerms bs ++ "."
-ppClause (Clause h []) = ppTerm h ++ "."
-
--- | Term list pretty printer
-ppTerms :: (Show a, Show b, Show c) =>  [Term a b c] -> String
-ppTerms ts = concat . intersperse ", " . map ppTerm $ ts
-
--- | Term pretty printer
-ppTerm :: (Show a, Show b, Show c) => Term a b c -> String
-ppTerm (Var x) = "V_" ++ show x
-ppTerm (Fun f ts) = (filter (/= '"') $ show f) ++
-	if null ts 
-		then ""
-		else "(" ++ ppTerms ts ++ ")"
---ppTerm (Const i) = show i
-
--- | Substitution pretty printer
-ppSubst :: (Show a, Show b, Show c) => Subst a b c -> String
-ppSubst s = "{ " ++ (concat . intersperse ", " . map f) s ++ " }"
-	where
-		f (v,t) = ppTerm t ++ " / V_" ++ show v
