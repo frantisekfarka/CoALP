@@ -6,7 +6,7 @@ module CoALP.Tests.Unit.Transform where
 import System.FilePath.Posix (replaceExtension, takeBaseName, replaceFileName)
 
 import CoALP.Transform
-import CoALP.Program (Program, Program1,Clause1, Clause(..),Term1,Term(..),Subst)
+import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),Subst)
 import CoALP.Parser.Parser (parseWithCount)
 --import CoALP.Parser.PrettyPrint
 import Data.List (intersperse)

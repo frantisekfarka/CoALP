@@ -39,7 +39,7 @@ import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng)
 import CoALP.Program (Program1)
 import CoALP.Parser.Parser (parse,parseWithCount,parseClause)
---import CoALP.Parser.PrettyPrint (ppProgram)
+import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,Vr(..))
 

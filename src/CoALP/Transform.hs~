@@ -33,8 +33,8 @@ transformClause count index (Clause h b) = (Clause (transformHead count numOfTer
 -- n - number of fresh vars in the body
 -- index - index of the clause in the program
 transformHead :: Integer -> Integer -> Integer -> Term1 -> Term1
-transformHead _ _ _ v@(Var _) = v 
 transformHead count n index (Fun ids ts) = Fun ids (ts ++ [newFunc])
+transformHead _ _ _ v@(Var _) = v 
   where vars = map (Var) [count..(count + n - 1)]
         newFunc = Fun ("transform-func-" ++ show index) vars
 

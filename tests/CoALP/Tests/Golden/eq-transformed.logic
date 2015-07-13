@@ -1,0 +1,2 @@
+eq(pair(V_2, V_3), transform-func-1(V_5, V_6)) :- eq(V_2, V_5), eq(V_3, V_6).
+eq(V_4, transform-func-2).

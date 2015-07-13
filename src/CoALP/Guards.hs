@@ -1,25 +1,30 @@
 {-# LANGUAGE FlexibleContexts #-}
--- | This module provides guardednes checks
+-- | Guardednes checks
 --
 module CoALP.Guards (
+	-- * Guardedness checks
 	  gc1 -- guardenes on clauses
 	, gc2 -- guardenes on rew trees
 	, gc3 -- guardenes on der trees
-	, gcRewTree
 	, gc3one
+
+	-- * Guarding context
+	, guardingContext
+
+	-- * GC on a rewriting tree
+	, gcRewTree
+
+	-- * Derivation tree transformations
 	, derToObs
 	, derToUnc
-	, depthOT
-	, guardingContext
-	, guardedTerm, recGuardedTerm, recGuardedTermB
+	, derToUng
 ) where
 
 --import Control.Arrow ((***))
 import Data.Functor ((<$>))
-import Data.Foldable (asum,foldMap)
+import Data.Foldable (asum)
 import Data.List (nub)
 import Data.Maybe (maybeToList)
--- import Data.Traversable (sequenceA,traverse)
 
 import CoALP.Program (Program, Clause(..), Term(..),
 	AndNode(..),OrNode(..),RewTree(..),
@@ -28,10 +33,11 @@ import CoALP.Program (Program, Clause(..), Term(..),
 	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,GuardingContext1,
 	RewTree(..),
 	RewTree(..),
-	mapClause,
-	Loop,Subst,
-	subtermOf,propSubtermOf,
-	Program1,Clause1,RewTree1,DerTree1
+	Loop,Subst
+	, subtermOf
+	, propSubtermOf
+	, DerTree1
+	, VR
 	)
 
 import CoALP.FreshVar (Freshable,apartL,apartR)
@@ -42,46 +48,22 @@ import CoALP.Unify (match)
 import Control.DeepSeq (force)
 import Debug.Trace
 
--- | GC1 -- guardendes on cluases
--- GQ 1 requires that:
+-- | Guardendes check GC1 on clauses
 --
--- for every program P and j ∈ dom(P(i)), P(i)(ε).P(i)(j)
--- whenever P(i)(ε)(ε) = P(i)(j)(ε). 
---
--- TODO move this to definition of program
---
--- notation program P over Σ is total function
--- {0..n} ε N to non-goal clauses
---
--- P(i) is n-th clause
---
--- clause C over Σ is a total function from finite tree language L
--- of depth 1 to terms (term trees)
---
--- C(ε) is a head of clause
--- C(i) is a n-th term (for i =/= ε)
---
--- Term
--- ...
--- 
--- T(ε) is a predicate of term
--- 
---
-gc1 :: Program a b c -> Bool
+-- Given program P check that all program clauses are guarded, i. e. 
+-- whenever @C(ε)@ and @C(i)@ have same predicate check that @C(i)@ is a reduct of @C(ε)@
+gc1 :: (Eq a, Eq c) => Program a b c -> Bool
 gc1 = all guardedClause
 
 
 
--- | Check that clause is guarded
---
--- i. e. 
+-- | Check that clause is guarded, i. e. 
 --
 -- whenever C(ε) and C(i) have same predicate check that
 --
 -- C(i) is a reduct of C(ε)
 --
--- TODO heads to tree lang projections?
-guardedClause :: Clause a b c -> Bool
+guardedClause :: (Eq a, Eq c) => Clause a b c -> Bool
 guardedClause (Clause h b) = all (isJust . guardedTerm h) $ filter (sameHead h) b
 	where
 		sameHead (Fun p1 _) (Fun p2 _) 	= p1 == p2
@@ -90,10 +72,10 @@ guardedClause (Clause h b) = all (isJust . guardedTerm h) $ filter (sameHead h) 
 		isJust (Just _)	= True
 		isJust _	= False
 
--- | reflects definitoon 5.1
+-- | Checks whther a term is guurded, reflects @Definitoon 5.1@
 --
 -- we ensure 2) by recursion on Term
-guardedTerm :: Term a b c -> Term a b c -> Maybe (Term a b c)
+guardedTerm :: Eq a => Term a b c -> Term a b c -> Maybe (Term a b c)
 guardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive hypothesis
 		then (asum $ fmap (uncurry guardedTerm) [
 			(t1,t2) | t1 <- s1, t2 <- s2
@@ -105,13 +87,11 @@ guardedTerm t@(Fun _ s) (Var _)		= if length s > 0
 		else Nothing
 guardedTerm _ _				= Nothing
 
-
--- | repeated definition 5.1 for recursive contraction
+-- | Compute recursive contraction measure on a term
+-- accorging to @Definiton 5.1@
 --
---   the direction is v -> v (w is a prefix of v)
-recGuardedTerm :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Maybe (Term a b c)
+recGuardedTerm :: (Eq a, Eq b, Eq c) =>  Term a b c -> Term a b c -> Maybe (Term a b c)
 recGuardedTerm f@(Fun _ _) v@(Var _)	= case v `subtermOf` f of
-	--True	-> Just f
 	True	-> Just f
 	False	-> Nothing
 
@@ -119,72 +99,83 @@ recGuardedTerm f@(Fun _ _) c@(Fun _ [])	= case c `propSubtermOf` f of
 	True	-> Just f
 	False	-> Nothing
 
-recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- should hold from recursive hypothesis
+recGuardedTerm (Fun p1 s1) (Fun p2 s2)	= if p1 == p2 -- holds from recursive hypothesis
 		then (f $ fmap (uncurry recGuardedTerm) 
-			(zip s1 s2)) -- TODO check with paper
+			(zip s1 s2)) 
 			--[
 			--(t1,t2) | t1 <- s1, t2 <- s2
 			--])
 		else Nothing
 	where
-		-- asum?
+		-- asum
 		f [] = Nothing
 		f ((Just t):_) = Just t
 		f (Nothing:xs) = f xs
 recGuardedTerm _ _			= Nothing
 
--- TODO
-recGuardedTermB :: (Eq a, Eq b) =>  Term a b c -> Term a b c -> Bool
+-- | Boolean helper
+recGuardedTermB :: (Eq a, Eq b, Eq c) =>  Term a b c -> Term a b c -> Bool
 recGuardedTermB t1 t2 = case recGuardedTerm t1 t2 of
 	Just _	-> True
 	Nothing	-> False
 
---gc2 :: (Eq a, Ord b, Freshable b) => Program a b c -> Clause a b c -> Bool
-gc2 :: Program1 -> Clause1 -> Bool
-gc2 p c = gcRewTree ((rew p' c' []) :: RewTree1)
+-- | Guardedness check GC2
+--
+-- Given program P and a clause C check guardednees of the rewriting tree
+--
+-- @
+-- 	rew (P, C, /id/)
+-- @
+gc2 :: (Eq a, Eq b, Eq c, Ord c, Freshable c) => Program a b c -> Clause a b c -> Bool
+gc2 p c = gcRewTree (rew p' c' []) 
 	where
-		p' = force $ map (mapClause apartL) p
-		c' = force $ mapClause apartR c
+		p' = force $ fmap (fmap apartL) p
+		c' = force $ fmap apartR c
 
---gcRewTree :: (Eq a, Eq b) =>  RewTree a b c Integer -> Bool
+-- | Check GC2 guardedness of a rewritng tree
+gcRewTree :: (Eq a, Eq b, Eq c) =>  RewTree a b c Integer -> Bool
 gcRewTree RTEmpty	= True
 gcRewTree rt@(RT _ _ _) = all (uncurry recGuardedTermB . g) $ (loops rt)
 	where
 		g (t1,t2,_) = (t1,t2)
-		--f x = traceShow (take 1 x) x
 
---gc3 :: (Freshable b, Ord b, Eq a) =>
---	Program a b c -> Bool
+-- | Guradedness check GC3 according to @Defintion 5.6@ for the whole program
+gc3 :: (Freshable c, Ord c, Eq a, Eq b) =>
+	Program a b c -> Bool
 gc3 p = all (gc3one p ) p
 	
 
 
---gc3one :: (Freshable b, Ord b, Eq a) =>
---	Program a b c -> Clause a b c -> Bool
-gc3one p c = gcDerTree [] $ ((der p c) :: DerTree1)
+-- | Guradedness check GC3 according to @Defintion 5.6@ for a single clause
+gc3one :: (Freshable c, Ord c, Eq a, Eq b) =>
+	Program a b c -> Clause a b c -> Bool
+gc3one p c = gcDerTree [] $ (der p c) 
 
---gcDerTree :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> DerTree a b c Integer -> Bool
+gcDerTree :: (Eq a, Eq b, Ord c) => [GuardingContext a b c] -> DerTree a b c VR -> Bool
 gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 
---gcTrans :: (Eq a, Eq b, Ord b) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
+
+-- | Check whether a transition id guarded
+gcTrans :: (Eq a, Eq b, Ord c) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
 gcTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> True
 		False	-> gcDerTree (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
-		--gc = trace ("GC: " ++ show gc' ++ "\n\t" ++ show gcs ++
-		--	"\n\t" ++ show (gc' `elem` gcs)) gc'
 
 
+-- | Construct observation tree from a derivation tree 
+-- according to the @Definition 5.5@
 derToObs :: DerTree1 -> OTree1
 derToObs dt = derToObs' [] dt 
 
+-- | The actual implementation
 derToObs' :: [GuardingContext1] -> DerTree1 -> OTree1
 derToObs' gcs (DT rt trs) = case gcRewTree rt of
 	False	-> UNRT rt
 	True	-> ODT rt $ map (transToObs gcs) trs
 
-
+-- | Ditto for a transition
 transToObs :: [GuardingContext1] -> Trans1 -> OTrans1
 transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> GTrans v gcs gc
@@ -192,47 +183,69 @@ transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 	where
 		gc = guardingContext p rt cx 
 
+-- | Select leftmost branch of a derivation tree that is not closed
+-- up to given depth
 derToUnc :: Int -> DerTree1 -> DerTree1
-derToUnc n dt@(DT rt _) = case derToUnc' n [] dt of
+derToUnc n dt@(DT rt _) = case derToUnc' [] n [] dt 0 of
 	Just dt'	-> dt'
 	Nothing		-> DT rt []
 	
-
-derToUnc' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
-derToUnc' 0 _   (DT rt _) = Just $ DT rt []
-derToUnc' n gcs (DT rt trs) = case gcRewTree rt of
-		False	-> Nothing -- we found unguarded tree and thus we can finish
-		True	-> (DT rt) <$> (altseq $ map (transToUnc (n-1) gcs) trs)
+-- | The actual implementation
+derToUnc' :: [Int] -> Int -> [GuardingContext1] -> DerTree1 -> Int -> Maybe DerTree1
+derToUnc' _    0 _   (DT rt _) _ = Just $ DT rt []
+derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
+		False	-> -- trace ("Unguarded tree at " ++ (show $ reverse (tix:path))) $
+			Nothing -- we found unguarded tree and thus we can finish
+		True	-> -- trace ("Continue " ++ (show $ reverse $ tix:path)) 
+			(DT rt) <$> (altseq $ zipWith (transToUnc (tix:path) (n-1) gcs) trs [0..])
 	where
 		altseq xs = let r = altseq' xs in if null r then Nothing else Just r
 		altseq' ((Just x):_) = [x] -- :(altseq' xs)
 		altseq' (Nothing:xs) = altseq' xs
 		altseq' [] = []
 
-transToUnc :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
-transToUnc n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
-		True	-> Nothing -- guarded trs
-		False	-> (Trans p rt v cx) <$> derToUnc' n (gc:gcs) dt
+-- | Ditto for trans
+transToUnc :: [Int] -> Int -> [GuardingContext1] -> Trans1 ->  Int -> Maybe (Trans1)
+transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
+		True	-> trace ("Guarded trans at " ++ (show $ reverse path)) $ 
+			Nothing -- guarded trs
+		False	-> (Trans p rt v cx) <$> derToUnc' path n (gc:gcs) dt pix
+	where
+		gc = guardingContext p rt cx 
+-- | Select leftmost branch containing an unguarded rewriting tree in the 
+-- given or less depth
+derToUng :: Int -> DerTree1 -> DerTree1
+derToUng depthD dt@(DT _ _) = case derToUng' depthD [] dt of
+	Just dt'	-> dt'
+	Nothing		-> DT RTEmpty []
+
+-- | The actual implementation
+derToUng' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
+derToUng' 0 _ (DT rt _) = Just (DT rt [])
+derToUng' n gcs (DT rt trs) = case gcRewTree rt of
+		False	-> Just $ DT rt []
+		True	-> (DT rt) <$> (altseq $ map (transToUng (n - 1) gcs) trs)
+	where
+		altseq []		= Nothing
+		altseq ((Just x):_)	= Just [x]
+		altseq (Nothing:xs)	= altseq xs
+
+-- | Ditto for trans
+transToUng :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
+transToUng n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+		True	-> Nothing -- guarded trans
+		False	-> (Trans p rt v cx) <$> derToUng' n (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
 
 
-
-
-
-depthOT :: OTree1 -> Int
-depthOT (ODT _ [])	= 1 
-depthOT (ODT _ trs)	= 1 + (maximum $ map depthTrs trs)
-depthOT (UNRT _)	= 0
-
-depthTrs :: OTrans1 -> Int
-depthTrs (OTrans _ _ _ _ ot)	= depthOT ot
-depthTrs (GTrans _ _ _) 	= 0
-
-
-
-
-guardingContext :: (Eq a, Ord b) =>
+-- | Given a program P, rewriting tree @D(wi) = rew(P, C, &#x3c3;)@ and the external
+-- resolvent &#x3c3;' with its contraction measure compute guarding context
+--
+-- @
+-- 	gc(D(wi)) = {(P(k), t', v) &#8712; &#x3c0;(wi) | ... }
+-- @
+guardingContext :: (Eq a, Eq b, Ord c) =>
 	Program a b c
 	-> RewTree a b c d
 	-> Maybe (Int, Subst a b c, Term a b c) 
@@ -266,7 +279,7 @@ guardingContext p rt cx	= nub [(pkt', t', v) |
 --	2/ have same head
 --	3/ parents can be matched to the same program clause
 --
-loops :: RewTree a b c d -> [Loop a b c] 
+loops :: Eq a => RewTree a b c d -> [Loop a b c] 
 loops (RTEmpty)	= []
 loops (RT _ _ ands) = concat $ concatMap loops0 ands
 	where
@@ -275,7 +288,7 @@ loops (RT _ _ ands) = concat $ concatMap loops0 ands
 	
 
 
-aLoops :: 
+aLoops :: (Eq a) =>
 	[(Term a b c, (Int, Int))]
 	-> Int -- ^ parent clause ix
 	-> Int -- ^ term ix
@@ -290,7 +303,7 @@ aLoops tws pci ti (AndNode t ors) = (concatMap f tws) :
 		eqs (Fun t1 _)	(Fun t2 _)	= t1 == t2
 		eqs _		_		= False
 
-oLoops :: 
+oLoops :: (Eq a) =>
 	[(Term a b c, (Int, Int))]
 	-> Int -- ^ clause ix
 	-> OrNode (Clause a b c) (Term a b c) d

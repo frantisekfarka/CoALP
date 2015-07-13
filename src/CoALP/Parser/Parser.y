@@ -1,4 +1,5 @@
 {
+-- The Happy parser
 module CoALP.Parser.Parser (
 	  parse
 	, parseWithCount
@@ -43,7 +44,7 @@ import Data.Map(empty,findWithDefault,insert)
 	','		{ TTermSep }
 	'('             { TLPar }
 	')'		{ TRPar }
-	'?'		{ TQuery }
+--	'?'		{ TQuery }
 
 %%
 
@@ -56,8 +57,8 @@ Clause :: { Clause1 }
 Clause	: Term ':-' Terms '.'		{ Clause $1 (reverse $3) }
 	| Term '.'			{ Clause $1 [] }
 
-Query :: { Query1 }
-Query	: '?' ':-' Terms '.'		{ Query $3 }
+-- Query :: { Query1 }
+-- Query	: '?' ':-' Terms '.'		{ Query $3 }
 
 Terms :: { [ Term1 ] }
 Terms	: Terms ',' Term		{ $3 : $1 }
@@ -73,10 +74,7 @@ Term	: funId '(' Terms ')'		{ Fun $1 (reverse $3) }
 
 {
 
---parseError :: Token -> Alex a
---parseError t = throwE $ ParserErr $ show t
---parseError t = alexError $ "syntactic error: " ++ show t --  fail $ "Happy error: " ++ show t
-
+-- | Handle syntactic error
 parseError :: Token -> Alex a
 parseError t = alexSynError t
 
@@ -85,11 +83,11 @@ parseError t = alexSynError t
 parse :: String -> Either String Program1
 parse s = runAlex s main
 
--- | Parse program
--- obtain next variable counter 
+-- | Parse program, obtain next variable counter 
 parseWithCount :: String -> Either String (Program1, Integer)
 parseWithCount s = runAlex' s main
 
+-- | Parse single clause
 parseClause :: String -> Either String Clause1 
 parseClause s = runAlex s clause 
 

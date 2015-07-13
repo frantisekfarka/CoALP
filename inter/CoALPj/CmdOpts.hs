@@ -5,12 +5,12 @@ module CoALPj.CmdOpts (
 	  runArgParser
 	, CmdOpts
 	, optVerbose
-	, optVVerbose
+	--, optVVerbose
 	, optQuiet
 	, optGC3
-	, optDummy1
-	, optDdumpLexer
-	, optDdumpParser
+	--, optDummy1
+	--, optDdumpLexer
+	--, optDdumpParser
 ) where
 
 import Control.Applicative
@@ -52,13 +52,13 @@ runArgParser = execParser ( info parser (fullDesc
 -- | Command line optins
 data CmdOpts = CmdOpts {
 	  optVerbose :: Bool   		-- | verbose
-	, optVVerbose :: Bool  		-- | very verbose
+	--, optVVerbose :: Bool  		-- | very verbose
 	, optQuiet :: Bool		-- | quiet
 	, optGC3 :: Maybe String	-- | GC3 <program>
 	--, optVersion :: Bool
-	, optDummy1 :: Int
-	, optDdumpLexer :: Bool	-- | parser debugging output
-	, optDdumpParser :: Bool	-- | parser debugging output
+	--, optDummy1 :: Int
+	--, optDdumpLexer :: Bool	-- | parser debugging output
+	--, optDdumpParser :: Bool	-- | parser debugging output
 	}
 	deriving (Show)
 
@@ -78,10 +78,10 @@ parseOptions = CmdOpts  <$> --many $
 		<> help "Verbose output" 
 		-- <> helpDoc (Just (PP.text "hello PP.text world"))
 		)
-	<*> switch (
-		long "vverbose"
-		<> help "Very verbose output" 
-		)
+--	<*> switch (
+--		long "vverbose"
+--		<> help "Very verbose output" 
+--		)
 	<*> switch (
 		short 'q'
 		<> long "quiet"
@@ -92,15 +92,15 @@ parseOptions = CmdOpts  <$> --many $
 		long "gc3" 
 		<> help "Guardednes check of program ARG" 
 		<> value Nothing)
-	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)
-	<*> switch (
-		long "ddump-lexer"
-		<> help "Lexer debugging output"
-		)
-	<*> switch (
-		long "ddump-parser"
-		<> help "Parser debugging output"
-		)
+--	<*> option auto	(long "dummy1" <> help "Dummy Int" <> value 7)
+--	<*> switch (
+--		long "ddump-lexer"
+--		<> help "Lexer debugging output"
+--		)
+--	<*> switch (
+--		long "ddump-parser"
+--		<> help "Parser debugging output"
+--		)
 
 -- | Version info option parser
 --

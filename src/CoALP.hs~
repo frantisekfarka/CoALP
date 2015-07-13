@@ -1,0 +1,11 @@
+-- | * The CoALP top-level module.
+
+module CoALP
+(
+	module CoALP.Program,
+        module CoALP.Transform
+) where
+
+--import CoALP.Parser.Parser
+import CoALP.Program
+import CoALP.Transform
