@@ -40,6 +40,10 @@ import CoALP.FreshVar (
 	, Freshable (..)
 	)
 
+import CoALP.DerTree (
+	  clauseProj
+	)
+
 import CoALP.Unify (
 	  match
 	, unify
@@ -75,7 +79,7 @@ data RDTrans a b c d
 	= InternalRes (Maybe Int) Int (ClauseNode a b c d)
 	| NullRes (Maybe Int) Int (Vr d)
 	| UnguardedRes (Maybe Int) Int (Int, Int, Term a b c, Term a b c)
-	| ExternalRes (Maybe Int) Int (Subst a b c) (ClauseNode a b c d)
+	| ExternalRes (Maybe Int) Int (Subst a b c) [(Int, Term a b c, [Int])] (ClauseNode a b c d)
 
 
 type TermStack a b c = [(Int, Int, Term a b c)]
@@ -144,7 +148,7 @@ expandTN p pth (TermNode mck tk t trs) 	= TermNode mck tk t $ zipWith (expandTrs
 			Just ck	-> (ck, tk, t):pth
 
 expandTrs p pth t (InternalRes mck tk cn) _		= InternalRes mck tk $ expandCN p pth cn
-expandTrs p pth t (ExternalRes mck tk si cn) _		= ExternalRes mck tk si $ expandCN p pth cn
+expandTrs p pth t (ExternalRes mck tk si cp cn) _	= ExternalRes mck tk si cp $ expandCN p pth cn
 
 expandTrs p pth t tr@(NullRes mck tk (Vr v)) (Clause h bs)	= 
 		case h `match` t of
@@ -157,8 +161,7 @@ expandTrs p pth t tr@(NullRes mck tk (Vr v)) (Clause h bs)	=
 					Just l	-> -- traceShow (pth) $ 
 						UnguardedRes mck tk l
 			Nothing -> case h' `unify` t' of
-				Just th	-> ExternalRes mck tk th $
-					--ClauseNode mck (mkC th) (mkTNs th)
+				Just th	-> ExternalRes mck tk th (mkCP th) $
 					constructCN p' mck (mkC th) v
 				Nothing	-> tr
 	where
@@ -168,6 +171,8 @@ expandTrs p pth t tr@(NullRes mck tk (Vr v)) (Clause h bs)	=
 		t' = fmap apartL t
 
 		mkC si = Clause (si `applySubst` t') $ fmap (si `applySubst`) bs'
+		mkCP si = clauseProj p' $ fmap (\x -> (x, si, t')) mck
+
 
 
 				
@@ -204,7 +209,7 @@ findUnifTN p (TermNode _ _ t trs) = asum $ zipWith (findUnifTrs p t) trs p
 findUnifTrs p t (InternalRes _ _ cn) _ = findUnifCN p cn
 findUnifTrs p t (NullRes _ _ e) (Clause h bs) = h `unify` t
 findUnifTrs p t (UnguardedRes _ _ _) _ = Nothing
-findUnifTrs p t (ExternalRes _ _ th cn) _ = findUnifCN p cn
+findUnifTrs p t (ExternalRes _ _ th _ cn) _ = findUnifCN p cn
 
 
 
@@ -265,14 +270,16 @@ renderTRS n n' (UnguardedRes mck tk (l, k, t1, t2)) =
 	where
 		lbl = sMckTk mck tk ++ "Ung: (" ++ show l ++ ") " ++ ppTerm t1 ++ " -> (" ++ show k ++ ") " ++ ppTerm t2
 
-renderTRS n n' (ExternalRes mck tk th cn) =
+renderTRS n n' (ExternalRes mck tk th cp cn) =
 		show n' ++ "[shape=diamond,label=\"" ++ lbl ++ "\"]\n" ++
 		show n ++ " -> " ++ show n' ++ "\n" ++
 		renderCN n' n'' cn ++
 		"\n"
 	where
 		n'' = 10 * n'
-		lbl = "Ext: (" ++ ppSubst th
+		lbl = "Ext: (" ++ ppSubst th ++ " " ++ f cp
+		f a = concatMap g a
+		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
 
 
