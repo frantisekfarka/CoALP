@@ -64,6 +64,7 @@ import CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
+        , annotateFile
 	)
 
 -- | MonadException instance for ExceptT
@@ -186,6 +187,7 @@ processInput cmd _origState = do
 		Right (Load f)	-> loadFile f
 		Right (Reload)	-> reloadFile
                 Right (Transform f) -> transformFile f 
+                Right (Annotate f) -> annotateFile f
 		Right (Print)	-> printProgram
 
 		Right (Quit) 	-> do

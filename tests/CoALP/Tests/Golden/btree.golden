@@ -1,4 +1,0 @@
-bit(0, transform-func-1).
-bit(1, transform-func-2).
-btree(empty, transform-func-3).
-btree(tree(V_2, V_3, V_4), transform-func-4(V_5, V_6, V_7)) :- btree(V_2, V_5), bit(V_3, V_6), btree(V_4, V_7).

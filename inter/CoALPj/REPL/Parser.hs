@@ -52,6 +52,10 @@ dCmd = toCmdDescr [
 		, spaces *> (Transform <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar)))
 	  	, "\n\t:transform <file>\n\t\tLoad and transform new program\n"
 	), (
+                ":annotate"
+		, spaces *> (Annotate <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar)))
+		, "\n\t:annotate\n\t\tLoads, transforms and annotates a program\n"
+	), (
 		":print"
 		, pure Print
 		, "\n\t:print\n\t\tPrint contents of the loaded program\n"

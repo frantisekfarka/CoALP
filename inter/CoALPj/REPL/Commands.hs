@@ -10,6 +10,7 @@ data Command
         | Transform FilePath
 	| Print
 	| Quit
+        | Annotate FilePath
 	| GC1
 	| GC2 String
 	| GC3

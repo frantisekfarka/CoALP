@@ -1,0 +1,1 @@
+stream2(scons(V_2, V_3), transform-func-1(V_4, V_-5)) :- bit(V_2, V_4), stream2(scons(V_2, V_3), V_-5).

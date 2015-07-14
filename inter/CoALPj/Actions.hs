@@ -13,6 +13,7 @@ module CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
+        , annotateFile
 	) where
 
 import Control.Monad (when)
@@ -36,14 +37,14 @@ import CoALPj.InternalState (
 
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
-import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng)
+import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng, getProgramLoops)
 import CoALP.Program (Program1)
 import CoALP.Parser.Parser (parse,parseWithCount,parseClause)
 --import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,Vr(..))
 
-import CoALP.Transform (transformProg)
+import CoALP.Transform (transformProg, annotateProg)
 
 
 -- TODO repeats in REPL.hs, merge to helper module
@@ -92,6 +93,27 @@ transformFile file = do
 				"Program " ++ file ++ " loaded and transformed.")
                         where transformed = transformProg (reverse prg, count+1)
 
+annotateFile :: FilePath -> CoALP ()
+annotateFile file = do
+        cnt <- lift . lift $ readFile file
+        case parseWithCount cnt of
+                Left err         -> do
+                        iputStrLn err
+                        return ()
+                Right (prg, count) -> do
+                        s <- get
+                        put $ s { program = Just annotated, programPath = Just file }
+			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
+				"Program " ++ file ++ " loaded, transformed and annotated."
+                                ++ "\nOriginal\n"++ ppProgram p 
+                                ++ "\nTransformed:\n" ++ ppProgram transformed 
+                                ++ "\nAnnotated:\n" ++ ppProgram annotated
+                                ++ "\nLoops: " ++ (show $ getProgramLoops p) ++ "\n")
+                        where p = reverse prg
+                              transformed = transformProg (p, count+1)
+                              annotated = annotateProg transformed (getProgramLoops p)		
+--realTrans = whenProgram (\p -> iputStrLn . ppProgram . annotate p $ getProgramLoops p)
+
 dropProgram :: CoALP ()
 dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing } ) =<< get
 			
@@ -118,8 +140,7 @@ checkGuard3One c = whenProgram (
 		Left err	-> iputStrLn err
 		Right r		-> iputStrLn . show $ (gc3one p r)
 	)
-			
-			
+	
 			
 drawProgram :: CoALP ()
 drawProgram = whenProgram (liftIO . displayProgram)
