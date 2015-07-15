@@ -31,11 +31,11 @@ tests = testGroup "Transformation Tests" [
 termTests :: TestTree
 termTests = testGroup "Transforming terms" [
             testCase "Transforming a function with no terms" $
-                    addVar 1 f1 @?= f2
+                    addTerm f1 (Var 1) @?= f2
             , testCase "Transforming a function a single term" $
-                    addVar 2 f2 @?= f3
+                    addTerm f2 (Var 2)  @?= f3
             , testCase "Transforming a function with multiple terms" $
-                    addVar 3 f3 @?= f4
+                    addTerm f3 (Var 3) @?= f4
             ]
   where
             f1 = Fun "f" [] :: Term1
@@ -45,43 +45,23 @@ termTests = testGroup "Transforming terms" [
 
 clauseTests :: TestTree
 clauseTests = testGroup "Transforming clauses" [
-              testCase "Transform the head of a clause with no body" $
-                      transformHead 1 0 1 h1 @?= h2
-              , testCase "Transform the head of a clause when the body has a single term" $
-                      transformHead 2 1 1 h1 @?= h3
-              , testCase "Transform the head of a clause when the body has two terms" $
-                      transformHead 2 2 1 h1 @?= h4
-              , testCase "Transform the body of a clause with no terms" $
-                      transformBody 1 [] @?= []
-              , testCase "Transform the body of a clause with a single term" $
-                      transformBody 2 [b1] @?= [b2]
-              , testCase "Transform the body of a clause with multiple terms" $
-                      transformBody 3 [b1,h1,b2] @?= [b3,b4,b5]
-              , testCase "Transform clause with no body" $
+              testCase "Transform clause with no body" $
                       tc1 @?= c2
-              , testCase "Transform clause with no body next fresh variable" $
-                      count1 @?= 1
               , testCase "Transform clause with body" $
                       tc2 @?= c4
-              , testCase "Transform clause with body next fresh variable" $
-                      count2 @?= 3
               ]
   where
               h1 = Fun "f" [Var 1] :: Term1
               h2 = Fun "f" [Var 1, Fun "transform-func-1" []] :: Term1
               h3 = Fun "f" [Var 1, Fun "transform-func-1" [Var 2]] :: Term1
-              h4 = Fun "f" [Var 1, Fun "transform-func-1" [Var 2, Var 3]] :: Term1
               b1 = Fun "g" [] :: Term1
               b2 = Fun "g" [Var 2] :: Term1
-              b3 = Fun "g" [Var 3] :: Term1 
-              b4 = Fun "f" [Var 1, Var 4] :: Term1
-              b5 = Fun "g" [Var 2, Var 5] :: Term1
               c1 = Clause h1 [] :: Clause1
               c2 = Clause h2 [] :: Clause1
               c3 = Clause h1 [b1] :: Clause1
               c4 = Clause h3 [b2] :: Clause1
-              (tc1, count1) = transformClause 1 1 c1
-              (tc2, count2) = transformClause 2 1 c3
+              tc1 = transformClause (Fun "transform-func-1" []) c1
+              tc2 = transformClause (Fun "transform-func-1" [Var 2]) c3
 
 programTests :: TestTree
 programTests = testGroup "Transforming programs" [
