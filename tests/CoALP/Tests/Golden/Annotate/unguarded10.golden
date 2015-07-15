@@ -1,0 +1,2 @@
+q(V_2, s(V_3), transform-func-1(V_6)) :- p(V_2, s(V_3), V_6).
+p(t(V_4), V_5, transform-func-2(V_-7)) :- q(t(V_4), V_5, V_-7).

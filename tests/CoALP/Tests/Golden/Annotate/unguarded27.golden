@@ -1,0 +1,1 @@
+f(s(V_2), V_3, transform-func-1(V_-5)) :- f(V_3, s(V_4), V_-5).

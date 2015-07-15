@@ -1,0 +1,1 @@
+p(1, V_2, transform-func-1(V_-3)) :- p(V_2, V_2, V_-3).

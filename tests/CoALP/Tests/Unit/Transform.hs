@@ -263,7 +263,11 @@ annotationGoldenTests = createAnnotationTests (map (annotationLocation ++) annot
 
 -- File names for golden tests
 annotationFiles :: [String]
-annotationFiles = ["simpleLoop.golden", "unguarded3.golden"]
+annotationFiles = [ "simpleLoop.golden", "unguarded1.golden", "unguarded2.golden", "unguarded3.golden", "unguarded4.golden", "unguarded5.golden"
+                  , "unguarded7.golden", "unguarded8.golden", "unguarded9.golden", "unguarded10.golden", "unguarded11.golden", "unguarded12.golden"
+                  , "unguarded13.golden", "unguarded14.golden", "unguarded15.golden", "unguarded16.golden", "unguarded17.golden", "unguarded19.golden"
+                  , "unguarded20.golden", "unguarded21.golden", "unguarded22.golden", "unguarded23.golden", "unguarded24.golden", "unguarded25.golden"
+                  , "unguarded27.golden"]
 -- File location for golden tests
 annotationLocation :: String
 annotationLocation = "tests/CoALP/Tests/Golden/Annotate/"
@@ -283,5 +287,6 @@ annoFile source dest = do
                         return ()
                 Right (prg, count) -> do
                         writeBinaryFile dest ((ppProg annotated) ++ "\n")
-                        where transformed = transformProg (reverse prg, count+1)
-                              annotated = annotateProg transformed (getProgramLoops prg)
+                        where p = reverse prg
+                              transformed = transformProg (p, count+1)
+                              annotated = annotateProg transformed (getProgramLoops p)

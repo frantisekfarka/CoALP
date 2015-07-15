@@ -1,0 +1,3 @@
+q(s(s(V_2), V_3, V_4), 1, transform-func-1(V_11)) :- q(s(V_3, V_4, s(V_2)), 2, V_11).
+q(s(s(V_5), V_6, V_7), 2, transform-func-2(V_-12)) :- q(s(V_6, V_7, s(V_5)), 3, V_-12).
+q(s(s(V_8), V_9, V_10), 3, transform-func-3(V_-13)) :- q(s(V_9, V_10, s(V_8)), 1, V_-13).

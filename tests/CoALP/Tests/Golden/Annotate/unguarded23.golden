@@ -1,0 +1,2 @@
+q(V_2, transform-func-1(V_-3)) :- q(a, V_-3).
+q(a, transform-func-2).
