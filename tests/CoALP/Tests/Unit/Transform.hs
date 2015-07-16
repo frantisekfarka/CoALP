@@ -138,36 +138,34 @@ realisationTransformTests = testGroup "Realization Transformation Tests with Ann
 annotateTermTests :: TestTree
 annotateTermTests =  testGroup "Term Annotation Tests" [
                       testCase "Annotate single Var" $
-                            annotateLast v1 @?= a1
-                    , testCase "Annotate last Var in list" $
-                            annotateLast v2 @?= a2
+                            annotateTerm v1 @?= a1
                     , testCase "Annotate Function with single Var" $
                             annotateTerm t1 @?= ta1
                     , testCase "Annotate Function with multiple Vars" $
                             annotateTerm t2 @?= ta2
                     ]
           where
-                    v1 = [Var 1] :: [Term1]
-                    a1 = [Var (-1)] :: [Term1]
+                    v1 = Var 1 :: Term1
+                    a1 = Var (-1) :: Term1
                     v2 = map (Var) [1..10] :: [Term1]
                     a2 = (map (Var) [1..9]) ++  [Var (-10)] :: [Term1]
-                    t1 = Fun "t1" v1 :: Term1
-                    ta1 = Fun "t1" a1 :: Term1
+                    t1 = Fun "t1" [v1] :: Term1
+                    ta1 = Fun "t1" [a1] :: Term1
                     t2 = Fun "t2" v2 :: Term1
                     ta2 = Fun "t2" a2 :: Term1
 
 annotateClauseTests :: TestTree
 annotateClauseTests =  testGroup "Clause Annotation Tests" [
                        testCase "Annotate Body with one term" $
-                             annotateBody b1 t1 @?= a1
+                             annotateNth b1 t1 @?= a1
                      , testCase "Annotate Body with multiple terms" $
-                             annotateBody b2 t2 @?= a2
+                             annotateNth b2 t2 @?= a2
                      , testCase "Attempt to Annotate term not in Body" $
-                             annotateBody b2 t3 @?= b2
-                     , testCase "Annotate transformation functions with single var" $
-                             annotateTransFunc v1 ts1 @?= as1
-                     , testCase "Annotate transformation function with multiple vars" $
-                             annotateTransFunc v2 ts2 @?= as2
+                             annotateNth b2 t3 @?= b2
+                     --, testCase "Annotate transformation functions with single var" $
+                     --        annotateTransFunc v1 ts1 @?= as1
+                     --, testCase "Annotate transformation function with multiple vars" $
+                     --        annotateTransFunc v2 ts2 @?= as2
                      , testCase "Annotate Simple Clause" $
                              annotateClause c1 cv1 @?= ca1
                      , testCase "Annotate Complex Clause" $
@@ -181,10 +179,10 @@ annotateClauseTests =  testGroup "Clause Annotation Tests" [
                     t2 = 9 :: Int
                     a2 = (map (Var) [1..9]) ++ [Var (-10)] :: [Term1]
                     t3 = 20 :: Int
-                    v1 = 0
+                    --v1 = 0
                     ts1 = [Var 1, Fun "transform-func-1" [Var 2]]
                     as1 = [Var 1, Fun "transform-func-1" [Var (-2)]]
-                    v2  = 3
+                    --v2  = 3
                     ts2 = [Var 1, Fun "g" [], Fun "transform-func-1" [Var 3, Var 4, Var 5, Var 6]]
                     as2 = [Var 1, Fun "g" [], Fun "transform-func-1" [Var 3, Var 4, Var 5, Var (-6)]]
                     c1  = Clause (Fun "h" ts1) [Fun "h" [Var 1, Var 2]]
