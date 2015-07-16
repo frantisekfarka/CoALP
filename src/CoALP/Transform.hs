@@ -46,15 +46,16 @@ annotateTerm (Var v) = Var (negate ( abs v))
 
 -- Transform a program
 -- prgWithCount - pair with the program to transform and the next fresh variable
-transformProg :: (Program1, Integer) -> Program1
+transformProg :: (Program1, Integer) -> (Program1, Integer)
 transformProg prgWithCount =  transformProgAux prgWithCount transFuncs
   where transFuncs = map (\x -> Fun ("transform-func-" ++ show x) []) [(1::Int)..]
 
-transformProgAux :: (Program1, Integer) -> [Term1] -> Program1
-transformProgAux ([], _) _ = []
-transformProgAux _ [] = []
-transformProgAux ((x@(Clause _ b):xs), count) (tf:tfs) = [transformed] ++ transformProgAux (xs, lastVar) tfs
-  where numTerms = toInteger . length $ b
+transformProgAux :: (Program1, Integer) -> [Term1] -> (Program1, Integer)
+transformProgAux ([], i) _ = ([],i)
+transformProgAux (_, i) [] = ([],i)
+transformProgAux ((x@(Clause _ b):xs), count) (tf:tfs) = ([transformed] ++ rest, lastNewVar)
+  where (rest, lastNewVar) = transformProgAux (xs, lastVar) tfs
+        numTerms = toInteger . length $ b
         lastVar = count + numTerms
         transformed = transformClause (foldl addTerm tf (map Var [count..lastVar-1])) x
 

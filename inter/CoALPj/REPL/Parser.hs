@@ -48,14 +48,6 @@ dCmd = toCmdDescr [
 		, pure Reload
 		, "\n\t:reload\n\t\tReload the current program\n"
 	), (
-	  	":transform"
-		, spaces *> (Transform <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar)))
-	  	, "\n\t:transform <file>\n\t\tLoad and transform new program\n"
-	), (
-                ":annotate"
-		, spaces *> (Annotate <$> many (noneOf " \t\\" <|> (char '\\' *> anyChar)))
-		, "\n\t:annotate\n\t\tLoads, transforms and annotates a program\n"
-	), (
 		":print"
 		, pure Print
 		, "\n\t:print\n\t\tPrint contents of the loaded program\n"
@@ -63,6 +55,15 @@ dCmd = toCmdDescr [
 		":quit"
 		, pure Quit
 		, "" -- \n\t:quit\n\t\tExit the interpreter\n"
+	), (
+	  	":transform"
+		, spaces *> (pure Transform)
+	  	, "\n\t:transform\n\t\tTransforms the loaded program\n"
+	), (
+                ":annotate"
+		, spaces *> (pure Annotate)
+		, "\n\t:annotate\n\t\tAnnotates the loaded program\n\t\tDo not transform before annotation as" ++
+                  "this transform the loaded program and then annotates it"
 	), (
 		":gc1"
 		, pure GC1

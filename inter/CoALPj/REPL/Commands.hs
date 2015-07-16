@@ -7,10 +7,10 @@ module CoALPj.REPL.Commands (
 data Command
 	= Load FilePath
 	| Reload
-        | Transform FilePath
 	| Print
 	| Quit
-        | Annotate FilePath
+        | Transform
+        | Annotate
 	| GC1
 	| GC2 String
 	| GC3

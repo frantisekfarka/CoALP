@@ -94,8 +94,8 @@ programTests = testGroup "Transforming programs" [
               fun11 = Fun "eq" [Var 4, Fun "transform-func-2" []] :: Term1
               clause3 = Clause fun10 [fun6, fun7] :: Clause1
               clause4 = Clause fun11 [] :: Clause1
-              prog3 = [clause3] :: Program1
-              prog4 = [clause3, clause4] :: Program1
+              prog3 = ([clause3], 7) :: (Program1, Integer)
+              prog4 = ([clause3, clause4], 7) :: (Program1, Integer)
 
 
 goldenTests :: TestTree
@@ -123,7 +123,7 @@ transFile source dest = do
                         return ()
                 Right (prg, count) -> do
                         writeBinaryFile dest ((ppProg transformed) ++ "\n")
-                        where transformed = transformProg (reverse prg, count+1)
+                        where (transformed,_) = transformProg (reverse prg, count+1)
 
 ppProg :: (Show a, Show b, Show c) => Program a b c -> String
 ppProg = concat . intersperse "\n" . (map ppClause)
@@ -266,5 +266,5 @@ annoFile source dest = do
                 Right (prg, count) -> do
                         writeBinaryFile dest ((ppProg annotated) ++ "\n")
                         where p = reverse prg
-                              transformed = transformProg (p, count+1)
+                              (transformed, _) = transformProg (p, count+1)
                               annotated = annotateProg transformed (getProgramLoops p)

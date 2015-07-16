@@ -11,6 +11,7 @@ module CoALPj.InternalState (
 	, caOptions
 	, program
 	, programPath
+        , varCount 
 	, optVerbosity
 	, REPLState
 	, replInit
@@ -65,6 +66,7 @@ data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
 	, program 	:: Maybe Program1
 	, programPath	:: Maybe FilePath
+        , varCount      :: Maybe Integer
 	}
 
 -- | Create initial state from general CoALPj options
@@ -74,6 +76,7 @@ replInit = REPLState {
 	  caOptions = defaultCoALPOptions
 	, program = mempty
 	, programPath = mempty
+        , varCount  = Nothing
 	}
 
 -- | Verbosity levels

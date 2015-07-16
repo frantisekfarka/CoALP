@@ -29,7 +29,6 @@ import System.IO ( BufferMode(LineBuffering), stdout, hSetBuffering)
 import CoALPj.Actions (
 	  loadFile
 	, reloadFile
-        , transformFile
 	)
 
 import CoALPj.InternalState (
@@ -64,7 +63,8 @@ import CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
-        , annotateFile
+        , transform
+        , annotate
 	)
 
 -- | MonadException instance for ExceptT
@@ -186,8 +186,6 @@ processInput cmd _origState = do
 			return ()
 		Right (Load f)	-> loadFile f
 		Right (Reload)	-> reloadFile
-                Right (Transform f) -> transformFile f 
-                Right (Annotate f) -> annotateFile f
 		Right (Print)	-> printProgram
 
 		Right (Quit) 	-> do
@@ -199,6 +197,9 @@ processInput cmd _origState = do
 		Right (GC2 c)	-> checkGuard2 c
 		Right (GC3)	-> checkGuard3 
 		Right (GC3One c) -> checkGuard3One c
+
+		Right (Transform) -> transform
+                Right (Annotate) -> annotate
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q

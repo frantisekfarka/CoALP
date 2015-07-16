@@ -1,7 +1,6 @@
 module CoALPj.Actions (
 	  loadFile
 	, reloadFile
-        , transformFile
 	, printProgram
 	, checkGuard1
 	, checkGuard2
@@ -13,10 +12,11 @@ module CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
-        , annotateFile
+        , annotate
+        , transform
 	) where
 
-import Control.Monad (when)
+import Control.Monad (when, liftM2)
 import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.Except (throwE)
 import Control.Monad.Trans.State (get, put)
@@ -31,6 +31,7 @@ import CoALPj.InternalState (
 	, caOptions
 	, program
 	, programPath
+        , varCount 
 	, optVerbosity
 	, Verbosity (..)
 	)
@@ -63,13 +64,13 @@ loadFile file = do
 	cnt <- lift . lift $ readFile file
 	--iputStrLn $ ppLexer $ scanTokens cnt
 	--TODO refactor parser monad (stack)
-	case parse cnt of
+	case parseWithCount cnt of
 		Left err	-> do
 			iputStrLn err
 			return ()
-		Right prg	-> do
+		Right (prg, c) -> do
 			s <- get
-			put $ s { program = Just (reverse prg), programPath = Just file }
+			put $ s { program = Just (reverse prg), programPath = Just file, varCount = Just c}
 			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
 				"Program " ++ file ++ " loaded.")
 
@@ -79,44 +80,44 @@ reloadFile = do
 	dropProgram 
 	(maybe (iputStrLn "No program loaded")) loadFile pp
 
-transformFile :: FilePath -> CoALP ()
-transformFile file = do
-        cnt <- lift . lift $ readFile file
-        case parseWithCount cnt of
-                Left err         -> do
-                        iputStrLn err
-                        return ()
-                Right (prg, count) -> do
-                        s <- get
-                        put $ s { program = Just transformed, programPath = Just file }
-			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
-				"Program " ++ file ++ " loaded and transformed.")
-                        where transformed = transformProg (reverse prg, count+1)
-
-annotateFile :: FilePath -> CoALP ()
-annotateFile file = do
-        cnt <- lift . lift $ readFile file
-        case parseWithCount cnt of
-                Left err         -> do
-                        iputStrLn err
-                        return ()
-                Right (prg, count) -> do
-                        s <- get
-                        put $ s { program = Just annotated, programPath = Just file }
-			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
-				"Program " ++ file ++ " loaded, transformed and annotated."
-                                ++ "\nOriginal\n"++ ppProgram p 
-                                ++ "\nTransformed:\n" ++ ppProgram transformed 
-                                ++ "\nAnnotated:\n" ++ ppProgram annotated
-                                ++ "\nLoops: " ++ (show $ getProgramLoops p) ++ "\n")
-                        where p = reverse prg
-                              transformed = transformProg (p, count+1)
-                              annotated = annotateProg transformed (getProgramLoops p)		
---realTrans = whenProgram (\p -> iputStrLn . ppProgram . annotate p $ getProgramLoops p)
-
 dropProgram :: CoALP ()
 dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing } ) =<< get
 			
+transform :: CoALP ()
+transform = whenProgCount (
+          \pc -> do 
+              s <- get
+              let (t, c) = transformProg pc
+              putPrgState (t,c)
+              when (optVerbosity (caOptions s) >= Default) (iputStrLn $
+                     "Program transformed."
+                     ++ "\nOriginal\n"++ ppProgram (fst pc)
+                     ++ "\nTransformed\n" ++ ppProgram t 
+                     ++ "\n") 
+          )
+
+annotate :: CoALP ()
+annotate = whenProgCount (
+         \pc -> do
+             s <- get
+             let loops = getProgramLoops (fst pc)
+                 (t,c) = transformProg pc
+                 anno  = annotateProg t loops 
+             putPrgState (anno, c)
+             when (optVerbosity (caOptions s) >= Default) (iputStrLn $
+                     "Program annotated."
+                     ++ "\nOriginal\n"++ ppProgram (fst pc) 
+                     ++ "\nLoops found\n" ++ (show $ loops)
+                     ++ "\nAnnotated\n" ++ ppProgram anno
+                     ++ "\n") 
+         )
+
+putPrgState :: (Program1, Integer) -> CoALP ()
+putPrgState (p,c) = do
+        s <- get
+        put $ s { program = Just p, varCount = Just c }
+
+
 -- | print program
 printProgram :: CoALP ()
 printProgram = whenProgram (iputStrLn . ppProgram)
@@ -130,6 +131,7 @@ checkGuard2 c = whenProgram (
 		Left err	-> iputStrLn err
 		Right r		-> iputStrLn . show $ (gc2 p r)
 	)
+
 			
 checkGuard3 :: CoALP ()
 checkGuard3 = whenProgram (\p -> iputStrLn . show $ (gc3 p))
@@ -219,6 +221,11 @@ verbPutStrLn str = do
 whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
 whenProgram f = maybe (iputStrLn "No program loaded") f
 	=<< program <$> get
-		
+
+
+whenProgCount :: ((Program1, Integer) -> CoALP ()) -> CoALP ()
+whenProgCount f = maybe (iputStrLn "No program loaded") f
+        =<< progCount <$> get
+        where progCount s = liftM2 (,) (program s) (varCount s)
 
 
