@@ -11,6 +11,7 @@ data Command
 	| Quit
         | Transform
         | Annotate
+        | Convert
 	| GC1
 	| GC2 String
 	| GC3

@@ -63,6 +63,7 @@ import CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
+        , convert
         , transform
         , annotate
 	)
@@ -200,6 +201,7 @@ processInput cmd _origState = do
 
 		Right (Transform) -> transform
                 Right (Annotate) -> annotate
+                Right (Convert) -> convert
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q

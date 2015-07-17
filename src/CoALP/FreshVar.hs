@@ -16,7 +16,7 @@ module CoALP.FreshVar (
 
 import Control.Applicative (Applicative, pure, (<*>))
 import Data.Bits (shiftL, shiftR, setBit)
-
+import CoALP.Program(AnnoVar(..))
 
 ---------------------------------------------------------------------------
 -- | /getFresh/ returns fresh variable from the internals of the monad.
@@ -64,13 +64,14 @@ instance (Freshable v) => Monad (FreshVar v) where
 		let (a, v') = runFresh m v 
 		in runFresh (k a) v'
 
+
 -- | Get next fresh variable
 getFresh :: (Freshable v) => FreshVar v v -- ^ TODO is Num for efficiency neccessary?
 getFresh = FreshVar $ \v -> split $ v
 
 -- | Class to force initial 0 to be polymorphic
 class Freshable a where
-	initFresh :: a
+	initFresh :: a -- Consider removing for cases of initialising CoInd vs Ind.
 	split :: a -> (a,a)
 	apartL :: a -> a
 	apartR :: a -> a
@@ -82,5 +83,16 @@ instance Freshable Integer where
 	apartL v = shiftL v 1
 	apartR v = setBit (shiftL v 1) 0
 	unpart v = shiftR v 1
+
+instance Freshable (AnnoVar Integer)  where
+        initFresh = Ind 1
+	split (Ind v) = let v' = shiftL v 1 in (Ind v', Ind (setBit v' 0))
+	split (CoInd v) = let v' = shiftL v 1 in (CoInd v', CoInd (setBit v' 0))
+	apartL (Ind v) = Ind (shiftL v 1)
+        apartL (CoInd v) = CoInd (shiftL v 1)
+	apartR (Ind v) = Ind (setBit (shiftL v 1) 0)
+	apartR (CoInd v) = CoInd (setBit (shiftL v 1) 0)
+	unpart (Ind v) = Ind (shiftR v 1)
+	unpart (CoInd v) = CoInd (shiftR v 1)
 
 

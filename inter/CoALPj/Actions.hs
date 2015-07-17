@@ -12,6 +12,7 @@ module CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
+        , convert
         , annotate
         , transform
 	) where
@@ -31,6 +32,7 @@ import CoALPj.InternalState (
 	, caOptions
 	, program
 	, programPath
+        , programA
         , varCount 
 	, optVerbosity
 	, Verbosity (..)
@@ -39,13 +41,13 @@ import CoALPj.InternalState (
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng, getProgramLoops)
-import CoALP.Program (Program1)
+import CoALP.Program (Program1, ProgramA)
 import CoALP.Parser.Parser (parse,parseWithCount,parseClause)
 --import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,Vr(..))
 
-import CoALP.Transform (transformProg, annotateProg)
+import CoALP.Transform (transformProg, transformProgA, annotateProg, annotateProgA, toProgramA)
 
 
 -- TODO repeats in REPL.hs, merge to helper module
@@ -81,41 +83,58 @@ reloadFile = do
 	(maybe (iputStrLn "No program loaded")) loadFile pp
 
 dropProgram :: CoALP ()
-dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing } ) =<< get
+dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing, programA = Nothing } ) =<< get
+
+convert :: CoALP ()
+convert = whenProgram (
+          \prg -> do
+                s <- get
+                let prgA = toProgramA prg
+                put $ s { programA = Just prgA }
+                when (optVerbosity (caOptions s) >= Default) (iputStrLn $
+                        "Program converted to Annotated Version.")
+          )
 			
+
 transform :: CoALP ()
-transform = whenProgCount (
-          \pc -> do 
+transform = whenProgACount (
+            \pc -> do 
               s <- get
-              let (t, c) = transformProg pc
-              putPrgState (t,c)
+              let (t, c) = transformProgA pc
+              putPrgAState (t,c)
               when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                      "Program transformed."
                      ++ "\nOriginal\n"++ ppProgram (fst pc)
                      ++ "\nTransformed\n" ++ ppProgram t 
                      ++ "\n") 
-          )
+            )
 
 annotate :: CoALP ()
-annotate = whenProgCount (
-         \pc -> do
+annotate = whenProgACount (
+           \pc -> do
              s <- get
              let loops = getProgramLoops (fst pc)
-                 (t,c) = transformProg pc
-                 anno  = annotateProg t loops 
-             putPrgState (anno, c)
+                 (t,c) = transformProgA pc
+                 anno  = annotateProgA t loops 
+             putPrgAState (anno, c)
              when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                      "Program annotated."
                      ++ "\nOriginal\n"++ ppProgram (fst pc) 
                      ++ "\nLoops found\n" ++ (show $ loops)
                      ++ "\nAnnotated\n" ++ ppProgram anno
                      ++ "\n") 
-         )
+           )
+
 
 putPrgState :: (Program1, Integer) -> CoALP ()
 putPrgState (p,c) = do
         s <- get
         put $ s { program = Just p, varCount = Just c }
+
+putPrgAState :: (ProgramA, Integer) -> CoALP()
+putPrgAState (p,c) = do
+        s <- get
+        put $ s { programA = Just p, varCount = Just c }
 
 
 -- | print program
@@ -222,10 +241,18 @@ whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
 whenProgram f = maybe (iputStrLn "No program loaded") f
 	=<< program <$> get
 
+whenPrgOrPrgA :: (Either Program1 ProgramA -> CoALP ()) -> CoALP()
+whenPrgOrPrgA f = maybe (iputStrLn "No program converted ") f
+        =<< prog <$> get
+        where prog p = case programA p of
+                         Just a -> Just (Right a)
+                         Nothing -> case program p of
+                                      Just a -> Just (Left a)
+                                      Nothing -> Nothing
 
-whenProgCount :: ((Program1, Integer) -> CoALP ()) -> CoALP ()
-whenProgCount f = maybe (iputStrLn "No program loaded") f
+whenProgACount :: ((ProgramA, Integer) -> CoALP ()) -> CoALP ()
+whenProgACount f = maybe (iputStrLn "No program converted ") f
         =<< progCount <$> get
-        where progCount s = liftM2 (,) (program s) (varCount s)
+        where progCount s = liftM2 (,) (programA s) (varCount s)
 
 

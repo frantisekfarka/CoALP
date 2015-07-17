@@ -11,6 +11,7 @@ module CoALPj.InternalState (
 	, caOptions
 	, program
 	, programPath
+        , programA
         , varCount 
 	, optVerbosity
 	, REPLState
@@ -30,7 +31,7 @@ import System.IO.Error (tryIOError)
 
 
 import CoALP.Error (Err(Msg))
-import CoALP.Program (Program1)
+import CoALP.Program (Program1, ProgramA)
 
 
 --
@@ -64,8 +65,9 @@ defaultCoALPOptions = CoALPOptions {
 -- | Read-Eval-Print loop state
 data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
-	, program 	:: Maybe Program1
+	, program 	:: Maybe Program1  
 	, programPath	:: Maybe FilePath
+        , programA      :: Maybe ProgramA
         , varCount      :: Maybe Integer
 	}
 
@@ -76,6 +78,7 @@ replInit = REPLState {
 	  caOptions = defaultCoALPOptions
 	, program = mempty
 	, programPath = mempty
+        , programA = mempty
         , varCount  = Nothing
 	}
 
