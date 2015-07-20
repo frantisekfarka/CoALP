@@ -12,6 +12,7 @@ module CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
+	, resolve
 	) where
 
 import Control.Monad (when)
@@ -41,6 +42,7 @@ import CoALP.Parser.Parser (parse,parseClause)
 import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,mkVar)
+import CoALP.Sound (resolve)
 
 -- TODO repeats in REPL.hs, merge to helper module
 iputStrLn :: String -> CoALP ()
@@ -101,6 +103,13 @@ checkGuard3One c = whenProgram (
 		Right r		-> iputStrLn . show $ (gc3one p r)
 	)
 			
+			
+resolve :: String -> CoALP ()
+resolve c = whenProgram (
+	\p -> case parseClause c of
+		Left err	-> iputStrLn err
+		Right r		-> iputStrLn . show $ (resolve r)
+	)
 			
 			
 drawProgram :: CoALP ()

@@ -31,6 +31,7 @@ parseCmd cmd = parse (
 	(
 		(spaces *> pure Empty <* eof)
 		<|> toCmdParser dCmd
+		<|> (Resolve <$> many anyChar)
 	) <* spaces <* eof) "(input)" cmd
 
 cmdInfo :: String

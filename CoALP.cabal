@@ -44,6 +44,7 @@ library
                     CoALP.RewTree
                     CoALP.DerTree
                     CoALP.Guards
+                    CoALP.Sound
                     CoALP.Unify
 
   other-modules:    CoALP.FreshVar

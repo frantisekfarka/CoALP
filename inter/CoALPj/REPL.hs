@@ -26,11 +26,6 @@ import System.Console.Haskeline.MonadException (MonadException (controlIO), RunI
 import System.Exit (exitWith, ExitCode(ExitSuccess))
 import System.IO ( BufferMode(LineBuffering), stdout, hSetBuffering)
 
-import CoALPj.Actions (
-	  loadFile
-	, reloadFile
-	)
-
 import CoALPj.InternalState (
 	  CoALP
 	, REPLState
@@ -52,7 +47,10 @@ import CoALPj.REPL.Parser (
 	)
 
 import CoALPj.Actions (
-	  printProgram
+	  loadFile
+	, reloadFile
+	, resolve
+	, printProgram
 	, checkGuard1
 	, checkGuard2
 	, checkGuard3
@@ -204,5 +202,6 @@ processInput cmd _origState = do
 		Right (DrawUng dD dR q) -> drawUng dD dR q
 		Right (Help) -> iputStrLn cmdInfo
 		Right (Empty) -> return ()
+		Right (Resolve c) -> resolve c
 
 
