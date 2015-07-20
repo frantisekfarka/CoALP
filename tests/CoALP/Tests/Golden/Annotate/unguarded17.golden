@@ -1,4 +1,4 @@
-q(s(s(V_2), V_3, V_4, V_5), 1, transform-func-1(V_-18)) :- q(s(V_2, V_3, V_4, s(V_5)), 2, V_-18).
-q(s(V_6, s(V_7), V_8, V_9), 2, transform-func-2(V_-19)) :- q(s(s(V_6), V_7, V_8, V_9), 3, V_-19).
-q(s(V_10, V_11, s(V_12), V_13), 3, transform-func-3(V_-20)) :- q(s(V_10, s(V_11), V_12, V_13), 4, V_-20).
-q(s(V_14, V_15, V_16, s(V_17)), 4, transform-func-4(V_-21)) :- q(s(V_14, V_15, s(V_16), V_17), 1, V_-21).
+q(s(s(V_2i), V_3i, V_4i, V_5i), 1, transform-func-1(V_18c)) :- q(s(V_2i, V_3i, V_4i, s(V_5i)), 2, V_18c).
+q(s(V_6i, s(V_7i), V_8i, V_9i), 2, transform-func-2(V_19c)) :- q(s(s(V_6i), V_7i, V_8i, V_9i), 3, V_19c).
+q(s(V_10i, V_11i, s(V_12i), V_13i), 3, transform-func-3(V_20c)) :- q(s(V_10i, s(V_11i), V_12i, V_13i), 4, V_20c).
+q(s(V_14i, V_15i, V_16i, s(V_17i)), 4, transform-func-4(V_21c)) :- q(s(V_14i, V_15i, s(V_16i), V_17i), 1, V_21c).
