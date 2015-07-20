@@ -43,6 +43,7 @@ module CoALP.Program (
 	, Subst1
 	, Program1
 	, RewTree1
+        , RewTreeA
 	, Vr1
 	, Loop1
 	, DerTree1
@@ -184,7 +185,6 @@ instance NFData (Vr d) where
 	rnf (Vr v) = v `seq` ()
 
 -- | Annotated variable
--- needs to derive Eq and Ord
 data AnnoVar a
         = Ind a
         | CoInd a 
@@ -264,7 +264,8 @@ type ClauseA = Clause Ident Constant VarA
 --
 type Program1 = Program Ident Constant Var
 
-type ProgramA = Program Ident Constant VarA 
+type ProgramA = Program Ident Constant VarA
+
 
 -- | Type of substitution of terms
 --
@@ -276,24 +277,24 @@ type SubstA = Subst Ident Constant VarA
 --
 type RewTree1 = RewTree Ident Constant Var VR
 
-type RewTreeA = RewTree Ident Constant VarA VarA 
+type RewTreeA = RewTree Ident Constant VarA VR 
 
 -- | The derivation tree
 --
 type DerTree1 = DerTree Ident Constant Var VR
 
-type DerTreeA = DerTree Ident Constant VarA VarA 
+type DerTreeA = DerTree Ident Constant VarA VR
 
 -- | Type of rewritng tree variables
 --
 type Vr1 = Vr VR
 
-type VRA = Vr VarA 
+type VRA = Vr VR
 
 -- | Type of a GC
 type GuardingContext1 = GuardingContext Ident Constant Var
 
-type GuardingContextA = GuardingContext Ident Constant VarA 
+type GuardingContextA = GuardingContext Ident Constant VarA
 
 -- | @AndNode a its@ is an atom with a possibly partial mapping from clauses to
 -- or-subtrees. Each of those or-subtrees corresponds to some clause number @i@

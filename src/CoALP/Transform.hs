@@ -11,6 +11,7 @@ module CoALP.Transform (
        , annotateTerm1
        , annotateTermA
        , toProgramA
+       , toClauseA
 ) where
 
 import CoALP.Program (Program1,ProgramA,Clause1,ClauseA,Clause(..),Term1,TermA,Term(..), AnnoVar(..))

@@ -41,13 +41,13 @@ import CoALPj.InternalState (
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng, getProgramLoops)
-import CoALP.Program (Program1, ProgramA)
-import CoALP.Parser.Parser (parse,parseWithCount,parseClause)
+import CoALP.Program (Program1, ProgramA, RewTree1, RewTreeA)
+import CoALP.Parser.Parser (parseWithCount,parseClause)
 --import CoALP.Parser.PrettyPrint (ppProgram)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,Vr(..))
 
-import CoALP.Transform (transformProg, transformProgA, annotateProg, annotateProgA, toProgramA)
+import CoALP.Transform (transformProgA, annotateProgA, toProgramA, toClauseA)
 
 
 -- TODO repeats in REPL.hs, merge to helper module
@@ -72,7 +72,7 @@ loadFile file = do
 			return ()
 		Right (prg, c) -> do
 			s <- get
-			put $ s { program = Just (reverse prg), programPath = Just file, varCount = Just c}
+			put $ s { program = Just (reverse prg), programA = Nothing, programPath = Just file, varCount = Just c}
 			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
 				"Program " ++ file ++ " loaded.")
 
@@ -85,6 +85,7 @@ reloadFile = do
 dropProgram :: CoALP ()
 dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing, programA = Nothing } ) =<< get
 
+-- | Convert a program from Program1 to ProgramA
 convert :: CoALP ()
 convert = whenProgram (
           \prg -> do
@@ -95,7 +96,7 @@ convert = whenProgram (
                         "Program converted to Annotated Version.")
           )
 			
-
+-- | Apply RT to ProgramA
 transform :: CoALP ()
 transform = whenProgACount (
             \pc -> do 
@@ -109,6 +110,7 @@ transform = whenProgACount (
                      ++ "\n") 
             )
 
+-- | Apply RT* to ProgramA
 annotate :: CoALP ()
 annotate = whenProgACount (
            \pc -> do
@@ -120,113 +122,113 @@ annotate = whenProgACount (
              when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                      "Program annotated."
                      ++ "\nOriginal\n"++ ppProgram (fst pc) 
-                     ++ "\nLoops found\n" ++ (show $ loops)
                      ++ "\nAnnotated\n" ++ ppProgram anno
                      ++ "\n") 
            )
 
-
-putPrgState :: (Program1, Integer) -> CoALP ()
-putPrgState (p,c) = do
-        s <- get
-        put $ s { program = Just p, varCount = Just c }
-
+-- | Update ProgramA and Count in the state
 putPrgAState :: (ProgramA, Integer) -> CoALP()
 putPrgAState (p,c) = do
         s <- get
         put $ s { programA = Just p, varCount = Just c }
 
-
 -- | print program
 printProgram :: CoALP ()
-printProgram = whenProgram (iputStrLn . ppProgram)
-		
+printProgram = whenPrgOrPrgA (eitherM (iputStrLn . ppProgram) (iputStrLn . ppProgram))
+
 checkGuard1 :: CoALP ()
-checkGuard1 = whenProgram (iputStrLn . show . gc1)
+checkGuard1 =  whenPrgOrPrgA (eitherM (iputStrLn . show . gc1) (iputStrLn . show . gc1))
 			
 checkGuard2 :: String -> CoALP ()
-checkGuard2 c = whenProgram (
-	\p -> case parseClause c of
-		Left err	-> iputStrLn err
-		Right r		-> iputStrLn . show $ (gc2 p r)
-	)
+checkGuard2 c = whenPrgOrPrgA (
+          \p -> case parseClause c of
+                  Left err -> iputStrLn err
+                  Right r  -> eitherM (iputStrLn . show . flip gc2 r) (iputStrLn . show . flip gc2 (toClauseA r)) p
+          )
 
-			
+		
 checkGuard3 :: CoALP ()
-checkGuard3 = whenProgram (\p -> iputStrLn . show $ (gc3 p))
+checkGuard3 = whenPrgOrPrgA (eitherM (iputStrLn . show . gc3) (iputStrLn . show . gc3))
 			
 checkGuard3One :: String -> CoALP ()
-checkGuard3One c = whenProgram (
-	\p -> case parseClause c of
-		Left err	-> iputStrLn err
-		Right r		-> iputStrLn . show $ (gc3one p r)
-	)
-	
+checkGuard3One c = whenPrgOrPrgA (
+         \p -> case parseClause c of
+                 Left err -> iputStrLn err
+                 Right r  -> eitherM (iputStrLn . show . flip gc3one r) (iputStrLn . show . flip gc3one (toClauseA r)) p
+         )
 			
 drawProgram :: CoALP ()
-drawProgram = whenProgram (liftIO . displayProgram)
+drawProgram = whenPrgOrPrgA (eitherM (liftIO . displayProgram) (liftIO . displayProgram))
 
 drawRew :: Int -> String -> CoALP ()
-drawRew depth q = whenProgram (
-	\p -> case parseClause q of
-		Left err	-> do
-			iputStrLn err
+drawRew depth q = whenPrgOrPrgA (
+        \p -> case parseClause q of
+                Left err  -> do
+                        iputStrLn err
 			return ()
-		Right r'	-> do
-			iputStrLn $ "Query " ++ q ++ " loaded."
+                Right r'  -> do
+                        iputStrLn $ "Query " ++ q ++ " loaded."
 			let r = r'
-			let rt = rew p r []
-			liftIO . displayRewTree depth $ rt  --rew p r []
+                        eitherM (liftIO . displayRewTree depth . (rt r)) (liftIO . displayRewTree depth . (rt' r)) p 
 			--iputStrLn . show . (head 20) $ loops' rt
-	)
+                        where rt  res pr = rew pr res [] :: RewTree1
+                              rt' res pr = rew pr (toClauseA res) [] :: RewTreeA
+        )
+
 
 drawTrans :: Int -> [Integer] -> String -> CoALP ()
-drawTrans depth var q = whenProgram (
-	\prog -> case parseClause q of
+drawTrans depth var q = whenPrgOrPrgA (
+        \prog -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			let rt = rew prog r []
-			let tt = fst $ foldl (trans prog . fst) (rt, Nothing) (fmap Vr var)
-			liftIO . displayRewTree depth $ tt 
+			eitherM (liftIO . displayRewTree depth . tt) (liftIO . displayRewTree depth . tt') prog
 			--iputStrLn . show . (head 20) $ loops' rt
+                        where rt  res pr = rew pr res []
+                              --rt' res pr = rew pr (toClauseA res) [] :: RewTreeA 
+			      tt  pr = fst $ foldl (trans pr . fst) (rt  r pr, Nothing) (fmap Vr var)
+			      tt' pr = fst $ foldl (trans pr . fst) (rt (toClauseA r) pr, Nothing) (fmap Vr var)
 	)
 
 drawDer :: Int -> Int -> String -> CoALP ()
-drawDer depD depR q = whenProgram (
+drawDer depD depR q = whenPrgOrPrgA (
 	\prog -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayDerTree depD depR $ der prog r 
+			eitherM (liftIO . displayDerTree depD depR . (flip der r)) (liftIO . displayDerTree depD depR . (flip der (toClauseA r))) prog
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
 drawInf :: Int -> Int -> String -> CoALP ()
-drawInf depD depR q = whenProgram (
+drawInf depD depR q = whenPrgOrPrgA (
 	\prog -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayDerTree depD depR $ derToUnc depD $ der prog r 
-			--iputStrLn . show . (head 20) $ loops' rt
+			eitherM (liftIO . displayDerTree depD depR . (derToUnc depD . dt)) (liftIO . displayDerTree depD depR . (derToUnc depD . dt')) prog 
+			where dt  = flip der r
+                              dt' = flip der (toClauseA r)
+                        --iputStrLn . show . (head 20) $ loops' rt
 	)
 
 drawUng :: Int -> Int -> String -> CoALP ()
-drawUng depD depR q = whenProgram (
+drawUng depD depR q = whenPrgOrPrgA (
 	\prog -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayDerTree depD depR $ derToUng depD $ der prog r 
+			eitherM (liftIO . displayDerTree depD depR . (derToUng depD . dt)) (liftIO . displayDerTree depD depR . (derToUng depD . dt')) prog
+                        where dt  = flip der r
+                              dt' = flip der (toClauseA r)
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
@@ -242,7 +244,7 @@ whenProgram f = maybe (iputStrLn "No program loaded") f
 	=<< program <$> get
 
 whenPrgOrPrgA :: (Either Program1 ProgramA -> CoALP ()) -> CoALP()
-whenPrgOrPrgA f = maybe (iputStrLn "No program converted ") f
+whenPrgOrPrgA f = maybe (iputStrLn "No program loaded ") f
         =<< prog <$> get
         where prog p = case programA p of
                          Just a -> Just (Right a)
@@ -255,4 +257,6 @@ whenProgACount f = maybe (iputStrLn "No program converted ") f
         =<< progCount <$> get
         where progCount s = liftM2 (,) (programA s) (varCount s)
 
-
+eitherM :: Monad m => (a -> m c) -> (b -> m c) -> Either a b -> m c
+eitherM f _ (Left x)  = f x
+eitherM _ f (Right x) = f x
