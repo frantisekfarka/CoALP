@@ -185,13 +185,14 @@ transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 
 -- | Select leftmost branch of a derivation tree that is not closed
 -- up to given depth
-derToUnc :: Int -> DerTree1 -> DerTree1
+
+derToUnc :: (Eq a, Eq b, Ord c) => Int -> DerTree a b c Integer -> DerTree a b c Integer
 derToUnc n dt@(DT rt _) = case derToUnc' [] n [] dt 0 of
 	Just dt'	-> dt'
 	Nothing		-> DT rt []
 	
 -- | The actual implementation
-derToUnc' :: [Int] -> Int -> [GuardingContext1] -> DerTree1 -> Int -> Maybe DerTree1
+derToUnc' :: (Eq a, Eq b, Ord c) => [Int] -> Int -> [GuardingContext a b c] -> DerTree a b c Integer -> Int -> Maybe (DerTree a b c Integer)
 derToUnc' _    0 _   (DT rt _) _ = Just $ DT rt []
 derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
 		False	-> -- trace ("Unguarded tree at " ++ (show $ reverse (tix:path))) $
@@ -205,7 +206,7 @@ derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
 		altseq' [] = []
 
 -- | Ditto for trans
-transToUnc :: [Int] -> Int -> [GuardingContext1] -> Trans1 ->  Int -> Maybe (Trans1)
+transToUnc :: (Eq a, Eq b, Ord c) => [Int] -> Int -> [GuardingContext a b c] -> Trans a b c Integer ->  Int -> Maybe (Trans a b c Integer)
 transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> trace ("Guarded trans at " ++ (show $ reverse path)) $ 
 			Nothing -- guarded trs
@@ -214,13 +215,13 @@ transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `el
 		gc = guardingContext p rt cx 
 -- | Select leftmost branch containing an unguarded rewriting tree in the 
 -- given or less depth
-derToUng :: Int -> DerTree1 -> DerTree1
+derToUng :: (Eq a, Eq b, Ord c) => Int -> DerTree a b c Integer -> DerTree a b c Integer
 derToUng depthD dt@(DT _ _) = case derToUng' depthD [] dt of
 	Just dt'	-> dt'
 	Nothing		-> DT RTEmpty []
 
 -- | The actual implementation
-derToUng' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
+derToUng' :: (Eq a, Eq b, Ord c) => Int -> [GuardingContext a b c] -> DerTree a b c Integer -> Maybe (DerTree a b c Integer)
 derToUng' 0 _ (DT rt _) = Just (DT rt [])
 derToUng' n gcs (DT rt trs) = case gcRewTree rt of
 		False	-> Just $ DT rt []
@@ -231,7 +232,7 @@ derToUng' n gcs (DT rt trs) = case gcRewTree rt of
 		altseq (Nothing:xs)	= altseq xs
 
 -- | Ditto for trans
-transToUng :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
+transToUng :: (Eq a, Eq b, Ord c) => Int -> [GuardingContext a b c] -> Trans a b c Integer -> Maybe (Trans a b c Integer)
 transToUng n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> Nothing -- guarded trans
 		False	-> (Trans p rt v cx) <$> derToUng' n (gc:gcs) dt
