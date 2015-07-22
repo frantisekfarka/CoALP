@@ -36,12 +36,12 @@ resTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 
 
 indRes RTEmpty = []
-indRes (RT _ _ ands) = concatMap indResAnds ands
+indRes (RT c _ ands) = concatMap (indResAnds c) ands
 	where
-		indResAnds (AndNode _ ors) = concatMap indResOrs ors
-		indResOrs (OrNodeEmpty _) = []
-		indResOrs (OrNode a []) = [Ind a]
-		indResOrs (OrNode a ands) = concatMap indResAnds ands
+		indResAnds c (AndNode _ ors) = concatMap (indResOrs c) ors
+		indResOrs c (OrNodeEmpty _) = []
+		indResOrs c (OrNode a []) = [Ind c]
+		indResOrs c (OrNode a ands) = concatMap (indResAnds c) ands
 
 
 
