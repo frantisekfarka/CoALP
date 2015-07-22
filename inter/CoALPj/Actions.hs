@@ -13,6 +13,7 @@ module CoALPj.Actions (
 	, drawInf
 	, drawUng
 	, resolve
+	, nextRes
 	) where
 
 import Control.Monad (when)
@@ -30,6 +31,7 @@ import CoALPj.InternalState (
 	, caOptions
 	, program
 	, programPath
+	, resolves
 	, optVerbosity
 	, Verbosity (..)
 	)
@@ -37,12 +39,12 @@ import CoALPj.InternalState (
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs,derToUng)
-import CoALP.Program (Program1)
+import CoALP.Program (Program1, Succ(..))
 import CoALP.Parser.Parser (parse,parseClause)
-import CoALP.Parser.PrettyPrint (ppProgram)
+import CoALP.Parser.PrettyPrint (ppProgram, ppClause)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,mkVar)
-import CoALP.Sound (resolve)
+import CoALP.Sound (res)
 
 -- TODO repeats in REPL.hs, merge to helper module
 iputStrLn :: String -> CoALP ()
@@ -77,7 +79,11 @@ reloadFile = do
 	(maybe (iputStrLn "No program loaded")) loadFile pp
 
 dropProgram :: CoALP ()
-dropProgram = (\s -> put $ s { program = Nothing, programPath = Nothing } ) =<< get
+dropProgram = (\s -> put $ s {
+		  program = Nothing
+		, programPath = Nothing
+		, resolves = Nothing
+		} ) =<< get
 			
 -- | print program
 printProgram :: CoALP ()
@@ -108,8 +114,27 @@ resolve :: String -> CoALP ()
 resolve c = whenProgram (
 	\p -> case parseClause c of
 		Left err	-> iputStrLn err
-		Right r		-> iputStrLn . show $ (resolve r)
+		Right r		-> do
+			s <- get
+			put $ s { resolves = Just $ res p r } 
+			-- iputStrLn . show $ (res p r)
+			nextRes
 	)
+
+nextRes :: CoALP ()
+nextRes = do
+	res <- fmap (resolves) $ get
+	case res of
+		Nothing	-> iputStrLn "no query yet"
+		Just [] -> iputStrLn "False"
+		Just (h:ts) -> do	
+			iputStrLn (d h)
+			s <- get
+			put $ s { resolves = Just $ dropWhile (== h) ts }
+	where
+		d (Ind c) = "True\n\tobserved inductively: " ++ ppClause c
+		d (CoInd c) = "True\n\tobserved co-inductively: " ++ ppClause c
+
 			
 			
 drawProgram :: CoALP ()

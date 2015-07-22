@@ -22,6 +22,7 @@ data Command
 	| Help
 	| Empty
 	| Resolve String
+	| Next
 	deriving Show
 
 

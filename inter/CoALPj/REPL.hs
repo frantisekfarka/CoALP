@@ -61,6 +61,7 @@ import CoALPj.Actions (
 	, drawDer
 	, drawInf
 	, drawUng
+	, nextRes
 	)
 
 -- | MonadException instance for ExceptT
@@ -203,5 +204,6 @@ processInput cmd _origState = do
 		Right (Help) -> iputStrLn cmdInfo
 		Right (Empty) -> return ()
 		Right (Resolve c) -> resolve c
+		Right (Next) -> nextRes
 
 
