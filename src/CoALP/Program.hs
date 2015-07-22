@@ -45,6 +45,8 @@ module CoALP.Program (
 	, Loop1
 	, subtermOf
 	, propSubtermOf
+	, Succ (..)
+	, Succ1
 ) where
 
 import Data.Functor(fmap)
@@ -76,6 +78,9 @@ instance (Show a, Show b, Show c) => Show (Term a b c) where
 -- | Type of clause
 data Clause a b c where
 	Clause :: (Term a b c) -> ([Term a b c]) -> Clause a b c
+
+instance (Eq a, Eq b, Eq c) => Eq (Clause a b c) where
+	Clause h1 b1 == Clause h2 b2 = h1 == h2 && b1 == b2	
 
 instance (Show a, Show b, Show c) => Show (Clause a b c) where
 	show (Clause h bs) = show h ++ " :- " ++ 
@@ -314,5 +319,15 @@ instance Foldable (AndNode (Clause a b c) (Term a b c)) where
 instance Foldable (OrNode (Clause a b c) (Term a b c)) where
 	foldMap f (OrNode _ ands) = foldMap (foldMap f) ands
 	foldMap f (OrNodeEmpty d) = f d
+
+-- | inductive / coinductive resuolution success
+--
+data Succ a b c
+	= Ind (Clause a b c)
+	| CoInd (Clause a b c)
+	deriving (Eq, Show)
+
+-- | Fully instantiated success
+type Succ1 = Succ Ident Variable Constant
 
 
