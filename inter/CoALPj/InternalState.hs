@@ -11,6 +11,7 @@ module CoALPj.InternalState (
 	, caOptions
 	, program
 	, programPath
+	, resolves
 	, optVerbosity
 	, REPLState
 	, replInit
@@ -29,7 +30,7 @@ import System.IO.Error (tryIOError)
 
 
 import CoALP.Error (Err(Msg))
-import CoALP.Program (Program1)
+import CoALP.Program (Program1, Succ1)
 
 
 --
@@ -65,6 +66,7 @@ data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
 	, program 	:: Maybe Program1
 	, programPath	:: Maybe FilePath
+	, resolves	:: Maybe [Succ1]
 	}
 
 -- | Create initial state from general CoALPj options
@@ -74,6 +76,7 @@ replInit = REPLState {
 	  caOptions = defaultCoALPOptions
 	, program = mempty
 	, programPath = mempty
+	, resolves = mempty
 	}
 
 -- | Verbosity levels

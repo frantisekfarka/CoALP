@@ -49,6 +49,8 @@ module CoALP.Program (
 	, GuardingContext1
 	, OTree1
 	, OTrans1
+	, Succ (..)
+	, Succ1
 ) where
 
 import Control.Arrow ((***))
@@ -377,4 +379,13 @@ propSubtermOf :: (Eq a, Eq c) => Term a b c -> Term a b c -> Bool
 propSubtermOf t1 t2 = t1 /= t2 && t1 `subtermOf` t2
 
 
+-- | inductive / coinductive resuolution success
+--
+data Succ a b c
+	= Ind (Clause a b c)
+	| CoInd (Clause a b c)
+	deriving (Eq, Show)
+
+-- | Fully instantiated success
+type Succ1 = Succ Ident Var Constant
 

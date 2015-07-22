@@ -5,6 +5,7 @@
 module CoALP.Render (
 	  renderProgram
 	, ppProgram
+	, ppClause
 	, displayProgram
 	, displayRewTree
 	, displayDerTree

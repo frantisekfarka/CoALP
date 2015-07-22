@@ -31,6 +31,7 @@ parseCmd cmd = parse (
 	(
 		(spaces *> pure Empty <* eof)
 		<|> toCmdParser dCmd
+		<|> (Resolve <$> many anyChar)
 	) <* spaces <* eof) "(input)" cmd
 
 cmdInfo :: String
@@ -125,6 +126,10 @@ dCmd = toCmdDescr [
 		":help"
 		, pure Help
 		, "\n\t:help\n\t\tShow the help\n"
+	), (
+		";"
+		, pure Next
+		, "\n\t;\n\t\tShow next result\n"
 	)
 	]
 

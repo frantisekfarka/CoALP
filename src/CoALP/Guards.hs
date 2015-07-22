@@ -253,12 +253,13 @@ guardingContext :: (Eq a, Eq b, Ord c) =>
 guardingContext p rt cx	= nub [(pkt', t', v) |
 		(pkt', t', v) <- -- trace "\n\nnextcmp" $ traceShowId $
 			clauseProj p cx
-		, (t1, t2, pkt'') <- -- f t' $
+		, (t1, t2, _pkt'') <- -- f t' $
 			(loops rt)
 		, t'' <- --trace ("loop:\n\t" ++ show t1  ++ "\n\t" ++ show t2) $
 			maybeToList $ recGuardedTerm t1 t2
 		, -- trace "It's guarded!" $ traceShow t'' $ 
-			pkt' == pkt'' && isJust (t' `match` t'')
+			-- pkt' == pkt'' && 
+			isJust (t' `match` t'')
 		--, pkt' == pkt'' && (
 		--,
 		--	traceShow (pkt', pkt'', t', t'', isJust (t' `match` t'')) $

@@ -3,7 +3,7 @@ name:          CoALP
 --             | ,----- pre-release
 --             | | ,--- fixes and new functionality
 --             | | |
-version:       0.0.6
+version:       0.0.7
 license:       LGPL-3
 license-file:  LICENSE
 author:        Ommited for reviewing
@@ -44,6 +44,7 @@ library
                     CoALP.RewTree
                     CoALP.DerTree
                     CoALP.Guards
+                    CoALP.Sound
                     CoALP.Unify
                     CoALP.Reductions
 

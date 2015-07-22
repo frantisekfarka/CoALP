@@ -21,6 +21,8 @@ data Command
 	| DrawUng Int Int String
 	| Help
 	| Empty
+	| Resolve String
+	| Next
 	deriving Show
 
 
