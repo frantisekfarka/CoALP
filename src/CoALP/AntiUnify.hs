@@ -8,36 +8,37 @@ module CoALP.AntiUnify (
 
 import Control.Monad.Trans.State (StateT, get, put, runStateT) 
 import Control.Monad.Identity
---import CoALP.FreshVar (FreshVar,getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Program (Term(..), Term1)
+import CoALP.FreshVar (getFresh,evalFresh,Freshable(..),initFresh)
+import CoALP.Program (Term(..))
 -- | Substitution on terms
 --type Subst a b c = [(c, Term a b c)]
 
 
-type AntiUnifySt a = StateT SubstMap Identity a
-type SubstAU = [((Term1, Term1), Integer)]
+type AntiUnifySt a b c d = StateT (SubstMap a b c) Identity d
+type SubstAU a b c = [((Term a b c, Term a b c), c)]
 
-data SubstMap = SubstMap {
-          substitutions :: SubstAU
-        , antiUnifier   :: Maybe Term1
-        , varCount      :: Integer
-        } deriving (Show, Eq)
-
-substMapInit :: SubstMap
-substMapInit = SubstMap {
-          substitutions = []
-        , antiUnifier   = Nothing
-        , varCount      = 0
+data SubstMap a b c = SubstMap {
+          substitutions :: SubstAU a b c
+        --, antiUnifier   :: Maybe (Term a b c)
+        , varCount      :: c
         }
 
-antiUnifyWithCount :: Term1 -> Term1 -> Integer -> Term1
-antiUnifyWithCount t1 t2 c = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) initSubstMap)
-  where initSubstMap = substMapInit { varCount = c }
+substMapInit :: (Eq a, Eq b, Eq c, Freshable c) => SubstMap a b c
+substMapInit = SubstMap {
+          substitutions = [] 
+        --, antiUnifier   = Nothing 
+        , varCount      = initFresh 
+        }
 
-antiUnify :: Term1 -> Term1 -> Term1
+
+antiUnifyWithCount :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> c -> Term a b c
+antiUnifyWithCount t1 t2 c = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) initSubstMap)
+  where initSubstMap = substMapInit { varCount = c}
+
+antiUnify :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> Term a b c
 antiUnify t1 t2 = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) substMapInit)
 
-antiUnifyTerms :: Term1 -> Term1 -> AntiUnifySt Term1
+antiUnifyTerms :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> AntiUnifySt a b c (Term a b c)
 antiUnifyTerms t1 t2
   | t1 == t2     = return t1
 antiUnifyTerms t1@(Fun idx1 ts1) t2@(Fun idx2 ts2)
@@ -61,7 +62,7 @@ antiUnifyTerms t1@(Fun _ _) t2@(Var _) = do
                   
 
 
-antiUnifyAux :: [Term1] -> [Term1] -> AntiUnifySt [Term1]
+antiUnifyAux :: (Eq a, Eq b, Eq c, Freshable c) => [Term a b c] -> [Term a b c] -> AntiUnifySt a b c [Term a b c]
 antiUnifyAux [] _  = return []
 antiUnifyAux _  [] = return []
 antiUnifyAux (t1:ts1) (t2:ts2) = do
@@ -69,26 +70,27 @@ antiUnifyAux (t1:ts1) (t2:ts2) = do
                                   xs <- antiUnifyAux ts1 ts2
                                   return ([x] ++ xs)
 
-substExists :: (Term1, Term1) -> AntiUnifySt Integer
+substExists :: (Eq a, Eq b, Eq c, Freshable c) => (Term a b c, Term a b c) -> AntiUnifySt a b c c
 substExists ts = do
                  s <- get
                  let subs = substitutions s
                      count = varCount s
+                     fresh = evalFresh getFresh count 
                  case containsSub ts subs of
                       True  -> return (lookupSub ts subs)
-                      False -> do let freshSub@(_, newVar) = (ts, count + 1)
+                      False -> do let freshSub@(_, newVar) = (ts, fresh)
                                   put $ s {substitutions = subs ++ [freshSub],  varCount = newVar}
                                   return newVar
                             
 
-containsSub :: (Term1, Term1) -> SubstAU -> Bool
+containsSub :: (Eq a, Eq b, Eq c) => (Term a b c, Term a b c) -> [((Term a b c , Term a b c), c)] -> Bool
 containsSub _ [] = False
 containsSub tp (t:ts)
   | tp == fst t = True
   | otherwise   = containsSub tp ts 
 
-lookupSub :: (Term1, Term1) -> SubstAU -> Integer
-lookupSub _ [] = 0
+lookupSub :: (Eq a, Eq b, Eq c) => (Term a b c, Term a b c) -> [((Term a b c , Term a b c), c)] -> c
+lookupSub _ [] = undefined
 lookupSub tp (t:ts)
   | tp == fst t = snd t
   | otherwise   = lookupSub tp ts
