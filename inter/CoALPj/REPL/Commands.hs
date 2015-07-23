@@ -12,6 +12,7 @@ data Command
         | Transform
         | Annotate
         | Convert
+        | AntiUnify String
 	| GC1
 	| GC2 String
 	| GC3

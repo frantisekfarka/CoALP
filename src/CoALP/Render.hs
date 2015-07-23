@@ -5,6 +5,8 @@
 module CoALP.Render (
 	  renderProgram
 	, ppProgram
+        , ppTerm
+        , ppSubst
 	, displayProgram
 	, displayRewTree
 	, displayDerTree
@@ -19,7 +21,7 @@ import CoALP.Program (Program, Program1,Clause1, Clause(..),Term1,Term(..),RewTr
 	-- GuardingContext,
 	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,
 	)
-import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppSubst, ppProgram)
+import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppSubst, ppProgram, ppSubst)
 
 import CoALP.Guards (gcRewTree,guardingContext)
 import CoALP.DerTree (clauseProj)

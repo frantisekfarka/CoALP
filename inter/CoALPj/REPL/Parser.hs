@@ -68,7 +68,12 @@ dCmd = toCmdDescr [
                 ":convert"
 		, spaces *> (pure Convert)
 		, "\n\t:convert\n\t\tConverts the loaded program so it is ready for transformation or annotation.\n"
-	),(
+	), (
+                ":antiUnify"
+		, spaces *> (AntiUnify <$> many anyChar)
+		, "\n\t:antiUnify <query>\n\t\tAttempt to antiunify the two terms in the body of the query.\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
 		":gc1"
 		, pure GC1
 		, "\n\t:gc1\n\t\tGuardednes check 1\n"

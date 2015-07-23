@@ -66,6 +66,7 @@ import CoALPj.Actions (
         , convert
         , transform
         , annotate
+        , antiUnify
 	)
 
 -- | MonadException instance for ExceptT
@@ -202,6 +203,7 @@ processInput cmd _origState = do
 		Right (Transform) -> transform
                 Right (Annotate) -> annotate
                 Right (Convert) -> convert
+                Right (AntiUnify c) -> antiUnify c 
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q

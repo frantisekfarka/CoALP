@@ -2,6 +2,7 @@
 
 module CoALP.AntiUnify (
   antiUnify
+  , antiUnifyClause
   , substMapInit
   , antiUnifyWithCount
 ) where
@@ -9,7 +10,7 @@ module CoALP.AntiUnify (
 import Control.Monad.Trans.State (StateT, get, put, runStateT) 
 import Control.Monad.Identity
 import CoALP.FreshVar (getFresh,evalFresh,Freshable(..),initFresh)
-import CoALP.Program (Term(..))
+import CoALP.Program (Term(..), Clause(..))
 -- | Substitution on terms
 --type Subst a b c = [(c, Term a b c)]
 
@@ -31,12 +32,21 @@ substMapInit = SubstMap {
         }
 
 
+antiUnifyClause :: (Eq a, Eq b, Eq c, Freshable c) => Clause a b c ->  Either String (Term a b c, SubstAU a b c)
+antiUnifyClause (Clause _ b)
+  | length b == 2 = Right (antiUnifyWithSubst (b !! 0) (b !! 1))
+  | otherwise     = Left "There are too many or too few terms in the clause body. Only use 2 terms for anti-unification.\n"
+
 antiUnifyWithCount :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> c -> Term a b c
 antiUnifyWithCount t1 t2 c = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) initSubstMap)
   where initSubstMap = substMapInit { varCount = c}
 
 antiUnify :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> Term a b c
 antiUnify t1 t2 = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) substMapInit)
+
+antiUnifyWithSubst :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> (Term a b c, SubstAU a b c)
+antiUnifyWithSubst t1 t2 = (res, substitutions s)
+  where (res, s) = runIdentity (runStateT (antiUnifyTerms t1 t2) substMapInit)
 
 antiUnifyTerms :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> AntiUnifySt a b c (Term a b c)
 antiUnifyTerms t1 t2
@@ -83,13 +93,13 @@ substExists ts = do
                                   return newVar
                             
 
-containsSub :: (Eq a, Eq b, Eq c) => (Term a b c, Term a b c) -> [((Term a b c , Term a b c), c)] -> Bool
+containsSub :: (Eq a, Eq b, Eq c) => (Term a b c, Term a b c) -> SubstAU a b c -> Bool
 containsSub _ [] = False
 containsSub tp (t:ts)
   | tp == fst t = True
   | otherwise   = containsSub tp ts 
 
-lookupSub :: (Eq a, Eq b, Eq c) => (Term a b c, Term a b c) -> [((Term a b c , Term a b c), c)] -> c
+lookupSub :: (Eq a, Eq b, Eq c) => (Term a b c, Term a b c) -> SubstAU a b c -> c
 lookupSub _ [] = undefined
 lookupSub tp (t:ts)
   | tp == fst t = snd t

@@ -15,6 +15,7 @@ module CoALPj.Actions (
         , convert
         , annotate
         , transform
+        , antiUnify
 	) where
 
 import Control.Monad (when, liftM2)
@@ -39,7 +40,7 @@ import CoALPj.InternalState (
 	)
 
 -- TODO refactor
-import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram)
+import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram, ppTerm, ppSubst)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng, getProgramLoops)
 import CoALP.Program (Program1, ProgramA, RewTree1, RewTreeA)
 import CoALP.Parser.Parser (parseWithCount,parseClause)
@@ -48,7 +49,7 @@ import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,Vr(..))
 
 import CoALP.Transform (transformProgA, annotateProgA, toProgramA, toClauseA)
-
+import CoALP.AntiUnify (antiUnifyClause)
 
 -- TODO repeats in REPL.hs, merge to helper module
 iputStrLn :: String -> CoALP ()
@@ -132,6 +133,16 @@ putPrgAState (p,c) = do
         s <- get
         put $ s { programA = Just p, varCount = Just c }
 
+antiUnify :: String -> CoALP()
+antiUnify c = case parseClause c of
+                Left err -> iputStrLn err
+                Right r  -> case antiUnifyClause r of
+                              Left er -> iputStrLn er
+                              Right t -> iputStrLn $
+                                           "AntiUnifier: " ++ ppTerm (fst t)
+                                           ++ "\nSubstitutions: " ++ ppSubst subs
+                                           where subs = map (\((t1, _), v) -> (v, t1)) (snd t)
+ 
 -- | print program
 printProgram :: CoALP ()
 printProgram = whenPrgOrPrgA (eitherM (iputStrLn . ppProgram) (iputStrLn . ppProgram))
