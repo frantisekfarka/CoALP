@@ -93,7 +93,7 @@ convert = whenProgram (
                 let prgA = toProgramA prg
                 put $ s { programA = Just prgA }
                 when (optVerbosity (caOptions s) >= Default) (iputStrLn $
-                        "Program converted to Annotated Version.")
+                        "Program converted to Annotatetable Version.")
           )
 			
 -- | Apply RT to ProgramA

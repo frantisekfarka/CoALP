@@ -6,6 +6,7 @@ module Main where
 --import qualified CoALP.Tests.Unit.Subst  as Subst
 --import qualified CoALP.Tests.Unit.Subst  as Subst
 import qualified CoALP.Tests.Unit.Unify as Unify
+import qualified CoALP.Tests.Unit.AntiUnify as AntiUnify
 import qualified CoALP.Tests.Unit.Transform as Transform
 
 import Test.Tasty
@@ -19,6 +20,7 @@ tests =
   [
       Unify.tests
     , Transform.tests
+    , AntiUnify.tests
 --    Subst.tests
 --  , Guards.tests
   ]

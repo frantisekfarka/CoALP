@@ -63,11 +63,11 @@ dCmd = toCmdDescr [
                 ":annotate"
 		, spaces *> (pure Annotate)
 		, "\n\t:annotate\n\t\tAnnotates the loaded program\n\t\tDo not transform before annotation as" ++
-                  "this transform the loaded program and then annotates it"
+                  "this transform the loaded program and then annotates it\n"
 	), (
                 ":convert"
 		, spaces *> (pure Convert)
-		, "\n\t:convert\n\t\tConverts the loaded program so it is ready for transformation onr annotation."
+		, "\n\t:convert\n\t\tConverts the loaded program so it is ready for transformation or annotation.\n"
 	),(
 		":gc1"
 		, pure GC1

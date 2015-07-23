@@ -44,6 +44,7 @@ library
                     CoALP.DerTree
                     CoALP.Guards
                     CoALP.Unify
+                    CoALP.AntiUnify
                     CoALP.Transform
                     CoALP.Reductions
                     CoALP.Parser.PrettyPrint
@@ -59,7 +60,7 @@ library
 
   build-depends:    base                 >= 4.6 && < 5,
                     containers           >= 0.5,
-                    -- mtl                  >= 2.1,
+                    mtl                  >= 2.2.1,
                     -- directory,
                     -- hashable,
                     -- deepseq,
@@ -162,6 +163,7 @@ test-suite CoALP-tests
 
   other-modules:    CoALP.Tests.Unit.Unify
                     CoALP.Tests.Unit.Transform
+                    CoALP.Tests.Unit.AntiUnify
 --                    CoALP.Tests.Unit.Guards
 
   default-language: Haskell2010
