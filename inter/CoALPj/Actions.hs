@@ -39,9 +39,9 @@ import CoALPj.InternalState (
 -- TODO refactor
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs,derToUng)
-import CoALP.Program (Program1, Succ(..))
+import CoALP.Program (Program1, Succ(..), GuardingContext)
 import CoALP.Parser.Parser (parse,parseClause)
-import CoALP.Parser.PrettyPrint (ppProgram, ppClause)
+import CoALP.Parser.PrettyPrint (ppProgram, ppClause, ppTerm)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans,mkVar)
 import CoALP.Sound (res)
@@ -133,7 +133,9 @@ nextRes = do
 			put $ s { resolves = Just $ dropWhile (== h) ts }
 	where
 		d (Ind c) = "True\n\tobserved inductively: " ++ ppClause c
-		d (CoInd c) = "True\n\tobserved co-inductively: " ++ ppClause c
+		d (CoInd c gc) = "True\n\tobserved co-inductively: " ++ ppClause c ++
+			"\n\t  GC: " ++ concatMap g gc
+		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
 			
 			

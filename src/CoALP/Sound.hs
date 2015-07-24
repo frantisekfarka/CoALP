@@ -31,7 +31,7 @@ resTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 	where
 		gc = guardingContext p rt cx 
 		rep (RTEmpty) = error "impossible"
-		rep (RT c s _) = CoInd c
+		rep (RT c s _) = CoInd c gc
 
 
 

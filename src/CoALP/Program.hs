@@ -324,7 +324,7 @@ instance Foldable (OrNode (Clause a b c) (Term a b c)) where
 --
 data Succ a b c
 	= Ind (Clause a b c)
-	| CoInd (Clause a b c)
+	| CoInd (Clause a b c) (GuardingContext a b c)
 	deriving (Eq, Show)
 
 -- | Fully instantiated success
