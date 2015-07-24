@@ -105,6 +105,14 @@ dCmd = toCmdDescr [
 		, "\n\t:drawDer <depthDer> <depthRew> <query>\n\t\tDraw derivation tree, depth is an integer, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
+		":drawUnsafe"
+		, spaces *> (DrawUnsafe
+		<$> (read <$> digits1 <* spaces1) 
+		<*> (read <$> digits1 <* spaces1) 
+		<*> many anyChar)
+		, "\n\t:drawUnsafe <depthDer> <depthRew> <query>\n\t\tDraw derivation tree ignoring unguarded rewriting trees, depth is an integer, and query has the form\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
 		":drawInf"
 		, spaces *> (DrawInf
 		<$> (read <$> digits1 <* spaces1) 

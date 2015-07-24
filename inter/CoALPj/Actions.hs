@@ -10,6 +10,7 @@ module CoALPj.Actions (
 	, drawRew
 	, drawTrans
 	, drawDer
+	, drawUnsafe
 	, drawInf
 	, drawUng
 	, resolve
@@ -37,7 +38,7 @@ import CoALPj.InternalState (
 	)
 
 -- TODO refactor
-import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree)
+import CoALP.Render (displayProgram,displayRewTree,displayDerTree,displayObsTree,displayDerTreeUnsafe)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToObs,derToUng)
 import CoALP.Program (Program1, Succ(..), GuardingContext)
 import CoALP.Parser.Parser (parse,parseClause)
@@ -182,6 +183,19 @@ drawDer depD depR q = whenProgram (
 			liftIO . displayDerTree depD depR $ der prog r 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
+
+drawUnsafe :: Int -> Int -> String -> CoALP ()
+drawUnsafe depD depR q = whenProgram (
+	\prog -> case parseClause q of
+		Left err	-> do
+			iputStrLn err
+			return ()
+		Right r		-> do
+			iputStrLn $ "Query " ++ q ++ " loaded."
+			liftIO . displayDerTreeUnsafe depD depR $ der prog r 
+			--iputStrLn . show . (head 20) $ loops' rt
+	)
+
 
 drawInf :: Int -> Int -> String -> CoALP ()
 drawInf depD depR q = whenProgram (

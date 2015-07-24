@@ -19,6 +19,7 @@ data Command
 	| DrawDer Int Int String
 	| DrawInf Int Int String
 	| DrawUng Int Int String
+	| DrawUnsafe Int Int String
 	| Help
 	| Empty
 	| Resolve String

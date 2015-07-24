@@ -4,6 +4,7 @@ module CoALP.Render (
 	, displayProgram
 	, displayRewTree
 	, displayDerTree
+	, displayDerTreeUnsafe
 	, displayObsTree
 ) where
 
@@ -41,6 +42,14 @@ displayDerTree depD depR dt = -- trace "Display der tree ... " $
 	do
 		writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 		_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+		return ()
+	
+displayDerTreeUnsafe :: Int -> Int -> DerTree1 -> IO ()
+displayDerTreeUnsafe depD depR dt = -- trace "Display der tree ... " $ 
+	do
+		writeFile "/tmp/test.dot" (renderDerTUns depD depR dt)
+		-- _ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+		_ <- spawnCommand "dot -T svg /tmp/test.dot > unsafe.svg"
 		return ()
 	
 displayObsTree :: Int -> Int -> OTree1 -> IO ()
@@ -183,6 +192,12 @@ renderDerT depD depR dt =
 	renderDer depD depR 1 dt ++
 	"}\n"
 
+renderDerTUns :: Int -> Int -> DerTree1 -> String
+renderDerTUns depD depR dt = 
+	"digraph D {\n" ++ 
+	renderDerUns depD depR 1 dt ++
+	"}\n"
+
 renderObsT :: Int -> Int -> OTree1 -> String
 renderObsT depD depR dt = 
 	"digraph D {\n" ++ 
@@ -202,6 +217,31 @@ renderTrans :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
 renderTrans sn depD depR n rt (Trans p _ vr gc dt) =  
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
+	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
+	show n ++ "-> root" ++ show (100*n) ++ ";\n"
+	where
+		lbl = "gc: {" ++ (f $ guardingContext p rt gc) ++ "}" 
+			++ ", cp: {" ++ (f $ clauseProj p gc) ++ "}"
+		--lbl = "gc: {" ++ (f $ clauseProj p gc) ++ "}"
+		f a = concatMap g a
+		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
+
+
+renderDerUns :: Int -> Int -> Integer -> DerTree1 -> String
+renderDerUns 0 _ n _ = 
+	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
+	""
+renderDerUns depD depR n (DT rt trans) = -- case gcRewTree rt of
+	--False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+	--	concat (zipWith (\x -> renderTransUns (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take 10 trans))
+	--True	->
+		renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+		concat (zipWith (\x -> renderTransUns (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take depR trans))
+
+renderTransUns :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
+renderTransUns sn depD depR n rt (Trans p _ vr gc dt) =  
+	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
+	renderDerUns depD depR (10*n) dt ++
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
 	show n ++ "-> root" ++ show (100*n) ++ ";\n"
 	where
