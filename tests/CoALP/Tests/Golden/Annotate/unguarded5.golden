@@ -1,0 +1,2 @@
+connected(V_2i, V_3i, transform-func-1(V_6c, V_7i)) :- connected(V_4i, V_3i, V_6c), edge(V_2i, V_4i, V_7i).
+connected(V_5i, V_5i, transform-func-2).

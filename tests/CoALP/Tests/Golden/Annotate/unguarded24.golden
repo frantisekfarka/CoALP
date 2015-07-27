@@ -1,0 +1,2 @@
+q(cons(V_2i, V_3i), transform-func-1(V_8c)) :- q2(cons(V_4i, cons(V_2i, V_3i)), V_8c).
+q2(cons(V_5i, cons(V_6i, V_7i)), transform-func-2(V_9c)) :- q(V_7i, V_9c).

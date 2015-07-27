@@ -44,10 +44,13 @@ library
                     CoALP.DerTree
                     CoALP.Guards
                     CoALP.Unify
+                    CoALP.AntiUnify
+                    CoALP.Transform
                     CoALP.Reductions
+                    CoALP.Parser.PrettyPrint
 
   other-modules:    CoALP.FreshVar
-                    CoALP.Parser.PrettyPrint
+                    
 
 
   if flag(eventlog)
@@ -57,7 +60,7 @@ library
 
   build-depends:    base                 >= 4.6 && < 5,
                     containers           >= 0.5,
-                    -- mtl                  >= 2.1,
+                    mtl                  >= 2.2.1,
                     -- directory,
                     -- hashable,
                     -- deepseq,
@@ -159,6 +162,8 @@ test-suite CoALP-tests
   main-is:          Tests.hs
 
   other-modules:    CoALP.Tests.Unit.Unify
+                    CoALP.Tests.Unit.Transform
+                    CoALP.Tests.Unit.AntiUnify
 --                    CoALP.Tests.Unit.Guards
 
   default-language: Haskell2010
@@ -168,6 +173,8 @@ test-suite CoALP-tests
   build-depends:    base        >= 4.6,
                     CoALP       >= 0.0.5,
 --                    containers  >= 0.5,
---                    directory,
+--                    directory   ,
+                    filepath    >= 1.3,
                     tasty       >= 0.10,
-                    tasty-hunit >= 0.9
+                    tasty-hunit >= 0.9,
+                    tasty-golden >= 2.3
