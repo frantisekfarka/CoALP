@@ -5,7 +5,9 @@ import Control.Monad.Trans.State (get, put)
 import System.Exit (exitWith, ExitCode(ExitSuccess))
 
 import CoALPj.Actions (loadFile, checkGuard3)
-import CoALPj.CmdOpts (CmdOpts, runArgParser, optDummy1, optVerbose, optVVerbose, optQuiet, optGC3)
+import CoALPj.CmdOpts (CmdOpts, runArgParser, optVerbose
+	--, optVVerbose
+	, optQuiet, optGC3)
 import CoALPj.REPL (runMain, caMain)
 import CoALPj.InternalState (defaultCoALPOptions, optVerbosity, Verbosity(..), CoALP, runIO, REPLState(..))
 
@@ -26,11 +28,6 @@ runCoALPj opts = do
 	--		setQuiet True
 	--		runIO $ runClient (getPort opts) c
 	--		runIO $ exitWith ExitSuccess
-	case optDummy1 opts of
-		0  -> do
-			runIO $ putStrLn "Dummy Bye Bye ..."
-			runIO $ exitWith ExitSuccess
-		_  -> return ()
 	case optGC3 opts of
 		Just fp  -> do
 			silence
@@ -46,7 +43,7 @@ runCoALPj opts = do
 			  optVerbosity = verb
 			}
 		-- TODO reafactor!!
-		verb = case (optVVerbose opts, optVerbose opts, optQuiet opts) of
+		verb = case ({-optVVerbose opts-} False, optVerbose opts, optQuiet opts) of
 			(True  , _    , _   ) -> VVerbose
 			(False , True , _   ) -> Verbose
 			(False , False, True) -> Quiet

@@ -39,16 +39,16 @@ library
                     CoALP.Program
                     CoALP.Parser.Lexer
                     CoALP.Parser.Parser
-                    CoALP.Parser.PrettyPrint
                     CoALP.Render
                     CoALP.RewTree
                     CoALP.DerTree
                     CoALP.Guards
                     CoALP.Sound
                     CoALP.Unify
+                    CoALP.Reductions
 
   other-modules:    CoALP.FreshVar
-                    CoALP.Reductions
+                    CoALP.Parser.PrettyPrint
 
 
   if flag(eventlog)
@@ -69,6 +69,7 @@ library
                     -- unordered-containers >= 0.2.3,
                     -- my dependencies
                     array                >= 0.5,
+                    bifunctors           >= 3.0,
                     deepseq              >= 1.3
 
   build-tools:      alex, happy
@@ -77,6 +78,11 @@ executable CoALPj
   hs-source-dirs:   inter
   main-is:          Main.hs
   other-modules:    CoALPj.CmdOpts
+                    CoALPj.Actions
+                    CoALPj.REPL
+                    CoALPj.REPL.Commands
+                    CoALPj.REPL.Parser
+                    CoALPj.InternalState
 
   other-extensions: FlexibleInstances
 

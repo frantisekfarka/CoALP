@@ -1,9 +1,12 @@
--- | Module that constructs rewriting tree
+-- | Construction of a derivation tree 
 module CoALP.DerTree (
+	-- * Tree constructions
 	  der
 	, trans
-	, mkVar
 	, clauseProj
+
+	-- * Rewritng tree variable
+	, Vr(..)
 ) where
 
 import Data.Maybe (maybeToList)
@@ -12,72 +15,77 @@ import CoALP.RewTree (rew, getVrs,extrew)
 import CoALP.FreshVar (Freshable,apartR, apartL)
 import CoALP.Unify (unify, applySubst, composeSubst, match)
 import CoALP.Program (Program, Clause(..), Subst, RewTree(..), DerTree(..),
-	Term(..),Vr(..),mkVar, Trans(..),
-	GuardingContext, mapClause,
-	mapProg,mapRTsecond
-
+	Term(..),Vr(..),Trans(..),
+	GuardingContext, 
 	)
 import CoALP.Reductions (isVarReductOf,nvPropSub)
 
 
-import Debug.Trace
 
--- | compute the rew tree transition
--- TODO make sure this works for infinite tree
+-- | Given a program P, rewriting tree rew(P, C, &#x3c3;) at position w and rewriting
+-- tree variable X_k construct the rewritng tree 
 --
--- TODO moce makeVrs to derT
+-- @
+--	Trans(P, D(w), X_k) = rew(P, C, &#x3c3;'&#x3c3;)
+-- @
 --
-trans :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
+-- and return the external resolvent &#x3c3;, contraction measure, and the
+-- originating clause according to @Definition 3.5@
+--
+trans :: (Eq a, Eq b, Ord c, Eq d, Freshable c, Freshable d)
 	=> Program a b c -> RewTree a b c d -> Vr d ->
 	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
 trans _ RTEmpty _ = (RTEmpty, Nothing)
-trans p rt@(RT cl si' _) vr = case term `unify` h of
+trans p rt@(RT _ si' _) vr = case term `unify` h of
 		Just si	-> (mkRew si
 			, Just (pk, si' `composeSubst` si
-			, term))  -- TODO comopse necessarily?
-		Nothing -> (RTEmpty, Nothing)
-	where
-		mkRew th = rew p (th `claps` cl) (si' `composeSubst` th)
-		(_, term, pk):_ = filter ((== vr).fst') $ getVrs rt
-		fst' (a,_,_) = a
-		claps th (Clause h' b') = Clause (th `applySubst` h') (map (applySubst th) b')
-		Clause h _ = p !! pk
-
-trans' :: (Eq a, Eq b, Ord b, Eq d, Freshable b, Freshable d)
-	=> Program a b c -> RewTree a b c d -> Vr d ->
-	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
-trans' _ RTEmpty _ = (RTEmpty, Nothing)
-trans' p rt@(RT cl si' _) vr = case term `unify` h of
-		Just si	-> (mkRew si
-			, Just (pk, si' `composeSubst` si
-			, term))  -- TODO comopse necessarily?
+			, term)) 
 		Nothing -> (RTEmpty, Nothing)
 	where
 		mkRew th = extrew p rt th
 		(_, term, pk):_ = filter ((== vr).fst') $ getVrs rt
 		fst' (a,_,_) = a
-		--claps th (Clause h' b') = Clause (th `applySubst` h') (map (applySubst th) b')
 		Clause h _ = p !! pk
 
---der :: (Eq a, Eq d, Ord b, Freshable b, Freshable d) =>
---	Program a b c -> Clause a b c -> DerTree a b c d
+-- | Given a program P and a clause C construct derivation tree
+--
+-- @
+-- 	der(P, C)
+-- @
+--
+-- according to definition 3.6
+--
+der :: (Eq a, Eq b, Eq d, Ord c, Freshable c, Freshable d) =>
+	Program a b c -> Clause a b c -> DerTree a b c d
 der p c = (derT p p' $ rew p' c' [])
 	where
-		p' = mapProg apartL p
-		c' = mapClause apartR c
+		p' = fmap (fmap apartL) p
+		c' = fmap apartR c
 
---derT :: (Eq a, Eq d, Ord b, Freshable b, Freshable d) =>
---	Program a b c -> RewTree a b c d -> DerTree a b c d
+-- | Compute next Derivation tree after transition
+derT :: (Eq a, Eq b, Eq d, Ord c, Freshable c, Freshable d) =>
+	Program a b c -> 
+	Program a b c -> 
+	RewTree a b c d ->
+	DerTree a b c d
 derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
 	where
 		
-		toTrans v = let (rt'', cp) = trans' p' rt' v 
+		toTrans v = let (rt'', cp) = trans p' rt' v 
 			in Trans p0 rt' v cp  $ derT p0 p' rt'' 
 		fst' (a, _, _) = a
-		p' = mapProg apartR p
-		rt' = rt -- mapRTsecond apartR rt
+		p' = fmap (fmap apartR) p
+		rt' = rt -- first apartR rt
 
-clauseProj :: (Eq a, Ord b) => 
+-- | Given program P and external resolvent of a transition with its measure
+-- conpute clause projection
+--
+-- @
+-- 	&#x3c0;(D(w)) = {P(k), t', v | ... }
+-- @
+--
+-- accorging to definition 5.4
+clauseProj :: (Eq a, Eq b, Ord c) => 
 	Program a b c -> Maybe (Int, Subst a b c, Term a b c) 
 	-> GuardingContext a b c
 clauseProj _ Nothing 		= []
@@ -90,10 +98,4 @@ clauseProj p (Just (pk, si, t))
 			]
 	| otherwise	= []
 
-	where
-		{- f x = if pk == 2 then (
-			trace ("ClauseProj of \n\t" ++ show t ++ "\n\t" ++ show si ++
-			"\n\ttrying " ++ show (si `applySubst` t))  x
-			) else x
-		-}
 
