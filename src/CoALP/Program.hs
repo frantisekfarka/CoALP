@@ -27,7 +27,6 @@ module CoALP.Program (
 	, GuardingContext
 	, OTree(..)
 	, OTrans(..)
-	, OTrans1
 
 	-- * Soundness
 	, Succ (..)
@@ -36,6 +35,7 @@ module CoALP.Program (
 	-- ** Identifier, Variable, and Constant 
 	, Ident
 	, Var
+        , AnnoVar(..)
 	, Constant
 	, VR
 
@@ -46,14 +46,20 @@ module CoALP.Program (
 	, Subst1
 	, Program1
 	, RewTree1
+        , RewTreeA
 	, Vr1
 	, Loop1
 	, DerTree1
 	, OTree1
 	, Trans1
+	, OTrans1
 	, GuardingContext1
 	, Succ1
 
+        , TermA
+        , ClauseA
+        , SubstA
+        , ProgramA
 ) where
 
 import Control.Arrow ((***))
@@ -77,9 +83,8 @@ import Control.DeepSeq (deepseq, NFData(..))
 -- * subterm(t, w) - subtree at a word w
 --
 data Term a b c
-	= Var c			-- ^ a variable
+	= Var c			-- ^ a inductive variable
 	| Fun a [Term a b c]	-- ^ a function symbol
-
 
 --	 Const b            -- an integral constant -- keep out for now
 
@@ -184,6 +189,30 @@ instance Functor (Vr) where
 instance NFData (Vr d) where
 	rnf (Vr v) = v `seq` ()
 
+-- | Annotated variable
+data AnnoVar a
+        = Ind a
+        | CoInd a 
+        deriving (Ord)
+
+instance (Eq a) => Eq (AnnoVar a) where
+	(Ind v1) == (Ind v2) = v1 == v2
+        (CoInd v1) == (CoInd v2) = v1 == v2
+        _ == _ = False
+
+instance (Show a) => Show (AnnoVar a) where
+        show (Ind x) = show x ++ "i"
+        show (CoInd y) = show y ++ "c"
+
+instance Functor (AnnoVar) where
+	fmap f (Ind v)		= Ind $ f v
+	fmap f (CoInd c)	= CoInd $ f c
+
+
+instance NFData (AnnoVar a) where
+	rnf (Ind v)	= seq v ()
+        rnf (CoInd c)	= seq c ()
+
 -- | Type of identifier
 --
 -- Identifiers start with a lower-case Latin letter or a symbol drawn from a
@@ -208,6 +237,8 @@ type Ident = String
 --
 type Var = Integer
 
+type VarA = AnnoVar Integer
+
 -- | Type of Rew Tree Variable
 --
 type VR = Integer
@@ -222,11 +253,13 @@ type Constant = Integer
 --
 type Term1 = Term Ident Constant Var
 
+type TermA = Term Ident Constant VarA 
 
 -- | Type of clause of first-order terms.
 --
 type Clause1 = Clause Ident Constant Var
 
+type ClauseA = Clause Ident Constant VarA 
 
 -- | Type of clause of first-order query
 --
@@ -236,24 +269,37 @@ type Clause1 = Clause Ident Constant Var
 --
 type Program1 = Program Ident Constant Var
 
+type ProgramA = Program Ident Constant VarA
+
+
 -- | Type of substitution of terms
 --
 type Subst1 = Subst Ident Constant Var
+
+type SubstA = Subst Ident Constant VarA 
 
 -- | Rewriting tree for Term1
 --
 type RewTree1 = RewTree Ident Constant Var VR
 
+type RewTreeA = RewTree Ident Constant VarA VR 
+
 -- | The derivation tree
 --
 type DerTree1 = DerTree Ident Constant Var VR
+
+type DerTreeA = DerTree Ident Constant VarA VR
 
 -- | Type of rewritng tree variables
 --
 type Vr1 = Vr VR
 
+type VRA = Vr VR
+
 -- | Type of a GC
 type GuardingContext1 = GuardingContext Ident Constant Var
+
+type GuardingContextA = GuardingContext Ident Constant VarA
 
 -- | @AndNode a its@ is an atom with a possibly partial mapping from clauses to
 -- or-subtrees. Each of those or-subtrees corresponds to some clause number @i@
@@ -385,8 +431,8 @@ propSubtermOf t1 t2 = t1 /= t2 && t1 `subtermOf` t2
 -- | inductive / coinductive resuolution success
 --
 data Succ a b c
-	= Ind (Clause a b c)
-	| CoInd (Clause a b c) (GuardingContext a b c)
+	= IndS (Clause a b c)
+	| CoIndS (Clause a b c) (GuardingContext a b c)
 	deriving (Eq, Show)
 
 -- | Fully instantiated success

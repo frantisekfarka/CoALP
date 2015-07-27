@@ -31,7 +31,7 @@ resTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 	where
 		gc = guardingContext p rt cx 
 		rep (RTEmpty) = error "impossible"
-		rep (RT c s _) = CoInd c gc
+		rep (RT c s _) = CoIndS c gc
 
 
 
@@ -40,7 +40,7 @@ indRes (RT c _ ands) = concatMap (indResAnds c) ands
 	where
 		indResAnds c (AndNode _ ors) = concatMap (indResOrs c) ors
 		indResOrs c (OrNodeEmpty _) = []
-		indResOrs c (OrNode a []) = [Ind c]
+		indResOrs c (OrNode a []) = [IndS c]
 		indResOrs c (OrNode a ands) = concatMap (indResAnds c) ands
 
 

@@ -4,6 +4,7 @@ module CoALP.Parser.PrettyPrint (
 	, ppClause
 	, ppProgram
 	, ppSubst
+--        , ppSubstitutions
 )where
 
 import Data.List (intersperse)
@@ -45,5 +46,9 @@ ppSubst s = "{ " ++ (concat . intersperse ", " . map f) s ++ " }"
 	where
 		f (v,t) = ppTerm t ++ " / V_" ++ show v
 
+
+--ppSubstitutions :: (Show a, Show b, Show c) => [((Term a b c, Term a b c), c)] -> String
+--ppSubstitutions s = "{ " ++ (concat . intersperse ", " . map f) s ++ " }"
+--       where f ((t1,t2), v) = "(" ++ ppTerm t1 ++ " / V_" ++ show v ++ ", " ++ ppTerm t2 ++ " / V_" ++ show v ++ ")"
 
 

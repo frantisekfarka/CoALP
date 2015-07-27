@@ -7,6 +7,7 @@ module CoALP.Guards (
 	, gc2 -- guardenes on rew trees
 	, gc3 -- guardenes on der trees
 	, gc3one
+        , getProgramLoops
 
 	-- * Guarding context
 	, guardingContext
@@ -24,7 +25,7 @@ module CoALP.Guards (
 import Data.Functor ((<$>))
 import Data.Foldable (asum)
 import Data.List (nub)
-import Data.Maybe (maybeToList)
+import Data.Maybe (maybeToList, catMaybes)
 
 import CoALP.Program (Program, Clause(..), Term(..),
 	AndNode(..),OrNode(..),RewTree(..),
@@ -163,7 +164,6 @@ gcTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 	where
 		gc = guardingContext p rt cx 
 
-
 -- | Construct observation tree from a derivation tree 
 -- according to the @Definition 5.5@
 derToObs :: DerTree1 -> OTree1
@@ -185,13 +185,14 @@ transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 
 -- | Select leftmost branch of a derivation tree that is not closed
 -- up to given depth
-derToUnc :: Int -> DerTree1 -> DerTree1
+
+derToUnc :: (Eq a, Eq b, Ord c) => Int -> DerTree a b c Integer -> DerTree a b c Integer
 derToUnc n dt@(DT rt _) = case derToUnc' [] n [] dt 0 of
 	Just dt'	-> dt'
 	Nothing		-> DT rt []
 	
 -- | The actual implementation
-derToUnc' :: [Int] -> Int -> [GuardingContext1] -> DerTree1 -> Int -> Maybe DerTree1
+derToUnc' :: (Eq a, Eq b, Ord c) => [Int] -> Int -> [GuardingContext a b c] -> DerTree a b c Integer -> Int -> Maybe (DerTree a b c Integer)
 derToUnc' _    0 _   (DT rt _) _ = Just $ DT rt []
 derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
 		False	-> -- trace ("Unguarded tree at " ++ (show $ reverse (tix:path))) $
@@ -205,7 +206,7 @@ derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
 		altseq' [] = []
 
 -- | Ditto for trans
-transToUnc :: [Int] -> Int -> [GuardingContext1] -> Trans1 ->  Int -> Maybe (Trans1)
+transToUnc :: (Eq a, Eq b, Ord c) => [Int] -> Int -> [GuardingContext a b c] -> Trans a b c Integer ->  Int -> Maybe (Trans a b c Integer)
 transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> trace ("Guarded trans at " ++ (show $ reverse path)) $ 
 			Nothing -- guarded trs
@@ -214,13 +215,13 @@ transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `el
 		gc = guardingContext p rt cx 
 -- | Select leftmost branch containing an unguarded rewriting tree in the 
 -- given or less depth
-derToUng :: Int -> DerTree1 -> DerTree1
+derToUng :: (Eq a, Eq b, Ord c) => Int -> DerTree a b c Integer -> DerTree a b c Integer
 derToUng depthD dt@(DT _ _) = case derToUng' depthD [] dt of
 	Just dt'	-> dt'
 	Nothing		-> DT RTEmpty []
 
 -- | The actual implementation
-derToUng' :: Int -> [GuardingContext1] -> DerTree1 -> Maybe DerTree1
+derToUng' :: (Eq a, Eq b, Ord c) => Int -> [GuardingContext a b c] -> DerTree a b c Integer -> Maybe (DerTree a b c Integer)
 derToUng' 0 _ (DT rt _) = Just (DT rt [])
 derToUng' n gcs (DT rt trs) = case gcRewTree rt of
 		False	-> Just $ DT rt []
@@ -231,7 +232,7 @@ derToUng' n gcs (DT rt trs) = case gcRewTree rt of
 		altseq (Nothing:xs)	= altseq xs
 
 -- | Ditto for trans
-transToUng :: Int -> [GuardingContext1] -> Trans1 -> Maybe (Trans1)
+transToUng :: (Eq a, Eq b, Ord c) => Int -> [GuardingContext a b c] -> Trans a b c Integer -> Maybe (Trans a b c Integer)
 transToUng n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> Nothing -- guarded trans
 		False	-> (Trans p rt v cx) <$> derToUng' n (gc:gcs) dt
@@ -286,9 +287,6 @@ loops (RT _ _ ands) = concat $ concatMap loops0 ands
 	where
 		loops0 (AndNode _ ors) = concat $ zipWith (oLoops []) [0..] ors
 
-	
-
-
 aLoops :: (Eq a) =>
 	[(Term a b c, (Int, Int))]
 	-> Int -- ^ parent clause ix
@@ -312,5 +310,69 @@ oLoops :: (Eq a) =>
 oLoops _	_	(OrNodeEmpty _) = []
 oLoops tws	ci	(OrNode _ ands) = concat $ zipWith (aLoops tws ci) [0..] ands 
 
+getProgramLoops :: (Freshable c, Ord c, Eq b, Eq a) =>
+        Program a b c -> [(Int, Int)]
+getProgramLoops p = map g $ catMaybes (snd $ gc3withLoops p)
+        where g ((_, _, c), ti) = (c, ti)
 
 
+-- | Guradedness check GC3 according to @Defintion 5.6@ for the whole program
+gc3withLoops :: (Freshable c, Ord c, Eq b, Eq a) =>
+        Program a b c -> (Bool, [Maybe (Loop a b c, Int)])
+gc3withLoops p = (r, ls)
+        where list = map (gc3oneWithLoops p) p
+              r = all (fst) list
+              rewTrees = map (snd) list
+              ls = concat $ map (map (unguarded . loops')) rewTrees
+              unguarded x = case x of
+                            [] -> Nothing
+                            _ -> Just (x !! 0)
+
+-- | Guradedness check GC3 according to @Defintion 5.6@ for a single clause
+gc3oneWithLoops :: (Freshable c, Ord c, Eq a, Eq b) =>
+	Program a b c -> Clause a b c -> (Bool, [RewTree a b c VR])
+gc3oneWithLoops p c = gcDerTreeWithLoops [] $ (der p c) 
+
+gcDerTreeWithLoops :: (Eq a, Eq b, Ord c) => [GuardingContext a b c] -> DerTree a b c VR -> (Bool, [RewTree a b c VR])
+gcDerTreeWithLoops gcs (DT rt trs) = case gcRewTree rt of
+                True    -> (and (map fst list), [rt] ++ concat (map snd list))
+                False   -> (False, [rt])
+        where list = map (gcTransWithLoops gcs) trs -- [(bool, [RewTree a b c VR])
+
+-- | Check whether a transition id guarded
+gcTransWithLoops :: (Eq a, Eq b, Ord c) => [GuardingContext a b c] -> Trans a b c Integer -> (Bool, [RewTree a b c VR])
+gcTransWithLoops gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+		True	-> (True, [])
+		False	-> gcDerTreeWithLoops (gc:gcs) dt
+
+	where
+		gc = guardingContext p rt cx 
+
+loops' :: Eq a => RewTree a b c d -> [(Loop a b c, Int)] 
+loops' (RTEmpty)	= []
+loops' (RT _ _ ands) = concat $ concatMap loops0 ands
+	where
+		loops0 (AndNode _ ors) = concat $ zipWith (oLoops' []) [0..] ors
+
+aLoops' :: (Eq a) =>
+	[(Term a b c, (Int, Int))]
+	-> Int -- ^ parent clause ix
+	-> Int -- ^ term ix
+	-> AndNode (Clause a b c) (Term a b c) d
+	-> [[(Loop a b c, Int)]]
+aLoops' tws pci ti (AndNode t ors) = (concatMap f tws) : 
+		(concat $ zipWith (oLoops' ((t, (pci, ti)):tws)) [0..] ors)
+	where
+		f (t', (pci', _ti')) = if pci' == pci && eqs t t'
+			then [((t', t, pci),ti)]
+			else []
+		eqs (Fun t1 _)	(Fun t2 _)	= t1 == t2
+		eqs _		_		= False
+
+oLoops' :: (Eq a) =>
+	[(Term a b c, (Int, Int))]
+	-> Int -- ^ clause ix
+	-> OrNode (Clause a b c) (Term a b c) d
+	-> [[(Loop a b c, Int)]]
+oLoops' _	_	(OrNodeEmpty _) = []
+oLoops' tws	ci	(OrNode _ ands) = concat $ zipWith (aLoops' tws ci) [0..] ands 

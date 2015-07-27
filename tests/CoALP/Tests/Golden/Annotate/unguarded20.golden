@@ -1,0 +1,4 @@
+q(d(s(V_2i), V_3i), transform-func-1(V_10c)) :- p(d(V_2i, V_3i), V_10c).
+p(d(t(V_4i), V_5i), transform-func-2(V_11c)) :- r(d(V_4i, V_5i), V_11c).
+r(d(u(V_6i), V_7i), transform-func-3(V_12c)) :- v(d(V_6i, V_7i), V_12c).
+v(d(w(V_8i), V_9i), transform-func-4(V_13c)) :- q(d(V_9i, V_9i), V_13c).

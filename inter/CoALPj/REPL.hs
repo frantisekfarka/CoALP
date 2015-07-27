@@ -63,6 +63,10 @@ import CoALPj.Actions (
 	, drawInf
 	, drawUng
 	, nextRes
+        , convert
+        , transform
+        , annotate
+        , antiUnify
 	)
 
 -- | MonadException instance for ExceptT
@@ -183,7 +187,7 @@ processInput cmd _origState = do
 			iputStrLn $ show err
 			return ()
 		Right (Load f)	-> loadFile f
-		Right (Reload)	-> reloadFile 
+		Right (Reload)	-> reloadFile
 		Right (Print)	-> printProgram
 
 		Right (Quit) 	-> do
@@ -195,6 +199,11 @@ processInput cmd _origState = do
 		Right (GC2 c)	-> checkGuard2 c
 		Right (GC3)	-> checkGuard3 
 		Right (GC3One c) -> checkGuard3One c
+
+		Right (Transform) -> transform
+                Right (Annotate) -> annotate
+                Right (Convert) -> convert
+                Right (AntiUnify c) -> antiUnify c 
 
 		Right (DrawProgram) -> drawProgram
 		Right (DrawRew d q) -> drawRew d q
