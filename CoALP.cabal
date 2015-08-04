@@ -65,15 +65,18 @@ library
                     -- directory,
                     -- hashable,
                     -- deepseq,
-                    -- text                 >= 1.2,
+                    text                 >= 1.1,
                     -- parsec               >= 3.1,
                     process              >= 1.0,
                     transformers         >= 0.3,
                     -- unordered-containers >= 0.2.3,
                     -- my dependencies
+                    graphviz             >= 2999.17.0,
+                    hashable             >= 1.2,
                     array                >= 0.5,
                     bifunctors           >= 3.0,
                     deepseq              >= 1.3
+                    
 
   build-tools:      alex, happy
 

@@ -70,6 +70,9 @@ import Data.List (intersperse)
 -- import Data.Set (Set)
 import Numeric (showHex) -- ,showIntAtBase)
 
+import Data.Text.Lazy(pack)
+import Data.GraphViz.Printing(PrintDot(..), dotText)
+
 import Control.DeepSeq (deepseq, NFData(..))
 
 -- | A term for any type of functional symbol and any type of variable.
@@ -85,7 +88,7 @@ import Control.DeepSeq (deepseq, NFData(..))
 data Term a b c
 	= Var c			-- ^ a inductive variable
 	| Fun a [Term a b c]	-- ^ a function symbol
-
+        deriving (Ord)
 --	 Const b            -- an integral constant -- keep out for now
 
 
@@ -107,6 +110,19 @@ instance NFData (Term a b c) where
 	rnf (Fun f ts)	= seq f $ deepseq ts $ ()
 	rnf (Var v)	= seq v ()
 	
+instance (Show a, Show b, Show c) => PrintDot (Term a b c) where
+        unqtDot t = dotText (pack $ ppTerm t)
+
+ppTerm :: (Show a, Show b, Show c) => Term a b c -> String
+ppTerm (Var x) = "V_" ++ show x
+ppTerm (Fun f ts) = (filter (/= '"') $ show f) ++
+	if null ts 
+		then ""
+		else "(" ++ ppTerms ts ++ ")"
+
+ppTerms :: (Show a, Show b, Show c) =>  [Term a b c] -> String
+ppTerms ts = concat . intersperse ", " . map ppTerm $ ts
+
 -- | A clause 
 --
 -- Notation: 
