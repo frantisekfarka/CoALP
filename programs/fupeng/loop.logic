@@ -1,0 +1,4 @@
+eq (p(A))  :- eq(A).
+eq (app(app(app(cmp, F) , G), A)) :- eq(app( F, app(G, A))).
+
+eq (app(app(fix, f), g)) :- eq(app(f,app(app(fix,app(app(cmp,G), F)),G))).
