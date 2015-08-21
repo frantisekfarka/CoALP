@@ -1,0 +1,26 @@
+%%
+%% Simply typed lambda calculus with kinds
+%%
+
+kind(KC,var(X),  K) :- first(pair(X,K),KC).
+kind(KC,arr(A,B),o) :- kind(KC,A,o), kind(KC,B,o).
+kind(KC,app(X,Y),K2) :- kind(KC,X,arr(K1,K2)), kind(KC,Y,K1).
+
+type(KC,C,var(X),         T) :- first(pair(X,T),C).
+type(KC,C,lam(X,E),arr(A,B)) :- type(KC,cons(pair(X,A),C), E,  B),
+                                kind(KC,arr(A,B),o).
+type(KC,C,app(X,Y),       B) :- type(KC,C,X,arr(A,B)), type(KC,C,Y,A).
+
+
+first(pair(K,V),cons(pair(K1,V1),Xs)) :- eq(K,K1), eq(V, V1). 
+first(pair(K,V),cons(pair(K1,V1),Xs)) :- first(pair(K,V), Xs).
+
+eq(X,X).
+
+%%
+%% Type checking:
+%%
+%% res :- type(nil,nil, lam(x,var(x)), arr(A, A)).
+%%
+%% > True
+%% >        observed inductively: res :- type(nil, lam(x, var(x)), arr(V_5, V_5)).
