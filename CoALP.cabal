@@ -55,9 +55,9 @@ library
 
 
   if flag(eventlog)
-    ghc-options:    -Wall -rtsopts -threaded -eventlog
+    ghc-options:    -Wall -rtsopts -threaded -eventlog -fno-warn-tabs
   else
-    ghc-options:    -Wall -rtsopts -auto-all -caf-all
+    ghc-options:    -Wall -rtsopts -auto-all -caf-all -fno-warn-tabs
 
   build-depends:    base                 >= 4.6 && < 5,
                     containers           >= 0.5,
@@ -92,9 +92,9 @@ executable CoALPj
   -- ghc-options:      -Wall -fwarn-incomplete-patterns 
   --ghc-options:      -fprof-auto -threaded -Wall -fwarn-incomplete-patterns 
   if flag(eventlog)
-    ghc-options:    -Wall -rtsopts -threaded -eventlog
+    ghc-options:    -Wall -rtsopts -threaded -eventlog -fno-warn-tabs
   else
-    ghc-options:    -Wall -rtsopts -auto-all -caf-all
+    ghc-options:    -Wall -rtsopts -auto-all -caf-all -fno-warn-tabs
 
 
 

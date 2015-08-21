@@ -16,6 +16,8 @@ import CoALP.Program (
 import CoALP.DerTree (der,clauseProj)
 import CoALP.Guards (guardingContext)
 
+import Debug.Trace
+
 
 --resolve ::
 --	Clause a b c
@@ -34,14 +36,20 @@ resTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		rep (RT c s _) = CoIndS c gc
 
 
-
+-- TODO make into traversal over the tree
 indRes RTEmpty = []
-indRes (RT c _ ands) = concatMap (indResAnds c) ands
+indRes (RT c _ ands) = if any hasSuccTreeAnd ands then [IndS c] else []
+
+		-- concatMap (indResAnds c) ands
 	where
-		indResAnds c (AndNode _ ors) = concatMap (indResOrs c) ors
-		indResOrs c (OrNodeEmpty _) = []
-		indResOrs c (OrNode a []) = [IndS c]
-		indResOrs c (OrNode a ands) = concatMap (indResAnds c) ands
+		hasSuccTreeAnd (AndNode _ ors) = any hasSuccTreeOr ors
+		hasSuccTreeOr (OrNodeEmpty _) = False
+		hasSuccTreeOr (OrNode a []) = True
+		hasSuccTreeOr (OrNode _ ands) = all hasSuccTreeAnd ands
+
+
+
+
 
 
 
