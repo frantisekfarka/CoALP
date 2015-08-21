@@ -23,4 +23,4 @@ eq(X,X).
 %% res :- type(nil,nil, lam(x,var(x)), arr(A, A)).
 %%
 %% > True
-%% >        observed inductively: res :- type(nil, lam(x, var(x)), arr(V_5, V_5)).
+%% >        observed inductively: res :- type(nil, nil, lam(x, var(x)), arr(V_5, V_5)).
