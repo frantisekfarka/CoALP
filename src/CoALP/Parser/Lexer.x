@@ -45,6 +45,12 @@ tokens :-
   -- we need to count newlines (for pretty printing of input, error msgs)
   -- $newline+			{ \a _ -> return (TNl (line a))  }
 
+  -- inductive keyword
+  "inductive"			{ \_ _ -> return TInd }
+
+  -- coinductive keyword
+  "coinductive"			{ \_ _ -> return TCoInd }
+
   -- we skip comments
   "%" .*			; --{ \a len -> return $ TComment $ tokenStr a len}
 
@@ -77,6 +83,10 @@ tokens :-
 
   -- closing brace
   ")"				{ \_ _ -> return TRPar }
+
+  -- type separator
+  ":"				{ \_ _ -> return TTSep }
+
 
 
 
@@ -111,8 +121,6 @@ clearVars :: Alex ()
 clearVars = Alex $ \s@AlexState{alex_ust=ust}
 	-> Right (s{alex_ust=ust{vars=empty}}, ())
 
-
-
 -- -----------------------------------------------------------------------------
 -- | The token type:
 data Token =
@@ -125,7 +133,10 @@ data Token =
 	TTermSep	|
 	TClauseTer	|
 	TQuery		|
-	TEof
+	TInd		|
+	TCoInd		|
+	TTSep		|
+	TEof		
 	deriving (Eq,Show)
 
 

@@ -2,11 +2,14 @@
 %% Simply typed lambda calculus
 %%
 
+
+type : inductive
 type(C,var(X),       T) :- first(pair(X,T),C).
 type(C,lam(X,E),arr(A, B)) :- type(cons(pair(X,A),C), E,  B).
 type(C,app(X,Y),        B) :- type(C,X,arr(A,B)), type(C,Y,A).
 
 
+first : coinductive
 first(pair(K,V),cons(pair(K1,V1),Xs)) :- eq(K,K1), eq(V, V1). 
 first(pair(K,V),cons(pair(K1,V1),Xs)) :- first(pair(K,V), Xs).
 

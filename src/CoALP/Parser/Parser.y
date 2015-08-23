@@ -45,12 +45,16 @@ import Data.Map(empty,findWithDefault,insert)
 	'('             { TLPar }
 	')'		{ TRPar }
 --	'?'		{ TQuery }
+	':'		{ TTSep }
+	'inductive'	{ TInd }
+	'coinductive'	{ TCoInd }
 
 %%
 
 Clauses :: { Program1 }
 -- ^ we do not clear vars as matching currently does not assign fresh vars
 Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
+	| Clauses IndSpec		{ $1 }
 	| {- empty -}			{ [ ] }
 
 Clause :: { Clause1 }
@@ -71,6 +75,10 @@ Term	: funId '(' Terms ')'		{ Fun $1 (reverse $3) }
 	| varId				{% getVar $1 >>= return . Var }
 	| int				{ Fun (show $1) [] } -- little hack for now
 --	| int				{ Const $1 }
+
+
+IndSpec : 'inductive' ':' funId		{ () }
+
 
 {
 
