@@ -27,7 +27,7 @@ import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.State (StateT) 
 import Control.Monad.Trans.Except (ExceptT, throwE)
 
---import Data.Monoid (mempty)
+import Data.Monoid (mempty)
 
 import System.IO.Error (tryIOError)
 
