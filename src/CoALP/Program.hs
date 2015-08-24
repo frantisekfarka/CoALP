@@ -13,6 +13,8 @@ module CoALP.Program (
 	--, Query(..)
 	, Subst
 	, Program
+	, Type(..)
+	, Signature
 
 	-- * Tier 2 structures
 	, RewTree(..)
@@ -45,6 +47,7 @@ module CoALP.Program (
 	--, Query1
 	, Subst1
 	, Program1
+	, Signature1
 	, RewTree1
         , RewTreeA
 	, Vr1
@@ -68,6 +71,8 @@ import Data.Bifunctor (Bifunctor(..))
 import Data.Foldable (Foldable,foldMap)
 import Data.List (intersperse)
 -- import Data.Set (Set)
+import Data.Map.Strict (Map)
+
 import Numeric (showHex) -- ,showIntAtBase)
 
 import Control.DeepSeq (deepseq, NFData(..))
@@ -158,6 +163,10 @@ mapSubst :: (c -> c') -> [(c, Term a b c)] -> [(c', Term a b c')]
 mapSubst f s = map (f *** (fmap f)) s
 
 
+-- | Predicate type
+-- 
+data Type = SInd | SCoInd
+
 -- | A program consisting of clauses
 --
 -- Notation:
@@ -166,6 +175,8 @@ mapSubst f s = map (f *** (fmap f)) s
 -- * @P(i)@ is n-th clause
 --
 type Program a b c = [Clause a b c]
+
+type Signature a = Map a Type
 
 -- | GuardingContext gathered for every transition between
 -- rewritng trees
@@ -270,6 +281,8 @@ type ClauseA = Clause Ident Constant VarA
 type Program1 = Program Ident Constant Var
 
 type ProgramA = Program Ident Constant VarA
+
+type Signature1 = Signature Ident 
 
 
 -- | Type of substitution of terms

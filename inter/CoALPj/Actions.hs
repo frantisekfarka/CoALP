@@ -39,6 +39,7 @@ import CoALPj.InternalState (
 	, resolves
         , programA
         , varCount 
+	, signature
 	, optVerbosity
 	, Verbosity (..)
 	)
@@ -85,9 +86,14 @@ loadFile file = do
 		Left err	-> do
 			iputStrLn err
 			return ()
-		Right (prg, c) -> do
+		Right ((prg, sig), c) -> do
 			s <- get
-			put $ s { program = Just (reverse prg), programA = Nothing, programPath = Just file, varCount = Just c}
+			put $ s { program = Just (reverse prg)
+				, programA = Nothing
+				, programPath = Just file
+				, varCount = Just c
+				, signature = Just sig 
+				}
 			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
 				"Program " ++ file ++ " loaded.")
 

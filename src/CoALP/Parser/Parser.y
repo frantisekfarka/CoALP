@@ -20,7 +20,9 @@ import CoALP.Parser.Lexer (
 	, scanTokens
 	, clearVars
 	, alexSynError
+	, getSig
 	)
+
 import CoALP.Program
 
 import Data.Char
@@ -28,7 +30,7 @@ import Data.Map(empty,findWithDefault,insert)
 
 }
 
-%name main Clauses
+%name main Program
 %name clause Clause
 %tokentype { Token }
 %monad { Alex } { >>= } { return }
@@ -51,7 +53,10 @@ import Data.Map(empty,findWithDefault,insert)
 
 %%
 
-Clauses :: { Program1 }
+Program :: { (Program1, Signature1) }
+Program : Clauses {% getSig >>= \s -> return ($1, s) }
+
+Clauses :: { [Clause1] } 
 -- ^ we do not clear vars as matching currently does not assign fresh vars
 Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
 	| Clauses IndSpec		{ $1 }
@@ -88,11 +93,11 @@ parseError t = alexSynError t
 
 
 -- | Parse program
-parse :: String -> Either String Program1
+parse :: String -> Either String (Program1, Signature1)
 parse s = runAlex s main
 
 -- | Parse program, obtain next variable counter 
-parseWithCount :: String -> Either String (Program1, Integer)
+parseWithCount :: String -> Either String ((Program1, Signature1), Integer)
 parseWithCount s = runAlex' s main
 
 -- | Parse single clause

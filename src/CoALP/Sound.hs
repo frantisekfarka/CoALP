@@ -27,13 +27,14 @@ res p c = resDerTree [] $ (der p c :: DerTree1 )
 
 resDerTree gcs (DT rt trs) = (indRes rt) ++ (concatMap (resTrans gcs) trs)
 
-resTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+resTrans gcs (Trans p rt _ cx dt) = case indClosed && (not $ null gc) && (gc `elem` gcs) of
 		True	-> [rep rt]
 		False	-> resDerTree (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
 		rep (RTEmpty) = error "impossible"
 		rep (RT c s _) = CoIndS c gc
+		indClosed = False
 
 
 -- TODO make into traversal over the tree

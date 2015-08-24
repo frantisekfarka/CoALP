@@ -14,6 +14,7 @@ module CoALPj.InternalState (
 	, resolves
         , programA
         , varCount 
+	, signature
 	, optVerbosity
 	, REPLState
 	, replInit
@@ -26,13 +27,13 @@ import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.State (StateT) 
 import Control.Monad.Trans.Except (ExceptT, throwE)
 
-import Data.Monoid (mempty)
+--import Data.Monoid (mempty)
 
 import System.IO.Error (tryIOError)
 
 
 import CoALP.Error (Err(Msg))
-import CoALP.Program (Program1, Succ1, ProgramA)
+import CoALP.Program (Program1, Succ1, ProgramA, Signature1)
 
 
 --
@@ -71,6 +72,7 @@ data REPLState = REPLState {
 	, resolves	:: Maybe [Succ1]
         , programA      :: Maybe ProgramA
         , varCount      :: Maybe Integer
+	, signature	:: Maybe Signature1
 	}
 
 -- | Create initial state from general CoALPj options
@@ -83,6 +85,7 @@ replInit = REPLState {
 	, resolves = mempty
         , programA = mempty
         , varCount  = Nothing
+	, signature = Nothing
 	}
 
 -- | Verbosity levels
