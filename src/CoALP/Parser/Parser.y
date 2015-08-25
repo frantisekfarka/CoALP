@@ -6,6 +6,7 @@ module CoALP.Parser.Parser (
 	, parseClause
 ) where
 
+import Control.Arrow ((***))
 import Control.Monad.Trans.Except (Except, throwE)
 
 import CoALP.Error (Err(ParserErr))
@@ -19,7 +20,9 @@ import CoALP.Parser.Lexer (
 	, getVar
 	, scanTokens
 	, clearVars
+	, alexError
 	, alexSynError
+	, alexGetPos
 	, getSig
 	)
 
@@ -53,14 +56,20 @@ import Data.Map(empty,findWithDefault,insert)
 
 %%
 
-Program :: { (Program1, Signature1) }
-Program : Clauses {% getSig >>= \s -> return ($1, s) }
+--Program :: { (Program1, Signature1) }
+--Program : Clauses {% getSig >>= \s -> return ($1, s) }
+Program : Program Clause 		{ (($2 : ) *** id) $1 }
+	| Program SigSpec		{% let ((c, s),(iden, t)) = ($1, $2)
+					   in case (markType s iden t) of
+					   	Left t'   -> repSig iden t'
+						Right s' -> return (c, s') }
+	| {- empty -}			{ ([], empty) }
 
-Clauses :: { [Clause1] } 
+--Clauses :: { [Clause1] } 
 -- ^ we do not clear vars as matching currently does not assign fresh vars
-Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
-	| Clauses IndSpec		{ $1 }
-	| {- empty -}			{ [ ] }
+--Clauses	: Clauses Clause		{% clearVars >> return ($2 : $1) }
+--	| Clauses IndSpec		{% alexError "ada"  }
+--	| {- empty -}			{ ([ ] }
 
 Clause :: { Clause1 }
 Clause	: Term ':-' Terms '.'		{ Clause $1 (reverse $3) }
@@ -82,10 +91,21 @@ Term	: funId '(' Terms ')'		{ Fun $1 (reverse $3) }
 --	| int				{ Const $1 }
 
 
-IndSpec : 'inductive' ':' funId		{ () }
+SigSpec :: { (Ident, Type) }
+SigSpec : SigT ':' funId		{ ($3, $1) } 
+
+SigT :: { Type }
+SigT : 'inductive'	{ SInd }
+     | 'coinductive'	{ SCoInd }
 
 
 {
+
+--repSig :: Ident -> Type -> Alex Ident
+repSig iden t = do
+	(l, c) <- alexGetPos
+	alexError ("Duplicate type signature at line " ++ show l ++
+		": '" ++ iden ++ "' already marked ")
 
 -- | Handle syntactic error
 parseError :: Token -> Alex a

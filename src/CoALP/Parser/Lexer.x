@@ -9,7 +9,9 @@ module CoALP.Parser.Lexer (
 	, getVar
 	, scanTokens
 	, clearVars
+	, alexError
 	, alexSynError
+	, alexGetPos
 	, getSig
 	) where
 

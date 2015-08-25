@@ -15,6 +15,8 @@ module CoALP.Program (
 	, Program
 	, Type(..)
 	, Signature
+	, markType
+	, lookupType
 
 	-- * Tier 2 structures
 	, RewTree(..)
@@ -67,11 +69,13 @@ module CoALP.Program (
 
 import Control.Arrow ((***))
 import Data.Bifunctor (Bifunctor(..))
---import Data.Functor(Functor(..))
+import Data.Either (Either(..))
+import Data.Functor(Functor(..))
+import Data.Maybe (Maybe(..))
 import Data.Foldable (Foldable,foldMap)
 import Data.List (intersperse)
 -- import Data.Set (Set)
-import Data.Map.Strict (Map)
+import Data.Map.Strict as M (Map, insertLookupWithKey, lookup) 
 
 import Numeric (showHex) -- ,showIntAtBase)
 
@@ -451,4 +455,19 @@ data Succ a b c
 -- | Fully instantiated success
 type Succ1 = Succ Ident Var Constant
 
+
+
+-- | 
+--
+markType :: Ord a => Signature a -> a -> Type -> Either Type (Signature a)
+markType sig iden t = case insertLookupWithKey f iden t sig of
+		(Just x, _)	-> Left x
+		(Nothing, sig')	-> Right sig'
+	where
+		f _ _ ov = ov
+
+lookupType :: Ord a => Signature a -> a -> Type
+lookupType sig iden = case M.lookup iden sig of
+	Just t	-> t
+	Nothing	-> SCoInd
 
