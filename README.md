@@ -11,7 +11,7 @@ Haskell implementation of coalgebraic logic programming. Experimental,
 development version.
 
 
-## Instalation
+## Installation
 
 ### Dependencies
 
