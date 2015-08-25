@@ -28,6 +28,7 @@ data Command
 	| Empty
 	| Resolve String
 	| Next
+	| Sig String
 	deriving Show
 
 

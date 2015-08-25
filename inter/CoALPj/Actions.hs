@@ -19,6 +19,7 @@ module CoALPj.Actions (
         , annotate
         , transform
         , antiUnify
+	, printSig
 	) where
 
 import Control.Monad (when, liftM2)
@@ -57,7 +58,9 @@ import CoALP.Render (
 	)
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram, ppTerm, ppSubst)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng, getProgramLoops)
-import CoALP.Program (Program1, ProgramA, RewTree1, RewTreeA, Succ(..), Vr(..))
+
+import CoALP.Program (Program1, Signature1, ProgramA, RewTree1, RewTreeA, Succ(..), Vr(..),Type(..),lookupType, Ident)
+
 import CoALP.Parser.Parser (parseWithCount,parseClause)
 import CoALP.RewTree (rew)
 import CoALP.DerTree (der,trans)
@@ -310,12 +313,13 @@ drawUng depD depR q = whenPrgOrPrgA (
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
-{-verbPutStrLn :: String -> CoALP ()
-verbPutStrLn str = do
-	s <- get
-	let verbosity = optVerbosity $ caOptions s
-	when (verbosity >= VVerbose) $ iputStrLn str
--}
+printSig :: Ident -> CoALP ()
+printSig ident = maybe (iputStrLn "No program loaded") (
+			\sig' -> case lookupType sig' ident of
+				SInd	-> iputStrLn $ "inductive : " ++ ident
+				SCoInd	-> iputStrLn $ "coinductive : " ++ ident
+			) =<< signature <$> get 
+
 
 whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
 whenProgram f = maybe (iputStrLn "No program loaded") f

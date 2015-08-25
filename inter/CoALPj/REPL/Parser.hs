@@ -75,6 +75,10 @@ dCmd = toCmdDescr [
 		, "\n\t:antiUnify <query>\n\t\tAttempt to antiunify the two terms in the body of the query.\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
+                ":signature"
+		, spaces *> (Sig <$> many anyChar)
+		, "\n\t:signature <identifier>\n\t\tPrint signatture for a predicate.\n"
+	), (
 		":gc1"
 		, pure GC1
 		, "\n\t:gc1\n\t\tGuardednes check 1\n"

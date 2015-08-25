@@ -67,6 +67,7 @@ import CoALPj.Actions (
         , transform
         , annotate
         , antiUnify
+	, printSig
 	)
 
 -- | MonadException instance for ExceptT
@@ -216,5 +217,6 @@ processInput cmd _origState = do
 		Right (Empty) -> return ()
 		Right (Resolve c) -> resolve c
 		Right (Next) -> nextRes
+		Right (Sig iden) -> printSig iden
 
 
