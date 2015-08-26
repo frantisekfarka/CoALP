@@ -11,6 +11,7 @@ import CoALP.Program (
 	, AndNode (..)
 	, OrNode (..)
 	, Succ (..)
+	, Ident, Constant, Var, VR, Program, Signature
 	)
 
 import CoALP.DerTree (der,clauseProj)
@@ -19,10 +20,12 @@ import CoALP.Guards (guardingContext)
 import Debug.Trace
 
 
---resolve ::
---	Clause a b c
---	-> [Subst a b c]
-res p c = resDerTree [] $ (der p c :: DerTree1 )
+res ::
+	Program Ident Constant Var
+	-> Signature Ident
+	-> Clause Ident Constant Var
+	-> [Succ Ident Constant Var]
+res p s c = resDerTree [] $ (der p c :: DerTree Ident Constant Var VR )
 
 
 resDerTree gcs (DT rt trs) = (indRes rt) ++ (concatMap (resTrans gcs) trs)

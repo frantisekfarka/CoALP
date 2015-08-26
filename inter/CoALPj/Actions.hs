@@ -22,6 +22,7 @@ module CoALPj.Actions (
 	, printSig
 	) where
 
+import Control.Arrow
 import Control.Monad (when, liftM2)
 import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.Except (throwE)
@@ -118,9 +119,9 @@ dropProgram = (\s -> put $ s {
 -- | Convert a program from Program1 to ProgramA
 convert :: CoALP ()
 convert = whenProgram (
-          \prg -> do
+          \p _ -> do
                 s <- get
-                let prgA = toProgramA prg
+                let prgA = toProgramA p
                 put $ s { programA = Just prgA }
                 when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                         "Program converted to Annotatetable Version.")
@@ -192,11 +193,11 @@ checkGuard3 = whenPrgOrPrgA (eitherM (iputStrLn . show . gc3) (iputStrLn . show 
 			
 resolve :: String -> CoALP ()
 resolve c = whenProgram (
-	\p -> case parseClause c of
+	\p sig -> case parseClause c of
 		Left err	-> iputStrLn err
 		Right r		-> do
 			s <- get
-			put $ s { resolves = Just $ res p r } 
+			put $ s { resolves = Just $ res p sig r } 
 			-- iputStrLn . show $ (res p r)
 			nextRes
 	)
@@ -274,13 +275,13 @@ drawDer depD depR q = whenPrgOrPrgA (
 
 drawUnsafe :: Int -> Int -> String -> CoALP ()
 drawUnsafe depD depR q = whenProgram (
-	\prog -> case parseClause q of
+	\p _ -> case parseClause q of
 		Left err	-> do
 			iputStrLn err
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayDerTreeUnsafe depD depR $ der prog r 
+			liftIO . displayDerTreeUnsafe depD depR $ der p r 
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
@@ -321,9 +322,12 @@ printSig ident = maybe (iputStrLn "No program loaded") (
 			) =<< signature <$> get 
 
 
-whenProgram :: (Program1 -> CoALP ()) -> CoALP ()
-whenProgram f = maybe (iputStrLn "No program loaded") f
-	=<< program <$> get
+whenProgram :: (Program1 -> Signature1 -> CoALP ()) -> CoALP ()
+whenProgram f = maybe (iputStrLn "No program loaded") (uncurry f)
+	=<<  (g . (program &&& signature)) <$> get
+	where
+		g (Just a, Just b) = Just (a, b)
+		g _ = Nothing
 
 whenPrgOrPrgA :: (Either Program1 ProgramA -> CoALP ()) -> CoALP()
 whenPrgOrPrgA f = maybe (iputStrLn "No program loaded ") f
