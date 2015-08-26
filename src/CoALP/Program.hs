@@ -69,9 +69,9 @@ module CoALP.Program (
 
 import Control.Arrow ((***))
 import Data.Bifunctor (Bifunctor(..))
-import Data.Either (Either(..))
-import Data.Functor(Functor(..))
-import Data.Maybe (Maybe(..))
+--import Data.Either (Either(..))
+--import Data.Functor(Functor(..))
+--import Data.Maybe (Maybe(..))
 import Data.Foldable (Foldable,foldMap)
 import Data.List (intersperse)
 -- import Data.Set (Set)
@@ -397,7 +397,7 @@ data DerTree a b c d = DT (RewTree a b c d) [Trans a b c d]
 -- | Transition between rewriting trees
 -- 
 -- see @Definition 3.5@
-data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
+data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) a (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
 
 -- | Loop in Rewritng trees
 --

@@ -158,7 +158,7 @@ gcDerTree gcs (DT rt trs) =  (gcRewTree rt) && all (gcTrans gcs) trs
 
 -- | Check whether a transition id guarded
 gcTrans :: (Eq a, Eq b, Ord c) => [GuardingContext a b c] -> Trans a b c Integer -> Bool
-gcTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+gcTrans gcs (Trans p rt _ _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> True
 		False	-> gcDerTree (gc:gcs) dt
 	where
@@ -177,7 +177,7 @@ derToObs' gcs (DT rt trs) = case gcRewTree rt of
 
 -- | Ditto for a transition
 transToObs :: [GuardingContext1] -> Trans1 -> OTrans1
-transToObs gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+transToObs gcs (Trans p rt v _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> GTrans v gcs gc
 		False	-> OTrans p rt v cx $ derToObs'(gc:gcs) dt
 	where
@@ -207,10 +207,10 @@ derToUnc' path n gcs (DT rt trs) tix = case gcRewTree rt of
 
 -- | Ditto for trans
 transToUnc :: (Eq a, Eq b, Ord c) => [Int] -> Int -> [GuardingContext a b c] -> Trans a b c Integer ->  Int -> Maybe (Trans a b c Integer)
-transToUnc path n gcs (Trans p rt v cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
+transToUnc path n gcs (Trans p rt v i cx dt) pix = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> trace ("Guarded trans at " ++ (show $ reverse path)) $ 
 			Nothing -- guarded trs
-		False	-> (Trans p rt v cx) <$> derToUnc' path n (gc:gcs) dt pix
+		False	-> (Trans p rt v i cx) <$> derToUnc' path n (gc:gcs) dt pix
 	where
 		gc = guardingContext p rt cx 
 -- | Select leftmost branch containing an unguarded rewriting tree in the 
@@ -233,9 +233,9 @@ derToUng' n gcs (DT rt trs) = case gcRewTree rt of
 
 -- | Ditto for trans
 transToUng :: (Eq a, Eq b, Ord c) => Int -> [GuardingContext a b c] -> Trans a b c Integer -> Maybe (Trans a b c Integer)
-transToUng n gcs (Trans p rt v cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+transToUng n gcs (Trans p rt v i cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> Nothing -- guarded trans
-		False	-> (Trans p rt v cx) <$> derToUng' n (gc:gcs) dt
+		False	-> (Trans p rt v i cx) <$> derToUng' n (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
 
@@ -341,7 +341,7 @@ gcDerTreeWithLoops gcs (DT rt trs) = case gcRewTree rt of
 
 -- | Check whether a transition id guarded
 gcTransWithLoops :: (Eq a, Eq b, Ord c) => [GuardingContext a b c] -> Trans a b c Integer -> (Bool, [RewTree a b c VR])
-gcTransWithLoops gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+gcTransWithLoops gcs (Trans p rt _ _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> (True, [])
 		False	-> gcDerTreeWithLoops (gc:gcs) dt
 

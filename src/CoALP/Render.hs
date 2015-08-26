@@ -226,7 +226,7 @@ renderDer depD depR n (DT rt trans) = case gcRewTree rt of
 
 -- | Render transition
 renderTrans :: (Show a, Show b, Show c, Eq a, Eq b, Ord c) => Integer -> Int -> Int -> Integer -> RewTree a b c Integer -> Trans a b c Integer -> String
-renderTrans sn depD depR n rt (Trans p _ vr gc dt) =  
+renderTrans sn depD depR n rt (Trans p _ vr _ gc dt) =  
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
@@ -251,7 +251,7 @@ renderDerUns depD depR n (DT rt trans) = -- case gcRewTree rt of
 		concat (zipWith (\x -> renderTransUns (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take depR trans))
 
 renderTransUns :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
-renderTransUns sn depD depR n rt (Trans p _ vr gc dt) =  
+renderTransUns sn depD depR n rt (Trans p _ vr _ gc dt) =  
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDerUns depD depR (10*n) dt ++
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++

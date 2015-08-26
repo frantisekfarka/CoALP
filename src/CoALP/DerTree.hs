@@ -68,14 +68,16 @@ derT :: (Eq a, Eq b, Eq d, Ord c, Freshable c, Freshable d) =>
 	Program a b c -> 
 	RewTree a b c d ->
 	DerTree a b c d
-derT p0 p rt = DT rt $ fmap toTrans (fmap fst' $ getVrs rt')
+derT p0 p rt = DT rt $ fmap toTrans (getVrs rt')
 	where
 		
-		toTrans v = let (rt'', cp) = trans p' rt' v 
-			in Trans p0 rt' v cp  $ derT p0 p' rt'' 
+		toTrans (v, t, _) = let (rt'', cp) = trans p' rt' v 
+			in Trans p0 rt' v (getIden t) cp $ derT p0 p' rt'' 
 		fst' (a, _, _) = a
 		p' = fmap (fmap apartR) p
 		rt' = rt -- first apartR rt
+		getIden (Fun a _) = a
+		getIden _	= error "Impossibru"
 
 -- | Given program P and external resolvent of a transition with its measure
 -- conpute clause projection
