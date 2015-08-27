@@ -26,7 +26,7 @@ import CoALP.Guards (guardingContext)
 
 -- | Resolve a query
 --
-res :: forall a b c . (Eq a, Ord a, Eq b, Ord c, Freshable c) =>
+res :: forall a b c . (Eq a, Show a, Show b, Show c, Ord a, Eq b, Ord c, Freshable c) =>
 	Program a b c
 	-> Signature a
 	-> Clause a b c 
@@ -38,7 +38,7 @@ res p s c = resDerTree s [] dt
 
 -- | Process a tree and procees
 --
-resDerTree :: (Ord a, Eq b, Ord c) =>
+resDerTree :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
 	Signature a
 	-> [GuardingContext a b c]
 	-> DerTree a b c t
@@ -51,7 +51,7 @@ resDerTree sig gcs (DT rt trs) = (indRes rt) ++
 
 -- | Process a transition within a tree that sill has
 -- some unprocessed inductive obligations
-resIndTrans :: (Ord a, Eq b, Ord c) =>
+resIndTrans :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
 	Signature a
 	-> [GuardingContext a b c]
 	-> Trans a b c d
@@ -62,7 +62,7 @@ resIndTrans sig gcs (Trans p rt _ _ cx dt) = resDerTree sig (gc:gcs) dt
 
 -- | Process a transition within a tree that has no inductive
 -- obligations - therefore we can conclude coinductively
-resCoIndTrans :: (Ord a, Eq b, Ord c) =>
+resCoIndTrans :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
 	Signature a
 	-> [GuardingContext a b c]
 	-> Trans a b c d

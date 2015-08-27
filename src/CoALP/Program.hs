@@ -74,6 +74,7 @@ import Data.Bifunctor (Bifunctor(..))
 --import Data.Maybe (Maybe(..))
 import Data.Foldable (Foldable,foldMap)
 import Data.List (intersperse)
+import Data.List.NonEmpty (NonEmpty)
 -- import Data.Set (Set)
 import Data.Map.Strict as M (Map, insertLookupWithKey, lookup) 
 
@@ -397,7 +398,7 @@ data DerTree a b c d = DT (RewTree a b c d) [Trans a b c d]
 -- | Transition between rewriting trees
 -- 
 -- see @Definition 3.5@
-data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) a (Maybe (Int, Subst a b c, Term a b c)) (DerTree a b c d)
+data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) a (Maybe (Int, Subst a b c, NonEmpty (Term a b c, Int))) (DerTree a b c d)
 
 -- | Loop in Rewritng trees
 --
@@ -418,7 +419,7 @@ data OTree a b c d = ODT (RewTree a b c d) [OTrans a b c d] | UNRT (RewTree a b 
 --
 -- see @Definition 5.5@
 data OTrans a b c d 
-	= OTrans (Program a b c) (RewTree a b c d) (Vr d) (Maybe (Int, Subst a b c, Term a b c)) (OTree a b c d)
+	= OTrans (Program a b c) (RewTree a b c d) (Vr d) (Maybe (Int, Subst a b c, NonEmpty (Term a b c, Int))) (OTree a b c d)
 	| GTrans (Vr d) [GuardingContext a b c] (GuardingContext a b c)
 
 

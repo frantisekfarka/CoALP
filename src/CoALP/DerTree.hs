@@ -9,6 +9,7 @@ module CoALP.DerTree (
 	, Vr(..)
 ) where
 
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), head)
 import Data.Maybe (maybeToList)
 
 import CoALP.RewTree (rew, getVrs,extrew)
@@ -32,14 +33,17 @@ import CoALP.Reductions (isVarReductOf,nvPropSub)
 -- and return the external resolvent &#x3c3;, contraction measure, and the
 -- originating clause according to @Definition 3.5@
 --
-trans :: (Eq a, Eq b, Ord c, Eq d, Freshable c, Freshable d)
-	=> Program a b c -> RewTree a b c d -> Vr d ->
-	(RewTree a b c d, Maybe (Int, Subst a b c, Term a b c))
-trans _ RTEmpty _ = (RTEmpty, Nothing)
-trans p rt@(RT _ si' _) vr = case term `unify` h of
+trans :: (Eq a, Eq b, Ord c, Eq d, Freshable c, Freshable d) =>
+	Program a b c
+	-> RewTree a b c d
+	-> Vr d
+	-> [(Term a b c, Int)]
+	-> (RewTree a b c d, Maybe (Int, Subst a b c, NonEmpty (Term a b c, Int)))
+trans _ RTEmpty _ _ = (RTEmpty, Nothing)
+trans p rt@(RT _ si' _) vr ts = case term `unify` h of
 		Just si	-> (mkRew si
 			, Just (pk, si' `composeSubst` si
-			, term)) 
+			, (term, pk) :| ts)) 
 		Nothing -> (RTEmpty, Nothing)
 	where
 		mkRew th = extrew p rt th
@@ -57,7 +61,7 @@ trans p rt@(RT _ si' _) vr = case term `unify` h of
 --
 der :: (Eq a, Eq b, Eq d, Ord c, Freshable c, Freshable d) =>
 	Program a b c -> Clause a b c -> DerTree a b c d
-der p c = (derT p p' $ rew p' c' [])
+der p c = (derT p p' [] $ rew p' c' [])
 	where
 		p' = fmap (fmap apartL) p
 		c' = fmap apartR c
@@ -66,13 +70,14 @@ der p c = (derT p p' $ rew p' c' [])
 derT :: (Eq a, Eq b, Eq d, Ord c, Freshable c, Freshable d) =>
 	Program a b c -> 
 	Program a b c -> 
+	[(Term a b c, Int)] ->
 	RewTree a b c d ->
 	DerTree a b c d
-derT p0 p rt = DT rt $ fmap toTrans (getVrs rt')
+derT p0 p ts rt = DT rt $ fmap toTrans (getVrs rt')
 	where
 		
-		toTrans (v, t, _) = let (rt'', cp) = trans p' rt' v 
-			in Trans p0 rt' v (getIden t) cp $ derT p0 p' rt'' 
+		toTrans (v, t, pk) = let (rt'', cp) = trans p' rt' v ((t, pk) : ts)
+			in Trans p0 rt' v (getIden t) cp $ derT p0 p' ((t, pk) : ts) rt'' 
 		fst' (a, _, _) = a
 		p' = fmap (fmap apartR) p
 		rt' = rt -- first apartR rt
@@ -88,12 +93,12 @@ derT p0 p rt = DT rt $ fmap toTrans (getVrs rt')
 --
 -- accorging to definition 5.4
 clauseProj :: (Eq a, Eq b, Ord c) => 
-	Program a b c -> Maybe (Int, Subst a b c, Term a b c) 
+	Program a b c -> Maybe (Int, Subst a b c, NonEmpty (Term a b c, Int))
 	-> GuardingContext a b c
 clauseProj _ Nothing 		= []
-clauseProj p (Just (pk, si, t))
+clauseProj p (Just (pk, si, ts))
 	| Just t'' <- -- traceShow (t, si `applySubst` t) $  traceShowId $ 
-		t `isVarReductOf` (si `applySubst` t),
+		let (t, _) = NE.head ts in (t `isVarReductOf` (si `applySubst` t)),
 	  Clause h _ <- p !! pk = [ (pk, t', v) |
 			(t', v) <- nvPropSub h 
 			, _ <- maybeToList $ match t' t'' 

@@ -257,8 +257,8 @@ drawTrans depth var q = whenPrgOrPrgA (
 			--iputStrLn . show . (head 20) $ loops' rt
                         where rt  res pr = rew pr res []
                               --rt' res pr = rew pr (toClauseA res) [] :: RewTreeA 
-			      tt  pr = fst $ foldl (trans pr . fst) (rt  r pr, Nothing) (fmap Vr var)
-			      tt' pr = fst $ foldl (trans pr . fst) (rt (toClauseA r) pr, Nothing) (fmap Vr var)
+			      tt  pr = fst $ foldl (\x y -> trans pr (fst x) y []) (rt  r pr, Nothing) (fmap Vr var)
+			      tt' pr = fst $ foldl (\x y -> trans pr (fst x) y []) (rt (toClauseA r) pr, Nothing) (fmap Vr var)
 	)
 
 drawDer :: Int -> Int -> String -> CoALP ()
