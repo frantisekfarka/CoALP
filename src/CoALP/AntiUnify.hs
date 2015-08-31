@@ -1,5 +1,6 @@
--- | Module that performs anti-unification
 
+-- | 
+-- Module that performs anti-unification
 module CoALP.AntiUnify (
   antiUnify
   , antiUnifyClause
@@ -24,6 +25,8 @@ data SubstMap a b c = SubstMap {
         , varCount      :: c
         }
 
+-- | Initialize substitution map
+--
 substMapInit :: (Eq a, Eq b, Eq c, Freshable c) => SubstMap a b c
 substMapInit = SubstMap {
           substitutions = [] 
@@ -31,23 +34,33 @@ substMapInit = SubstMap {
         , varCount      = initFresh 
         }
 
-
+-- | Anti-Unify clauses with two terms
+--
 antiUnifyClause :: (Eq a, Eq b, Eq c, Freshable c) => Clause a b c ->  Either String (Term a b c, SubstAU a b c)
 antiUnifyClause (Clause _ b)
   | length b == 2 = Right (antiUnifyWithSubst (b !! 0) (b !! 1))
   | otherwise     = Left "There are too many or too few terms in the clause body. Only use 2 terms for anti-unification.\n"
 
+
+-- | Anti-unify and count number of assigne fresh variables
+--
 antiUnifyWithCount :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> c -> Term a b c
 antiUnifyWithCount t1 t2 c = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) initSubstMap)
   where initSubstMap = substMapInit { varCount = c}
 
+-- | Anti-unify two terms
+--
 antiUnify :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> Term a b c
 antiUnify t1 t2 = fst $ runIdentity (runStateT (antiUnifyTerms t1 t2) substMapInit)
 
+-- | Anti-unify and return also substitution
+--
 antiUnifyWithSubst :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> (Term a b c, SubstAU a b c)
 antiUnifyWithSubst t1 t2 = (res, substitutions s)
   where (res, s) = runIdentity (runStateT (antiUnifyTerms t1 t2) substMapInit)
 
+-- | Anti-unify two terms
+--
 antiUnifyTerms :: (Eq a, Eq b, Eq c, Freshable c) => Term a b c -> Term a b c -> AntiUnifySt a b c (Term a b c)
 antiUnifyTerms t1 t2
   | t1 == t2     = return t1
@@ -71,7 +84,8 @@ antiUnifyTerms t1@(Fun _ _) t2@(Var _) = do
                   return (Var x)
                   
 
-
+-- | auxiliary function
+--
 antiUnifyAux :: (Eq a, Eq b, Eq c, Freshable c) => [Term a b c] -> [Term a b c] -> AntiUnifySt a b c [Term a b c]
 antiUnifyAux [] _  = return []
 antiUnifyAux _  [] = return []
@@ -80,6 +94,8 @@ antiUnifyAux (t1:ts1) (t2:ts2) = do
                                   xs <- antiUnifyAux ts1 ts2
                                   return ([x] ++ xs)
 
+-- | Does a substitution exist?
+--
 substExists :: (Eq a, Eq b, Eq c, Freshable c) => (Term a b c, Term a b c) -> AntiUnifySt a b c c
 substExists ts = do
                  s <- get

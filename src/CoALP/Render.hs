@@ -63,7 +63,8 @@ displayDerTree depD depR dt = -- trace "Display der tree ... " $
 		writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 		_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 		return ()
-	
+
+-- | Display der tree ignoring guardednes check
 displayDerTreeUnsafe :: Int -> Int -> DerTree1 -> IO ()
 displayDerTreeUnsafe depD depR dt = -- trace "Display der tree ... " $ 
 	do
@@ -71,7 +72,8 @@ displayDerTreeUnsafe depD depR dt = -- trace "Display der tree ... " $
 		-- _ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 		_ <- spawnCommand "dot -T svg /tmp/test.dot > unsafe.svg"
 		return ()
-	
+
+-- | Display observation tree
 displayObsTree :: Int -> Int -> OTree1 -> IO ()
 displayObsTree depD depR ot = do
 	writeFile "/tmp/test.dot" (renderObsT depD depR ot)

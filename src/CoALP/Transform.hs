@@ -19,11 +19,13 @@ import CoALP.Program (Program1,ProgramA,Clause1,ClauseA,Clause(..),Term1,TermA,T
 
 -- TODO Could annotate multiple terms in a single clause at once
 
+-- | Annotate program
 annotateProg :: Program1 -> [(Int, Int)] -> Program1
 annotateProg prg [] = prg
 annotateProg prg (l:ls) = annotateProg (map snd (helper annotateTerm1 idxPrg l)) ls
   where idxPrg = zip [0..] prg
 
+-- | Reannotate programA
 annotateProgA :: ProgramA -> [(Int, Int)] -> ProgramA
 annotateProgA prgA [] = prgA
 annotateProgA prgA (l:ls) = annotateProgA (map snd (helper annotateTermA idxPrg l)) ls
@@ -35,6 +37,7 @@ helper annoF (c@(cid, c1):cs) l@(cid', tid)
   | cid == cid' = [(cid, annotateClause annoF c1 tid)] ++ cs
   | otherwise = [c] ++ helper annoF cs l
 
+-- | Annotate clause
 annotateClause :: (Term a b c -> Term a b c) -> Clause a b c -> Int -> Clause a b c
 annotateClause _ c@(Clause (Var _) _) _ = c -- Malformed Cause...
 annotateClause _ c@(Clause (Fun _ []) _) _ = c -- Can't annotate missing transformation function
@@ -42,19 +45,22 @@ annotateClause annoF  (Clause (Fun idx ts) b) n = Clause (Fun idx (init ts ++ [n
   where Fun i xs = last ts  -- Last function in the head should be the transformation fuction
         nf       = Fun i (annotateNth annoF xs n)
 
+-- | Annotate n-th term
 annotateNth :: (Term a b c -> Term a b c) -> [Term a b c] -> Int -> [Term a b c]
 annotateNth annoF xs i 
   | i < length xs && i >= 0 = frnt ++ [annoF y] ++ ys -- Annotate the nth term
   | otherwise               = xs
        where (frnt, (y:ys)) = splitAt i xs
 
-
+-- | Annotate term1
+--
 annotateTerm1 :: Term1 -> Term1
 annotateTerm1 f@(Fun _ []) = f
 -- If it's a function it is from the body so last term is the transformation variable to annotate
 annotateTerm1 (Fun idx ts) = Fun idx (init ts ++ [annotateTerm1 (last ts)]) 
 annotateTerm1 (Var v) = Var (negate ( abs v))
 
+-- | Re-annotate termA
 annotateTermA :: TermA -> TermA
 annotateTermA f@(Fun _ [])  = f
 -- If it's a function it is from the body so last term is the transformation variable to annotate
@@ -65,7 +71,7 @@ annotateTermA vr@(Var _)    = vr
 --annotate :: a -> b
 --annotate v = CoIn v
 
--- Transform a program
+-- | Transform a program
 -- prgWithCount - pair with the program to transform and the next fresh variable
 transformProg :: (Program1, Integer) -> (Program1, Integer)
 transformProg prgWithCount =  transformProgAux prgWithCount transFuncs
@@ -80,6 +86,8 @@ transformProgAux ((x@(Clause _ b):xs), count) (tf:tfs) = ([transformed] ++ rest,
         lastVar = count + numTerms
         transformed = transformClause (foldl addTerm tf (map Var [count..lastVar-1])) x
 
+-- | Transform an annotated program
+--
 transformProgA :: (ProgramA, Integer) -> (ProgramA, Integer)
 transformProgA prgWithCount = transformProgAAux prgWithCount transFuncs
   where transFuncs = map (\x -> Fun ("transform-func-" ++ show x) []) [(1::Int)..]
@@ -93,20 +101,23 @@ transformProgAAux ((x@(Clause _ b):xs), count) (tf:tfs) = ([transformed] ++ rest
         lastVar = count + numTerms
         transformed = transformClause (foldl addTerm tf (map (Var . Ind) [count..lastVar-1])) x
 
--- Transforms a clause
+-- | Transforms a clause
+--
 transformClause :: Term a b c -> Clause a b c -> Clause a b c
 transformClause nf@(Fun _ ts) (Clause h b) = Clause (addTerm h nf) (zipWith addTerm b ts)
 transformClause (Var _) c = c 
 
--- Adds a Term to the end of a function term
+-- | Adds a Term to the end of a function term
 -- term - term to add
 addTerm :: Term a b c -> Term a b c -> Term a b c
 addTerm (Fun ids ts) var = Fun ids (ts ++ [var])
 addTerm v@(Var _) _ = v
 
+-- | Annotate clause
 toClauseA :: Clause1 -> ClauseA
 toClauseA c = fmap (Ind) c
 
+-- | Annotate program
 toProgramA :: Program1 -> ProgramA
 toProgramA p = map (fmap Ind) p
 

@@ -184,6 +184,9 @@ data Type = SInd | SCoInd
 --
 type Program a b c = [Clause a b c]
 
+-- | {Predicate signature
+--
+-- marking predicate either inductive or coinductive, coinductive by default
 type Signature a = Map a Type
 
 -- | GuardingContext gathered for every transition between
@@ -272,12 +275,16 @@ type Constant = Integer
 --
 type Term1 = Term Ident Constant Var
 
+-- | Type of first-order term with annotations
+--
 type TermA = Term Ident Constant VarA 
 
 -- | Type of clause of first-order terms.
 --
 type Clause1 = Clause Ident Constant Var
 
+-- | Type of clause of first-order terms with annotations
+--
 type ClauseA = Clause Ident Constant VarA 
 
 -- | Type of clause of first-order query
@@ -288,8 +295,12 @@ type ClauseA = Clause Ident Constant VarA
 --
 type Program1 = Program Ident Constant Var
 
+-- | Type of program of first-order term with annotations
+--
 type ProgramA = Program Ident Constant VarA
 
+-- | Type of signature of first-order terms.
+--
 type Signature1 = Signature Ident 
 
 
@@ -297,29 +308,38 @@ type Signature1 = Signature Ident
 --
 type Subst1 = Subst Ident Constant Var
 
+-- | Type of substitution of terms with annotations
+--
 type SubstA = Subst Ident Constant VarA 
 
 -- | Rewriting tree for Term1
 --
 type RewTree1 = RewTree Ident Constant Var VR
 
+-- | Rewriting tree for TermA
+--
 type RewTreeA = RewTree Ident Constant VarA VR 
 
 -- | The derivation tree
 --
 type DerTree1 = DerTree Ident Constant Var VR
 
+-- | The derivation tree with annotations
+--
 type DerTreeA = DerTree Ident Constant VarA VR
 
 -- | Type of rewritng tree variables
 --
 type Vr1 = Vr VR
 
+-- | Type of rewritng tree variables with annotations
+--
 type VRA = Vr VR
 
 -- | Type of a GC
 type GuardingContext1 = GuardingContext Ident Constant Var
 
+-- | Type of a GC with annotations
 type GuardingContextA = GuardingContext Ident Constant VarA
 
 -- | @AndNode a its@ is an atom with a possibly partial mapping from clauses to
@@ -459,7 +479,9 @@ data Succ a b c
 -- | Fully instantiated success
 type Succ1 = Succ Ident Var Constant
 
--- | 
+-- | Mark predicate in signature
+--
+-- If already marked return Left (previous marking)
 --
 markType :: Ord a => Signature a -> a -> Type -> Either Type (Signature a)
 markType sig iden t = case insertLookupWithKey f iden t sig of
@@ -468,6 +490,8 @@ markType sig iden t = case insertLookupWithKey f iden t sig of
 	where
 		f _ _ ov = ov
 
+-- | Lookup predicate marking
+--
 lookupType :: Ord a => Signature a -> a -> Type
 lookupType sig iden = case M.lookup iden sig of
 	Just t	-> t

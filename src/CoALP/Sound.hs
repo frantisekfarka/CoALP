@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | 
+-- Soundness results for query resolution according to the paper 1
 module CoALP.Sound (
 	res
 ) where

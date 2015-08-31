@@ -1,11 +1,14 @@
--- | CoALP parser pretty printing helpers
+
+-- | 
+-- CoALP parser pretty printing helpers
+--
 module CoALP.Parser.PrettyPrint (
 	  ppTerm
 	, ppClause
 	, ppProgram
 	, ppSubst
 --        , ppSubstitutions
-)where
+) where
 
 import Data.List (intersperse)
 

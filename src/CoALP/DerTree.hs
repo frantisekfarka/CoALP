@@ -78,7 +78,6 @@ derT p0 p ts rt = DT rt $ fmap toTrans (getVrs rt')
 		
 		toTrans (v, t, pk) = let (rt'', cp) = trans p' rt' v ((t, pk) : ts)
 			in Trans p0 rt' v (getIden t) cp $ derT p0 p' ((t, pk) : ts) rt'' 
-		fst' (a, _, _) = a
 		p' = fmap (fmap apartR) p
 		rt' = rt -- first apartR rt
 		getIden (Fun a _) = a

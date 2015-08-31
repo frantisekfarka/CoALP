@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 -- | Alex the lexer
 module CoALP.Parser.Lexer (
-	  Alex
+	  Alex -- Alex monad
 	, Token (..)
 	, runAlex
 	, runAlex'
@@ -109,6 +109,7 @@ alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState {
 	  counter = (1)
 	, vars = empty
+	, sig = empty
 	}
 
 -- | Get var counter from user state

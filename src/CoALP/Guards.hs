@@ -326,6 +326,7 @@ oLoops tws	ci	(OrNode _ ands) = concat $ zipWith (aLoops tws ci) [0..] ands
 --		f _				= False
 	
 
+-- | Program loops
 getProgramLoops :: ( Freshable c, Ord c, Eq b, Eq a) =>
         Program a b c -> [(Int, Int)]
 getProgramLoops p = map g $ catMaybes (snd $ gc3withLoops p)
