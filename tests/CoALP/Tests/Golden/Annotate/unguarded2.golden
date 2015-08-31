@@ -1,0 +1,3 @@
+p(1, transform-func-1).
+p(V_2i, transform-func-2(V_4i, V_5c, V_6i)) :- q(V_2i, V_4i), p2(V_2i, V_5c), q(V_2i, V_6i).
+p2(V_3i, transform-func-3(V_7c)) :- p(V_3i, V_7c).

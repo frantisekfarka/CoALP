@@ -9,6 +9,10 @@ data Command
 	| Reload
 	| Print
 	| Quit
+        | Transform
+        | Annotate
+        | Convert
+        | AntiUnify String
 	| GC1
 	| GC2 String
 	| GC3
@@ -19,10 +23,12 @@ data Command
 	| DrawDer Int Int String
 	| DrawInf Int Int String
 	| DrawUng Int Int String
+	| DrawUnsafe Int Int String
 	| Help
 	| Empty
 	| Resolve String
 	| Next
+	| Sig String
 	deriving Show
 
 

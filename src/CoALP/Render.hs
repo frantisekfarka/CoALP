@@ -6,48 +6,72 @@ module CoALP.Render (
 	  renderProgram
 	, ppProgram
 	, ppClause
+	, ppTerm
+        , ppSubst
 	, displayProgram
 	, displayRewTree
 	, displayDerTree
+	, displayDerTreeUnsafe
 	, displayObsTree
 ) where
 
 import System.Process
 
-import CoALP.Program (Program1,Clause1, Clause(..),Term1,Term(..),RewTree1,RewTree(..),
-	AndNode(..),OrNode(..),Vr1,
-	DerTree1,DerTree(..),Trans(..),Trans1,
-	-- GuardingContext,
-	OTree(..),OTree1,OTrans(..),OTrans1,DerTree1,Trans1,
+import CoALP.Program (
+	  Program
+	, Clause(..)
+	, Term(..)
+	, RewTree1
+	, RewTree(..)
+	, AndNode(..)
+	, OrNode(..)
+	, Vr
+	, DerTree1
+	, DerTree(..)
+	, Trans(..)
+	, Trans1
+	, OTree(..)
+	, OTree1
+	, OTrans(..)
+	, OTrans1
+	, DerTree1
+	, Trans1,
 	)
-import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppSubst, ppProgram)
+import CoALP.Parser.PrettyPrint (ppTerm,ppClause,ppSubst, ppProgram, ppSubst)
 
 import CoALP.Guards (gcRewTree,guardingContext)
 import CoALP.DerTree (clauseProj)
 
 -- | Display the whole program
-displayProgram :: Program1 -> IO ()
+displayProgram :: (Show b, Show c) => Program String b c -> IO ()
 displayProgram p = do
 	saveProgram p "/tmp/test.dot"
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 
 -- | Display rewriting tree up to depth
-displayRewTree :: Int -> RewTree1 -> IO ()
+displayRewTree :: (Show a, Show b, Show c, Show d, Integral d) => Int -> RewTree a b c d -> IO ()
 displayRewTree depth rt = do
 	writeFile "/tmp/test.dot" (renderRewT "digraph G" depth rt 1)
 	_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 	return ()
 	
 -- | Display derivation tree up to depthD, render rewriting trees in nodeѕ up to depthR
-displayDerTree :: Int -> Int -> DerTree1 -> IO ()
+displayDerTree :: (Show a, Show b, Show c, Eq a, Eq b, Ord c) => Int -> Int -> DerTree a b c Integer -> IO ()
 displayDerTree depD depR dt = -- trace "Display der tree ... " $ 
 	do
 		writeFile "/tmp/test.dot" (renderDerT depD depR dt)
 		_ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
 		return ()
-
--- | Display observation tree up to depth
+	
+displayDerTreeUnsafe :: Int -> Int -> DerTree1 -> IO ()
+displayDerTreeUnsafe depD depR dt = -- trace "Display der tree ... " $ 
+	do
+		writeFile "/tmp/test.dot" (renderDerTUns depD depR dt)
+		-- _ <- spawnCommand "dot -T svg /tmp/test.dot |  display"
+		_ <- spawnCommand "dot -T svg /tmp/test.dot > unsafe.svg"
+		return ()
+	
 displayObsTree :: Int -> Int -> OTree1 -> IO ()
 displayObsTree depD depR ot = do
 	writeFile "/tmp/test.dot" (renderObsT depD depR ot)
@@ -55,11 +79,11 @@ displayObsTree depD depR ot = do
 	return ()
 
 -- | Save program to FilePath
-saveProgram :: Program1 -> FilePath -> IO ()
+saveProgram :: (Show b, Show c) => Program String b c -> FilePath -> IO ()
 saveProgram p f = writeFile f (renderProgram p)
 
 -- | Render Clauses in program
-renderProgram :: Program1 -> String
+renderProgram :: (Show b, Show c) => Program String b c -> String
 renderProgram cl = 
 	"digraph G {\n" ++ 
 	"\tnode [fontname=\"Monospace\"];\n" ++
@@ -67,7 +91,7 @@ renderProgram cl =
 	"}\n"
 
 -- | Render single clause
-renderClause :: Integer ->  Clause1 -> String
+renderClause :: (Show b, Show c) => Integer ->  Clause String b c -> String
 renderClause n (c@(Clause h b)) =
 	"subgraph cluster" ++ show n ++ "{\n" ++
 	"\tcolor=grey;label=\"" ++ helper  ++ "\";\n" ++
@@ -86,11 +110,11 @@ renderClause n (c@(Clause h b)) =
 
 
 -- | Render term in imagemagic dot format
-renderTerm :: Integer -> Term1 -> String
+renderTerm :: (Show b, Show c) => Integer -> Term String b c -> String
 renderTerm m t0 = (node m t0) ++ (edge m t0)
 	where
 	--go :: ONode Occ -> Integer -> (Integer, String)
-	node :: Integer -> Term1 -> String
+	node :: (Show b, Show c) => Integer -> Term String b c -> String
 	node n (Var i) =
 		"\t" ++ show n
 		++ "[color=white,label=\"V_" ++ show i ++ "\"];\n"
@@ -101,14 +125,14 @@ renderTerm m t0 = (node m t0) ++ (edge m t0)
 		"\t" ++ show n ++
 		"[shape=box,color=white,width=.2,label=\"" ++ f ++ "\",fixedsize=false];\n" ++
 		concat (zipWith node [10*n + i  | i <- [1..]] t)
-	edge :: Integer -> Term1 -> String
+	edge :: (Show b, Show c) => Integer -> Term String b c -> String
 	edge _ (Var _) = ""
 	edge n (Fun _f t) = 
 		concat (zipWith (\o _ -> "\t" ++ show n ++ " -> " ++ show o ++ ";\n") [10*n + i  | i <- [1..]] t) ++
 		concat (zipWith edge [10*n + i  | i <- [1..]] t)
 
 -- | Render derivation tree	
-renderRewT :: String -> Int -> RewTree1 -> Integer -> String
+renderRewT :: (Show a, Show b, Show c, Show d, Integral d) => String -> Int -> RewTree a b c d -> Integer -> String
 renderRewT pref _ RTEmpty n = 
 	pref ++ " {\n" ++ 
 	"\tstyle=dashed;color=grey;\n" ++
@@ -127,7 +151,7 @@ renderRewT pref depth (RT q s os) n = -- trace "Render Rew ..." $
 		nid = "root" ++ show n
 
 -- | Render rewriting tree
-renderRewT' :: String -> Int -> RewTree1 -> Integer -> String
+renderRewT' :: (Show a, Show b, Show c, Show d, Integral d) => String -> Int -> RewTree a b c d -> Integer -> String
 renderRewT' pref _ (RTEmpty) n = pref ++ " {\n" ++ 
 	"\tstyle=dashed;color=grey;\n" ++
 	"\tnode [fontname=\"Monospace\"];\n" ++
@@ -144,7 +168,7 @@ renderRewT' pref depth (RT c s os) n = pref ++ " {\n" ++
 		nid = "root" ++ show n
 
 -- | Render and node of rewriting tree
-renderRewAnd :: Integer -> String -> Int -> Integer -> AndNode Clause1 Term1 Vr1 -> String
+renderRewAnd :: (Show a, Show b, Show c, Show d, Integral d) => Integer -> String -> Int -> Integer -> AndNode (Clause a b c) (Term a b c) (Vr d) -> String
 renderRewAnd _ par 0 n _ = -- trace ("Render and in 0") $
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"..." ++ "\",fixedsize=true];\n" ++
@@ -159,7 +183,7 @@ renderRewAnd sn par depth n (AndNode t ors) = -- trace ("Render and in " ++ show
 	""
 
 -- | Render or node of rewriting tree
-renderRewOr :: Integer -> String -> Int -> Integer -> OrNode Clause1 Term1 Vr1 -> String
+renderRewOr :: (Show a, Show b, Show c, Show d, Integral d) => Integer -> String -> Int -> Integer -> OrNode (Clause a b c) (Term a b c) (Vr d) -> String
 renderRewOr _sn par 0 n _ = -- trace ("Render or in 0")
 	"\t" ++ show n ++ "[shape=box,color=white,width=.4,label=\"" ++ 
 	"..." ++ "\",fixedsize=true];\n" ++
@@ -185,10 +209,16 @@ lh s = show ( fromIntegral (length s) * (0.15 :: Float) )
 
 
 -- | Render derivation tree	
-renderDerT :: Int -> Int -> DerTree1 -> String
+renderDerT :: (Show a, Show b, Show c, Eq a, Eq b, Ord c) => Int -> Int -> DerTree a b c Integer -> String
 renderDerT depD depR dt = 
 	"digraph D {\n" ++ 
 	renderDer depD depR 1 dt ++
+	"}\n"
+
+renderDerTUns :: Int -> Int -> DerTree1 -> String
+renderDerTUns depD depR dt = 
+	"digraph D {\n" ++ 
+	renderDerUns depD depR 1 dt ++
 	"}\n"
 
 -- | Render observation tree
@@ -199,7 +229,7 @@ renderObsT depD depR dt =
 	"}\n"
 
 -- | Render derivation tree
-renderDer :: Int -> Int -> Integer -> DerTree1 -> String
+renderDer :: (Show a, Show b, Show c, Eq a, Eq b, Ord c) => Int -> Int -> Integer -> DerTree a b c Integer -> String
 renderDer 0 _ n _ = 
 	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
 	""
@@ -209,8 +239,8 @@ renderDer depD depR n (DT rt trans) = case gcRewTree rt of
 		concat (zipWith (\x -> renderTrans (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take 10 trans))
 
 -- | Render transition
-renderTrans :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
-renderTrans sn depD depR n rt (Trans p _ vr gc dt) =  
+renderTrans :: (Show a, Show b, Show c, Eq a, Eq b, Ord c) => Integer -> Int -> Int -> Integer -> RewTree a b c Integer -> Trans a b c Integer -> String
+renderTrans sn depD depR n rt (Trans p _ vr _ gc dt) =  
 	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
 	renderDer depD depR (10*n) dt ++
 	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
@@ -221,6 +251,32 @@ renderTrans sn depD depR n rt (Trans p _ vr gc dt) =
 		--lbl = "gc: {" ++ (f $ clauseProj p gc) ++ "}"
 		f a = concatMap g a
 		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
+
+
+renderDerUns :: Int -> Int -> Integer -> DerTree1 -> String
+renderDerUns 0 _ n _ = 
+	"\troot" ++ show (n*10) ++ "[shape=box,style=dashed,color=grey,label=\"...\",fixedsize=false];\n" ++ 
+	""
+renderDerUns depD depR n (DT rt trans) = -- case gcRewTree rt of
+	--False	-> renderRewT' ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+	--	concat (zipWith (\x -> renderTransUns (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take 10 trans))
+	--True	->
+		renderRewT ("\tsubgraph cluster_" ++ show n) depR rt (10*n) ++
+		concat (zipWith (\x -> renderTransUns (10*n) (depD - 1) depR x rt) [10*n + i | i <- [1..]] (take depR trans))
+
+renderTransUns :: Integer -> Int -> Int -> Integer -> RewTree1 -> Trans1 -> String
+renderTransUns sn depD depR n rt (Trans p _ vr _ gc dt) =  
+	"\t" ++ show n ++ "[shape=diamond,color=green,width=" ++ lh lbl ++ ",label=\"" ++ lbl ++ "\",fixedsize=false];\n" ++ 
+	renderDerUns depD depR (10*n) dt ++
+	show vr ++ "_" ++ show sn ++ "-> " ++ show n ++ ";\n" ++
+	show n ++ "-> root" ++ show (100*n) ++ ";\n"
+	where
+		lbl = "gc: {" ++ (f $ guardingContext p rt gc) ++ "}" 
+			++ ", cp: {" ++ (f $ clauseProj p gc) ++ "}"
+		--lbl = "gc: {" ++ (f $ clauseProj p gc) ++ "}"
+		f a = concatMap g a
+		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
+
 
 
 -- | Render observatin tree

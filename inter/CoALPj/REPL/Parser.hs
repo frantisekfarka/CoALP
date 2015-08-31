@@ -57,6 +57,28 @@ dCmd = toCmdDescr [
 		, pure Quit
 		, "" -- \n\t:quit\n\t\tExit the interpreter\n"
 	), (
+	  	":transform"
+		, spaces *> (pure Transform)
+	  	, "\n\t:transform\n\t\tTransforms the loaded program\n"
+	), (
+                ":annotate"
+		, spaces *> (pure Annotate)
+		, "\n\t:annotate\n\t\tAnnotates the loaded program\n\t\tDo not transform before annotation as" ++
+                  "this transform the loaded program and then annotates it\n"
+	), (
+                ":convert"
+		, spaces *> (pure Convert)
+		, "\n\t:convert\n\t\tConverts the loaded program so it is ready for transformation or annotation.\n"
+	), (
+                ":antiUnify"
+		, spaces *> (AntiUnify <$> many anyChar)
+		, "\n\t:antiUnify <query>\n\t\tAttempt to antiunify the two terms in the body of the query.\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
+                ":signature"
+		, spaces *> (Sig <$> many anyChar)
+		, "\n\t:signature <identifier>\n\t\tPrint signatture for a predicate.\n"
+	), (
 		":gc1"
 		, pure GC1
 		, "\n\t:gc1\n\t\tGuardednes check 1\n"
@@ -103,6 +125,14 @@ dCmd = toCmdDescr [
 		<*> (read <$> digits1 <* spaces1) 
 		<*> many anyChar)
 		, "\n\t:drawDer <depthDer> <depthRew> <query>\n\t\tDraw derivation tree, depth is an integer, and query has the form\n" ++
+		"\t\t'? :- BODY . '\n"
+	), (
+		":drawUnsafe"
+		, spaces *> (DrawUnsafe
+		<$> (read <$> digits1 <* spaces1) 
+		<*> (read <$> digits1 <* spaces1) 
+		<*> many anyChar)
+		, "\n\t:drawUnsafe <depthDer> <depthRew> <query>\n\t\tDraw derivation tree ignoring unguarded rewriting trees, depth is an integer, and query has the form\n" ++
 		"\t\t'? :- BODY . '\n"
 	), (
 		":drawInf"

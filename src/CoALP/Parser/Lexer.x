@@ -9,16 +9,20 @@ module CoALP.Parser.Lexer (
 	, getVar
 	, scanTokens
 	, clearVars
+	, alexError
 	, alexSynError
+	, alexGetPos
+	, getSig
 	) where
 
-import Data.Map as M (Map,empty,insert, lookup) 
+import Data.Map.Strict as M (Map,empty,insert, lookup) 
 
 --import CoALP.Error (Err(ParserErr))
 import CoALP.Program (
 	  Ident
 	, Constant
 	, Var
+	, Type
 	)
 
 
@@ -44,6 +48,12 @@ tokens :-
 
   -- we need to count newlines (for pretty printing of input, error msgs)
   -- $newline+			{ \a _ -> return (TNl (line a))  }
+
+  -- inductive keyword
+  "inductive"			{ \_ _ -> return TInd }
+
+  -- coinductive keyword
+  "coinductive"			{ \_ _ -> return TCoInd }
 
   -- we skip comments
   "%" .*			; --{ \a len -> return $ TComment $ tokenStr a len}
@@ -78,6 +88,10 @@ tokens :-
   -- closing brace
   ")"				{ \_ _ -> return TRPar }
 
+  -- type separator
+  ":"				{ \_ _ -> return TTSep }
+
+
 
 
 {
@@ -87,6 +101,7 @@ tokens :-
 data AlexUserState = AlexUserState {
 	  counter :: Var
 	, vars :: Map Ident Var
+	, sig :: Map Ident Type
 	}
 
 -- | Initialize user state
@@ -105,13 +120,16 @@ getVar ident = Alex $ \s@AlexState{alex_ust=ust}
 			  counter=(counter ust + 1)
 			, vars=(insert ident (counter ust + 1) (vars ust))
 			}}, counter ust + 1)
-	
+
+-- | Get signature descriptor
+getSig :: Alex (Map Ident Type)
+getSig = Alex $ \s@AlexState{alex_ust=ust}
+	-> Right (s, sig ust)
+
 -- | Reset var counter
 clearVars :: Alex ()
 clearVars = Alex $ \s@AlexState{alex_ust=ust}
 	-> Right (s{alex_ust=ust{vars=empty}}, ())
-
-
 
 -- -----------------------------------------------------------------------------
 -- | The token type:
@@ -125,7 +143,10 @@ data Token =
 	TTermSep	|
 	TClauseTer	|
 	TQuery		|
-	TEof
+	TInd		|
+	TCoInd		|
+	TTSep		|
+	TEof		
 	deriving (Eq,Show)
 
 
@@ -173,7 +194,7 @@ alexSynError tok = do
 		len TRPar = 1
 		len t = length . show $ t
 
--- | Run alex monad and get user state counter
+-- | Run alex monad and get user state 
 runAlex' :: String -> Alex a -> Either String (a, Integer)
 runAlex' input (Alex f) = case f (AlexState {alex_pos = alexStartPos,
 		alex_inp = input,       

@@ -1,0 +1,19 @@
+%%
+%% Simply typed lambda calculus + equi recursive types
+%%
+%% Naive description, type predicate just followes how it is usually
+%% described on paper. Hopless even for coalp. I made coalp to loop!
+%%
+
+
+type(C,var(X),          T) :- first(pair(X,T),C).
+type(C,lam(X,E),arr(A, B)) :- type(cons(pair(X,A),C), E,  B).
+type(C,app(X,Y),        B) :- type(C,X,arr(A,B)), type(C,Y,A).
+type(C,E,           mu(F)) :- type(C,E,app(F,mu(F))).
+type(C,E,    app(F,mu(F))) :- type(C,E,mu(F)).
+
+first(pair(K,V),cons(pair(K1,V1),Xs)) :- eq(K,K1), eq(V, V1). 
+first(pair(K,V),cons(pair(K1,V1),Xs)) :- first(pair(K,V), Xs).
+
+eq(X,X).
+

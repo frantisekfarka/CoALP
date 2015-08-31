@@ -12,6 +12,9 @@ module CoALPj.InternalState (
 	, program
 	, programPath
 	, resolves
+        , programA
+        , varCount 
+	, signature
 	, optVerbosity
 	, REPLState
 	, replInit
@@ -30,7 +33,7 @@ import System.IO.Error (tryIOError)
 
 
 import CoALP.Error (Err(Msg))
-import CoALP.Program (Program1, Succ1)
+import CoALP.Program (Program1, Succ1, ProgramA, Signature1)
 
 
 --
@@ -64,9 +67,12 @@ defaultCoALPOptions = CoALPOptions {
 -- | Read-Eval-Print loop state
 data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
-	, program 	:: Maybe Program1
+	, program 	:: Maybe Program1  
 	, programPath	:: Maybe FilePath
 	, resolves	:: Maybe [Succ1]
+        , programA      :: Maybe ProgramA
+        , varCount      :: Maybe Integer
+	, signature	:: Maybe Signature1
 	}
 
 -- | Create initial state from general CoALPj options
@@ -77,6 +83,9 @@ replInit = REPLState {
 	, program = mempty
 	, programPath = mempty
 	, resolves = mempty
+        , programA = mempty
+        , varCount  = Nothing
+	, signature = Nothing
 	}
 
 -- | Verbosity levels

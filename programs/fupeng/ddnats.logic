@@ -1,0 +1,5 @@
+nats(s(N)) :- nats(N).
+nats(s(s(N))) :- nats(s(N)). 
+
+%nats(s(s(s(N)))) :- nats(s(N)). 
+nats(s(s(s(N)))) :- nats(s(s(N))). 

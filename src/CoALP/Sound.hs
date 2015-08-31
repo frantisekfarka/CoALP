@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module CoALP.Sound (
 	res
 ) where
@@ -13,6 +15,12 @@ import CoALP.Program (
 	, Program
 	, Clause
 	, GuardingContext
+	, VR
+	, Program
+	, Signature
+	, GuardingContext
+	, lookupType
+	, Type(..)
 	)
 
 import CoALP.DerTree (der)
@@ -23,48 +31,79 @@ import CoALP.FreshVar (Freshable)
 -- | Resolution on clause
 --
 -- according to paper 1
-res :: (Eq a, Eq b, Ord c, Freshable c) =>
+res :: forall a b c . (Eq a, Show a, Show b, Show c, Ord a, Eq b, Ord c, Freshable c) =>
 	Program a b c
-	-> Clause a b c
+	-> Signature a
+	-> Clause a b c 
 	-> [Succ a b c]
-res p c = resDerTree [] $ der p c 
+res p s c = resDerTree s [] dt
+	where
+		dt :: DerTree a b c VR 
+		dt = der p c 
 
--- | Resolution on der tree
+-- | Process a der tree and continue
 --
-resDerTree :: (Eq a, Eq b, Ord c) =>
-	[GuardingContext a b c]
-	-> DerTree a b c VR 
+resDerTree :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
+	Signature a
+	-> [GuardingContext a b c]
+	-> DerTree a b c t
 	-> [Succ a b c]
-resDerTree gcs (DT rt trs) = (indRes rt) ++ (concatMap (resTrans gcs) trs)
+resDerTree sig gcs (DT rt trs) = (indRes rt) ++
+	case separateTrs sig trs of
+		([], cotrs)	-> concatMap (resCoIndTrans sig gcs) cotrs
+		(indtrs, _)	-> concatMap (resIndTrans sig gcs) indtrs
 
--- | Resolution on der tree - co-inductive observations
---
-resTrans :: (Eq a, Eq b, Ord c) =>
-	[GuardingContext a b c]
-	-> Trans a b c VR 
+
+-- | Process a transition within a tree that sill has
+-- some unprocessed inductive obligations
+resIndTrans :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
+	Signature a
+	-> [GuardingContext a b c]
+	-> Trans a b c d
 	-> [Succ a b c]
-resTrans gcs (Trans p rt _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
+resIndTrans sig gcs (Trans p rt _ _ cx dt) = resDerTree sig (gc:gcs) dt
+	where
+		gc = guardingContext p rt cx 
+
+-- | Process a transition within a tree that has no inductive
+-- obligations - therefore we can conclude coinductively
+resCoIndTrans :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
+	Signature a
+	-> [GuardingContext a b c]
+	-> Trans a b c d
+	-> [Succ a b c]
+resCoIndTrans sig gcs (Trans p rt _ _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> [rep rt]
-		False	-> resDerTree (gc:gcs) dt
+		False	-> resDerTree sig (gc:gcs) dt
 	where
 		gc = guardingContext p rt cx 
 		rep (RTEmpty) = error "impossible"
-		rep (RT c _ _) = CoInd c
+		rep (RT c _ _) = CoIndS c gc
 
-
+-- | Separate transitions into inductive and coinductive obligations
+separateTrs :: Ord a => 
+	Signature a
+	-> [Trans a b c d]
+	-> ([Trans a b c d], [Trans a b c d])
+separateTrs sig trs = foldr f ([], []) trs
+	where
+		f t@(Trans _ _ _ i _ _) (as,bs) = case lookupType sig i of
+			SInd	-> (t:as, bs)
+			SCoInd	-> (as, t:bs)
 
 -- | Resolution on rew tree - inductive observations
 --
+-- TODO make into traversal over the tree
 indRes :: RewTree a b c d -> [Succ a b c]
 indRes RTEmpty = []
-indRes (RT c _ ands) = concatMap (indResAnds c) ands
+indRes (RT c _ ands) = if any hasSuccTreeAnd ands then [IndS c] else []
+
+	-- concatMap (indResAnds c) ands
 	where
-		indResAnds c' (AndNode _ ors) = concatMap (indResOrs c') ors
-		indResOrs _ (OrNodeEmpty _) = []
-		indResOrs c' (OrNode _ []) = [Ind c']
-		indResOrs c' (OrNode _ ands') = concatMap (indResAnds c') ands'
-
-
+		hasSuccTreeAnd (AndNode _ ors) = any hasSuccTreeOr ors
+		hasSuccTreeOr (OrNodeEmpty _) = False
+		hasSuccTreeOr (OrNode _ []) = True
+		hasSuccTreeOr (OrNode _ ands') = all hasSuccTreeAnd ands'
 
 
 
