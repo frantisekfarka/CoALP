@@ -45,7 +45,7 @@ Run from the project directory:
 > cabal install --enable-tests
 
 ## Input format
-Interpreter expect file whith extension /.logic/ that contains a set 
+Interpreter expect file with extension /.logic/ that contains a set 
 of clauses. Predicates can be marked inductive or coinductive. If unmarked
 predicate is considered to be coinductive. Comments are denoted by a '%'.
 An example of input program:
@@ -58,7 +58,7 @@ nat(s(X)) :- nat(X).
 
 % coinductive : conat
 % the explicit marking is commented out, conat is considered coinductive
-% implicitely
+% implicitly
 conat(0).
 conat(s(X)) :- conat(X).
 ```
@@ -97,7 +97,7 @@ There are example programs in the following directories:
 ./examples/unguarded   -- other unguarded programs
 ```
 
-## Example of an interfactve session:
+## Example of an interactive session:
 
 
 Let's load some program:
@@ -121,7 +121,7 @@ $> :gc3
 True
 ```
 
-And finaly, let's resolve some query:
+And finally, let's resolve some query:
 ```
 $> answer :- nat(X).
 True
