@@ -44,6 +44,25 @@ Run from the project directory:
 
 > cabal install --enable-tests
 
+## Input format
+Interpreter expect file whith extension /.logic/ that contains a set 
+of clauses. Predicates can be marked inductive or coinductive. If unmarked
+predicate is considered to be coinductive. Comments are denoted by a '%'.
+An example of input program:
+
+```
+% nat_conat.logic
+inductive : nat
+nat(0).
+nat(s(X)) :- nat(X).
+
+% coinductive : conat
+% the explicit marking is commented out, conat is considered coinductive
+% implicitely
+conat(0).
+conat(s(X)) :- conat(X).
+```
+
 
 ## Usage
 
@@ -76,5 +95,49 @@ There are example programs in the following directories:
 ./examples/paper       -- examples programs in the paper
 ./examples/guarded     -- other guarded programs
 ./examples/unguarded   -- other unguarded programs
+```
+
+## Example of an interfactve session:
+
+
+Let's load some program:
+
+```
+coinductive : nat
+nat(n0).
+nat(s(X)) :- nat(X).
+```
+
+which is in file paper/P1.logic.
+
+```
+$> :l examples/paper/P1.logic
+Program examples/paper/P1.logic loaded.
+```
+
+Let's check that the program is guarded:
+```
+$> :gc3
+True
+```
+
+And finaly, let's resolve some query:
+```
+$> answer :- nat(X).
+True
+        observed inductively: answer :- nat(n0).
+```
+
+Let's inspect other results till we hit the coinductive one:
+```
+$> ;
+True
+        observed inductively: answer :- nat(s(n0)).
+...
+$> ;
+True
+	observed co-inductively: answer :- nat(s(s(s(V_39)))).
+			  GC: ( 1, s(V_2), [0,0]),
+
 ```
 
