@@ -257,9 +257,9 @@ guardingContext p rt cx@(Just (_, si, br))	= nub [(pkt', t', v) |
 		(pkt', t', v) <- -- trace "\n\nnextcmp" $ traceShowId $
 			clauseProj p cx
 		, (t1, t2, pkt'') <- -- f t' $
-			-- (loops rt)
+			 (loops rt)
 			--traceShowId $
-			branchLoops $ (NE.head br):(fmap (applySubst si *** id) (NE.tail br))
+			--branchLoops $ (NE.head br):(fmap (applySubst si *** id) (NE.tail br))
 		, t'' <- -- trace ("loop:\n\t" ++ show t1  ++ "\n\t" ++ show t2) $ traceShowId $
 			maybeToList $ recGuardedTerm t1 t2
 		--, -- trace "It's guarded!" $ traceShow t'' $ 
