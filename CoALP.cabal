@@ -3,7 +3,7 @@ name:          CoALP
 --             | ,----- pre-release
 --             | | ,--- fixes and new functionality
 --             | | |
-version:       0.0.7
+version:       0.1.0
 license:       LGPL-3
 license-file:  LICENSE
 author:        Ommited for reviewing
