@@ -24,3 +24,38 @@ eq(X,X).
 %%
 %% > True
 %% >        observed inductively: res :- type(nil, nil, lam(x, var(x)), arr(V_5, V_5)).
+
+
+%%
+%% Type chekcing/inference with KC as variable.
+%% This also works! Great! S-resoulution is so cool!!!
+%% I think this is exactly what I want.
+%%
+%% 
+%%%%%%% These queries for identity funciton can be done with Prolog too.
+%%
+%% $> :- type(KC, nil, lam(x,var(x)), arr(A,A)).
+%%
+%% True
+%%         observed inductively: res :- type(cons(pair(V_631, o), V_267), nil, lam(x, var(x)), arr(var(V_631), var(V_631))).
+%%
+%% $> res :- type(KC, nil, lam(x,var(x)), T).
+%% True
+%%         observed inductively: res :- type(cons(pair(V_2527, o), V_1071), nil, lam(x, var(x)), arr(var(V_2527), var(V_2527))).
+%%
+%%
+%% However, this query inferring (\x.x)(\x.x) loops in Prolog.
+%% I experimented with coinductive library but does not work because that
+%% coinductive library in Prolog is only about infinite structures not that
+%% much different in control flow. Or maybe I am not using it correctly.
+%% But, CoALP can does it really well, populating KC with the fresh ty vars.
+%% This exaclty corresponds to what I had to do all the workarounds in Prolog
+%% by delaying kind goals and pre-processing collecting all the fresh ty vars.
+%% But in CoALP using S-resolution it JUST WORKS!!!!!! This is very promising.
+%%
+%% $> res :- type(KC, nil, app(lam(x,var(x)),lam(x,var(x))), T).
+%%
+%% True
+%%         observed co-inductively: res :- type(cons(pair(V_80895, o), cons(pair(V_80895, o), cons(pair(V_80895, o), V_34303))), nil, app(lam(x, var(x)), lam(x, var(x))), var(V_80895)).
+%%           GC: ( 6, cons(pair(V_31, V_32), V_33), [0,1]),
+%%
