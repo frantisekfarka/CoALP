@@ -1,0 +1,6 @@
+r(a,b).
+r(b,c).
+r(c,d).
+
+rt(X,Y) :- r(X,Y).
+rt(X,Z) :- r(X,Y), rt(Y,Z).
