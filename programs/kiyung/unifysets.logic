@@ -1,0 +1,8 @@
+memb(X,cons(X,L)).
+memb(X,cons(Y,L)) :- memb(X,L).
+% memb(X,cons(Y,L)) :- X /== Y, memb(X,L). % in Prolog
+
+subset_of(nil, L).
+subset_of(cons(X,R),L) :- memb(X,L), subset_of(R,L).
+
+unify_sets(A,B) :- subset_of(A,B), subset_of(B,A).
