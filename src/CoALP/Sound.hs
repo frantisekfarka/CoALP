@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
--- | 
+-- |
 -- Soundness results for query resolution according to the paper 1
 module CoALP.Sound (
 	res
@@ -13,7 +13,7 @@ import CoALP.Program (
 	, AndNode (..)
 	, OrNode (..)
 	, Succ (..)
-	, VR 
+	, VR
 	, Program
 	, Clause
 	, GuardingContext
@@ -36,12 +36,12 @@ import CoALP.FreshVar (Freshable)
 res :: forall a b c . (Eq a, Show a, Show b, Show c, Ord a, Eq b, Ord c, Freshable c) =>
 	Program a b c
 	-> Signature a
-	-> Clause a b c 
-	-> [Succ a b c]
+	-> Clause a b c
+	-> [(Succ a b c, DerTree a b c VR)]
 res p s c = resDerTree s [] dt
 	where
-		dt :: DerTree a b c VR 
-		dt = der p c 
+		dt :: DerTree a b c VR
+		dt = der p c
 
 -- | Process a der tree and continue
 --
@@ -49,8 +49,8 @@ resDerTree :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
 	Signature a
 	-> [GuardingContext a b c]
 	-> DerTree a b c t
-	-> [Succ a b c]
-resDerTree sig gcs (DT rt trs) = (indRes rt) ++
+	-> [(Succ a b c, DerTree a b c t)]
+resDerTree sig gcs dt@(DT rt trs) = (indRes rt dt) ++
 	case separateTrs sig trs of
 		([], cotrs)	-> concatMap (resCoIndTrans sig gcs) cotrs
 		(indtrs, _)	-> concatMap (resIndTrans sig gcs) indtrs
@@ -62,10 +62,10 @@ resIndTrans :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
 	Signature a
 	-> [GuardingContext a b c]
 	-> Trans a b c d
-	-> [Succ a b c]
+	-> [(Succ a b c, DerTree a b c d)]
 resIndTrans sig gcs (Trans p rt _ _ cx dt) = resDerTree sig (gc:gcs) dt
 	where
-		gc = guardingContext p rt cx 
+		gc = guardingContext p rt cx
 
 -- | Process a transition within a tree that has no inductive
 -- obligations - therefore we can conclude coinductively
@@ -73,17 +73,17 @@ resCoIndTrans :: (Show a, Show b, Show c, Ord a, Eq b, Ord c) =>
 	Signature a
 	-> [GuardingContext a b c]
 	-> Trans a b c d
-	-> [Succ a b c]
+	-> [(Succ a b c, DerTree a b c d)]
 resCoIndTrans sig gcs (Trans p rt _ _ cx dt) = case (not $ null gc) && (gc `elem` gcs) of
 		True	-> [rep rt]
 		False	-> resDerTree sig (gc:gcs) dt
 	where
-		gc = guardingContext p rt cx 
+		gc = guardingContext p rt cx
 		rep (RTEmpty) = error "impossible"
-		rep (RT c _ _) = CoIndS c gc
+		rep (RT c _ _) = (CoIndS c gc, dt)
 
 -- | Separate transitions into inductive and coinductive obligations
-separateTrs :: Ord a => 
+separateTrs :: Ord a =>
 	Signature a
 	-> [Trans a b c d]
 	-> ([Trans a b c d], [Trans a b c d])
@@ -96,9 +96,9 @@ separateTrs sig trs = foldr f ([], []) trs
 -- | Resolution on rew tree - inductive observations
 --
 -- TODO make into traversal over the tree
-indRes :: RewTree a b c d -> [Succ a b c]
-indRes RTEmpty = []
-indRes (RT c _ ands) = if any hasSuccTreeAnd ands then [IndS c] else []
+indRes :: RewTree a b c d -> DerTree a b c t -> [(Succ a b c, DerTree a b c t)]
+indRes RTEmpty _ = []
+indRes (RT c _ ands) dt = if any hasSuccTreeAnd ands then [(IndS c, dt)] else []
 
 	-- concatMap (indResAnds c) ands
 	where
@@ -106,6 +106,3 @@ indRes (RT c _ ands) = if any hasSuccTreeAnd ands then [IndS c] else []
 		hasSuccTreeOr (OrNodeEmpty _) = False
 		hasSuccTreeOr (OrNode _ []) = True
 		hasSuccTreeOr (OrNode _ ands') = all hasSuccTreeAnd ands'
-
-
-

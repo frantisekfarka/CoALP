@@ -13,7 +13,7 @@ module CoALPj.InternalState (
 	, programPath
 	, resolves
         , programA
-        , varCount 
+        , varCount
 	, signature
 	, optVerbosity
 	, REPLState
@@ -24,7 +24,7 @@ module CoALPj.InternalState (
 ) where
 
 import Control.Monad.Trans (lift, liftIO)
-import Control.Monad.Trans.State (StateT) 
+import Control.Monad.Trans.State (StateT)
 import Control.Monad.Trans.Except (ExceptT, throwE)
 
 import Data.Monoid (mempty)
@@ -33,12 +33,12 @@ import System.IO.Error (tryIOError)
 
 
 import CoALP.Error (Err(Msg))
-import CoALP.Program (Program1, Succ1, ProgramA, Signature1)
+import CoALP.Program (Program1, Succ1, ProgramA, Signature1, DerTree1)
 
 
 --
 -- TODO refactor
--- 
+--
 --type CoALP = StateT IState (ErrorT IO)
 --type CoALP = ErrorT Err IO
 type CoALP = StateT REPLState (ExceptT Err IO)
@@ -67,11 +67,11 @@ defaultCoALPOptions = CoALPOptions {
 -- | Read-Eval-Print loop state
 data REPLState = REPLState {
 	  caOptions 	:: CoALPOptions
-	, program 	:: Maybe Program1  
+	, program 	:: Maybe Program1
 	, programPath	:: Maybe FilePath
-	, resolves	:: Maybe [Succ1]
-        , programA      :: Maybe ProgramA
-        , varCount      :: Maybe Integer
+	, resolves	:: Maybe [(Succ1, DerTree1)]
+  , programA      :: Maybe ProgramA
+  , varCount      :: Maybe Integer
 	, signature	:: Maybe Signature1
 	}
 
@@ -83,12 +83,11 @@ replInit = REPLState {
 	, program = mempty
 	, programPath = mempty
 	, resolves = mempty
-        , programA = mempty
-        , varCount  = Nothing
+  , programA = mempty
+  , varCount  = Nothing
 	, signature = Nothing
 	}
 
 -- | Verbosity levels
 data Verbosity = Quiet | Default | Verbose | VVerbose
 	deriving (Eq, Ord)
-

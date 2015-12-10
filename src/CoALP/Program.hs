@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, TypeSynonymInstances  #-}
 
--- | 
+-- |
 -- Basic program datatypes
 --
 module CoALP.Program (
@@ -36,7 +36,7 @@ module CoALP.Program (
 	, Succ (..)
 
 	-- * Concrete types
-	-- ** Identifier, Variable, and Constant 
+	-- ** Identifier, Variable, and Constant
 	, Ident
 	, Var
         , AnnoVar(..)
@@ -79,7 +79,7 @@ import Data.Foldable (Foldable,foldMap)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty)
 -- import Data.Set (Set)
-import Data.Map.Strict as M (Map, insertLookupWithKey, lookup) 
+import Data.Map.Strict as M (Map, insertLookupWithKey, lookup)
 
 import Numeric (showHex) -- ,showIntAtBase)
 
@@ -87,7 +87,7 @@ import Control.DeepSeq (deepseq, NFData(..))
 
 -- | A term for any type of functional symbol and any type of variable.
 --
--- Term over Σ is a total function from a non-empty tree 
+-- Term over Σ is a total function from a non-empty tree
 -- to Σ &#x22c3; Var
 --
 -- Notation:
@@ -119,10 +119,10 @@ instance Functor (Term a b) where
 instance NFData (Term a b c) where
 	rnf (Fun f ts)	= seq f $ deepseq ts $ ()
 	rnf (Var v)	= seq v ()
-	
--- | A clause 
+
+-- | A clause
 --
--- Notation: 
+-- Notation:
 --
 -- * clause C over Σ is a total function from finite tree language L
 --   of depth 1 to terms (term trees)
@@ -135,13 +135,13 @@ data Clause a b c where
 
 instance (NFData (Term a b c)) => NFData (AndNode (Clause a b c) (Term a b c) (Vr d)) where
 	rnf (AndNode t ors) = deepseq t $ deepseq ors $ ()
-	
+
 
 instance (Eq a, Eq c) => Eq (Clause a b c) where
 	(Clause h b) == (Clause h' b') = h == h' && b == b'
 
 instance (Show a, Show b, Show c) => Show (Clause a b c) where
-	show (Clause h bs) = show h ++ " :- " ++ 
+	show (Clause h bs) = show h ++ " :- " ++
 		(concat . intersperse ", " . fmap show $ bs) ++ "."
 
 instance NFData (Clause a b c) where
@@ -152,14 +152,14 @@ instance Functor (Clause a b) where
 
 -- | A query as a special kind of clause - a goal clause
 --
-data Query a b c 
+data Query a b c
 	= Query [Term a b c]
 
 instance (Eq a, Eq c) => Eq (Query a b c) where
 	(Query b) == (Query b') = b == b'
 
 instance (Show a, Show b, Show c) => Show (Query a b c) where
-	show (Query ts ) = "? :- " ++ 
+	show (Query ts ) = "? :- " ++
 		(concat . intersperse ", " . fmap show $ ts) ++ "."
 
 -- | Substitution on terms
@@ -172,7 +172,7 @@ mapSubst f s = map (f *** (fmap f)) s
 
 
 -- | Predicate type
--- 
+--
 data Type = SInd | SCoInd
 
 -- | A program consisting of clauses
@@ -214,7 +214,7 @@ instance NFData (Vr d) where
 -- | Annotated variable
 data AnnoVar a
         = Ind a
-        | CoInd a 
+        | CoInd a
         deriving (Ord)
 
 instance (Eq a) => Eq (AnnoVar a) where
@@ -277,7 +277,7 @@ type Term1 = Term Ident Constant Var
 
 -- | Type of first-order term with annotations
 --
-type TermA = Term Ident Constant VarA 
+type TermA = Term Ident Constant VarA
 
 -- | Type of clause of first-order terms.
 --
@@ -285,7 +285,7 @@ type Clause1 = Clause Ident Constant Var
 
 -- | Type of clause of first-order terms with annotations
 --
-type ClauseA = Clause Ident Constant VarA 
+type ClauseA = Clause Ident Constant VarA
 
 -- | Type of clause of first-order query
 --
@@ -301,7 +301,7 @@ type ProgramA = Program Ident Constant VarA
 
 -- | Type of signature of first-order terms.
 --
-type Signature1 = Signature Ident 
+type Signature1 = Signature Ident
 
 
 -- | Type of substitution of terms
@@ -310,7 +310,7 @@ type Subst1 = Subst Ident Constant Var
 
 -- | Type of substitution of terms with annotations
 --
-type SubstA = Subst Ident Constant VarA 
+type SubstA = Subst Ident Constant VarA
 
 -- | Rewriting tree for Term1
 --
@@ -318,7 +318,7 @@ type RewTree1 = RewTree Ident Constant Var VR
 
 -- | Rewriting tree for TermA
 --
-type RewTreeA = RewTree Ident Constant VarA VR 
+type RewTreeA = RewTree Ident Constant VarA VR
 
 -- | The derivation tree
 --
@@ -352,7 +352,7 @@ type GuardingContextA = GuardingContext Ident Constant VarA
 -- This datatype represents the @Definition 3.3 3)@
 data AndNode a b c
 	= AndNode b [OrNode a b c]
-	deriving (Eq)
+	deriving (Eq, Show)
 
 instance Bifunctor (AndNode (Clause a b c)) where
 	first f (AndNode t ors) = AndNode (f t) $ fmap (first f) ors
@@ -373,7 +373,7 @@ instance Foldable (AndNode (Clause a b c) (Term a b c)) where
 data OrNode a b c
 	= OrNode a [AndNode a b c]
 	| OrNodeEmpty c
-	deriving (Eq)
+	deriving (Eq, Show)
 
 instance Bifunctor (OrNode (Clause a b c)) where
 	first f (OrNode c ands) 	= OrNode ({- fmap f -} c) $ fmap (first f) ands
@@ -393,18 +393,19 @@ instance NFData (OrNode (Clause a b c) (Term a b c) (Vr d)) where
 --
 -- This datatype represents the @Definition 3.3@
 data RewTree a b c d = RTEmpty | RT (Clause a b c) (Subst a b c) [AndNode (Clause a b c) (Term a b c) (Vr d)]
-
-instance (Show a, Show b, Show c, Show d, Integral d) => Show (RewTree a b c d) where
+	deriving (Show)
+{-instance (Show a, Show b, Show c, Show d, Integral d) => Show (RewTree a b c d) where
 	show (RTEmpty)		= "Empty Rew Tree"
 	show (RT c s ands)	= "RT: " ++ show c ++ " | " ++ show s ++ "\n" ++
 			concatMap (showAnd 1) ands
 		where
 			showAnd n (AndNode b ors) = pref n ++ show b ++ "\n" ++
-				concatMap (showOr (n+1)) ors 
+				concatMap (showOr (n+1)) ors
 			showOr n (OrNodeEmpty c') = pref n ++ show c' ++ "\n"
 			showOr n (OrNode a as) = pref n ++ show a ++ "\n" ++
 				(if (n < 5) then concatMap (showAnd (n+1)) as else "")
 			pref n = take n $ repeat ' '
+-}
 
 {-instance Bifunctor (RewTree a b) where
 	first f (RT c s ands)	= RT (fmap f c) (mapSubst f s) (fmap (first f) ands)
@@ -417,11 +418,13 @@ instance (Show a, Show b, Show c, Show d, Integral d) => Show (RewTree a b c d) 
 --
 -- This datatype represents @Definition 3.6@
 data DerTree a b c d = DT (RewTree a b c d) [Trans a b c d]
+	deriving (Show)
 
 -- | Transition between rewriting trees
--- 
+--
 -- see @Definition 3.5@
 data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) a (Maybe (Int, Subst a b c, NonEmpty (Term a b c, Int))) (DerTree a b c d)
+  deriving (Show)
 
 -- | Loop in Rewritng trees
 --
@@ -429,8 +432,7 @@ data Trans a b c d = Trans (Program a b c) (RewTree a b c d) (Vr d) a (Maybe (In
 type Loop a b c = (Term a b c, Term a b c, Int)
 
 -- | Loop on Term1's
-type Loop1 = Loop Ident Var Constant 
-
+type Loop1 = Loop Ident Var Constant
 
 -- | Helper datatype for Observation tree
 --
@@ -441,7 +443,7 @@ data OTree a b c d = ODT (RewTree a b c d) [OTrans a b c d] | UNRT (RewTree a b 
 --Guarded transition carries it's guarding context
 --
 -- see @Definition 5.5@
-data OTrans a b c d 
+data OTrans a b c d
 	= OTrans (Program a b c) (RewTree a b c d) (Vr d) (Maybe (Int, Subst a b c, NonEmpty (Term a b c, Int))) (OTree a b c d)
 	| GTrans (Vr d) [GuardingContext a b c] (GuardingContext a b c)
 
@@ -454,9 +456,6 @@ type OTrans1 = OTrans Ident Var Constant VR
 
 -- | Type of Derivation tree transition
 type Trans1 = Trans Ident Var Constant VR
-
-
-
 
 
 -- | Test whether first argument is a subterm of second argument
@@ -496,4 +495,3 @@ lookupType :: Ord a => Signature a -> a -> Type
 lookupType sig iden = case M.lookup iden sig of
 	Just t	-> t
 	Nothing	-> SCoInd
-

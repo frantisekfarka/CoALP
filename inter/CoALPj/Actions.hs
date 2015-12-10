@@ -15,10 +15,10 @@ module CoALPj.Actions (
 	, drawUng
 	, resolve
 	, nextRes
-        , convert
-        , annotate
-        , transform
-        , antiUnify
+  , convert
+  , annotate
+  , transform
+  , antiUnify
 	, printSig
 	) where
 
@@ -29,6 +29,7 @@ import Control.Monad.Trans.Except (throwE)
 import Control.Monad.Trans.State (get, put)
 
 import Data.Functor ((<$>))
+import Data.List (intersperse)
 
 import System.IO.Error (tryIOError)
 
@@ -39,8 +40,8 @@ import CoALPj.InternalState (
 	, program
 	, programPath
 	, resolves
-        , programA
-        , varCount 
+  , programA
+  , varCount
 	, signature
 	, optVerbosity
 	, Verbosity (..)
@@ -60,7 +61,7 @@ import CoALP.Render (
 import CoALP.Render (displayProgram,displayRewTree,displayDerTree, ppProgram, ppTerm, ppSubst)
 import CoALP.Guards (gc1,gc2,gc3,gc3one,derToUnc,derToUng, getProgramLoops)
 
-import CoALP.Program (Program1, Signature1, ProgramA, RewTree1, RewTreeA, Succ(..), Vr(..),Type(..),lookupType, Ident)
+import CoALP.Program (Program1, Signature1, ProgramA, RewTree1, RewTreeA, Succ(..), Vr(..),Type(..), DerTree(..), RewTree(..), AndNode(..), OrNode(..),lookupType, Ident)
 
 import CoALP.Parser.Parser (parseWithCount,parseClause)
 import CoALP.RewTree (rew)
@@ -96,15 +97,15 @@ loadFile file = do
 				, programA = Nothing
 				, programPath = Just file
 				, varCount = Just c
-				, signature = Just sig 
+				, signature = Just sig
 				}
-			when (optVerbosity (caOptions s) >= Default) (iputStrLn $ 
+			when (optVerbosity (caOptions s) >= Default) (iputStrLn $
 				"Program " ++ file ++ " loaded.")
 
 reloadFile :: CoALP ()
 reloadFile = do
 	pp <- programPath <$> get
-	dropProgram 
+	dropProgram
 	(maybe (iputStrLn "No program loaded")) loadFile pp
 
 dropProgram :: CoALP ()
@@ -126,19 +127,19 @@ convert = whenProgram (
                 when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                         "Program converted to Annotatetable Version.")
           )
-			
+
 -- | Apply RT to ProgramA
 transform :: CoALP ()
 transform = whenProgACount (
-            \pc -> do 
+            \pc -> do
               s <- get
               let (t, c) = transformProgA pc
               putPrgAState (t,c)
               when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                      "Program transformed."
                      ++ "\nOriginal\n"++ ppProgram (fst pc)
-                     ++ "\nTransformed\n" ++ ppProgram t 
-                     ++ "\n") 
+                     ++ "\nTransformed\n" ++ ppProgram t
+                     ++ "\n")
             )
 
 -- | Apply RT* to ProgramA
@@ -148,13 +149,13 @@ annotate = whenProgACount (
              s <- get
              let loops = getProgramLoops (fst pc)
                  (t,c) = transformProgA pc
-                 anno  = annotateProgA t loops 
+                 anno  = annotateProgA t loops
              putPrgAState (anno, c)
              when (optVerbosity (caOptions s) >= Default) (iputStrLn $
                      "Program annotated."
-                     ++ "\nOriginal\n"++ ppProgram (fst pc) 
+                     ++ "\nOriginal\n"++ ppProgram (fst pc)
                      ++ "\nAnnotated\n" ++ ppProgram anno
-                     ++ "\n") 
+                     ++ "\n")
            )
 
 -- | Update ProgramA and Count in the state
@@ -172,14 +173,14 @@ antiUnify c = case parseClause c of
                                            "AntiUnifier: " ++ ppTerm (fst t)
                                            ++ "\nSubstitutions: " ++ ppSubst subs
                                            where subs = map (\((t1, _), v) -> (v, t1)) (snd t)
- 
+
 -- | print program
 printProgram :: CoALP ()
 printProgram = whenPrgOrPrgA (eitherM (iputStrLn . ppProgram) (iputStrLn . ppProgram))
 
 checkGuard1 :: CoALP ()
 checkGuard1 =  whenPrgOrPrgA (eitherM (iputStrLn . show . gc1) (iputStrLn . show . gc1))
-			
+
 checkGuard2 :: String -> CoALP ()
 checkGuard2 c = whenPrgOrPrgA (
           \p -> case parseClause c of
@@ -187,17 +188,17 @@ checkGuard2 c = whenPrgOrPrgA (
                   Right r  -> eitherM (iputStrLn . show . flip gc2 r) (iputStrLn . show . flip gc2 (toClauseA r)) p
           )
 
-		
+
 checkGuard3 :: CoALP ()
 checkGuard3 = whenPrgOrPrgA (eitherM (iputStrLn . show . gc3) (iputStrLn . show . gc3))
-			
+
 resolve :: String -> CoALP ()
 resolve c = whenProgram (
 	\p sig -> case parseClause c of
 		Left err	-> iputStrLn err
 		Right r		-> do
 			s <- get
-			put $ s { resolves = Just $ res p sig r } 
+			put $ s { resolves = Just $ res p sig r }
 			-- iputStrLn . show $ (res p r)
 			nextRes
 	)
@@ -208,24 +209,47 @@ nextRes = do
 	case res of
 		Nothing	-> iputStrLn "no query yet"
 		Just [] -> iputStrLn "False"
-		Just (h:ts) -> do	
-			iputStrLn (d h)
+		Just (h:ts) -> do
+			iputStrLn (d $ fst h)
+			--liftIO (displayDerTreeUnsafe 10 10 (snd h))
+			--iputStrLn (show (snd h))
+			--liftIO (displayRewTree 10 (fst (dt $ snd h)))
+			--iputStrLn (show (fst (dt $ snd h)))
+			iputStrLn (concat $ pathOfRewTree (fst (dt $ snd h)))
 			s <- get
-			put $ s { resolves = Just $ dropWhile (== h) ts }
+			put $ s { resolves = Just $ dropWhile (\(x,_) -> x == (fst h)) ts }
 	where
+		dt (DT rt trans) = (rt, trans)
 		d (IndS c) = "True\n\tobserved inductively: " ++ ppClause c
 		d (CoIndS c gc) = "True\n\tobserved co-inductively: " ++ ppClause c ++
 			"\n\t  GC: " ++ concatMap g gc
 		g ((ix, t, v)) = "( " ++ show ix ++ ", " ++ ppTerm t ++ ", " ++ show v ++ "),"
 
-			
+data RoseTree a = Node a [RoseTree a]
+
+instance (Show a) => Show (RoseTree a) where
+  show (Node n rts) = "K" ++ show n ++ "(" ++ (concat $ intersperse ", " $ map show rts) ++ ")"
+
+-- TODO move this to a more appropriate place
+pathOfRewTree :: RewTree a b c d -> [String]
+pathOfRewTree (RT clause sub andNodes) = map (show . andNodePath) andNodes
+pathOfRewTree (RTEmpty) = []
+
+orNodePath :: Int -> [OrNode a b c] -> [RoseTree Int]
+orNodePath _ [] = []
+orNodePath n ((OrNodeEmpty _):orns) = orNodePath (n+1) orns
+orNodePath n ((OrNode _ ands):orns) = [Node n (concat $ map andNodePath ands)] ++ orNodePath (n+1) orns
+
+andNodePath :: AndNode a b c -> [RoseTree Int]
+andNodePath (AndNode _ ors) = orNodePath 1 ors
+
 checkGuard3One c = whenPrgOrPrgA (
          \p -> case parseClause c of
                  Left err -> iputStrLn err
                  Right r  -> eitherM (iputStrLn . show . flip gc3one r) (iputStrLn . show . flip gc3one (toClauseA r)) p
          )
-			
-			
+
+
 drawProgram :: CoALP ()
 drawProgram = whenPrgOrPrgA (eitherM (liftIO . displayProgram) (liftIO . displayProgram))
 
@@ -238,7 +262,7 @@ drawRew depth q = whenPrgOrPrgA (
                 Right r'  -> do
                         iputStrLn $ "Query " ++ q ++ " loaded."
 			let r = r'
-                        eitherM (liftIO . displayRewTree depth . (rt r)) (liftIO . displayRewTree depth . (rt' r)) p 
+                        eitherM (liftIO . displayRewTree depth . (rt r)) (liftIO . displayRewTree depth . (rt' r)) p
 			--iputStrLn . show . (head 20) $ loops' rt
                         where rt  res pr = rew pr res [] :: RewTree1
                               rt' res pr = rew pr (toClauseA res) [] :: RewTreeA
@@ -256,7 +280,7 @@ drawTrans depth var q = whenPrgOrPrgA (
 			eitherM (liftIO . displayRewTree depth . tt) (liftIO . displayRewTree depth . tt') prog
 			--iputStrLn . show . (head 20) $ loops' rt
                         where rt  res pr = rew pr res []
-                              --rt' res pr = rew pr (toClauseA res) [] :: RewTreeA 
+                              --rt' res pr = rew pr (toClauseA res) [] :: RewTreeA
 			      tt  pr = fst $ foldl (\x y -> trans pr (fst x) y []) (rt  r pr, Nothing) (fmap Vr var)
 			      tt' pr = fst $ foldl (\x y -> trans pr (fst x) y []) (rt (toClauseA r) pr, Nothing) (fmap Vr var)
 	)
@@ -281,7 +305,7 @@ drawUnsafe depD depR q = whenProgram (
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			liftIO . displayDerTreeUnsafe depD depR $ der p r 
+			liftIO . displayDerTreeUnsafe depD depR $ der p r
 			--iputStrLn . show . (head 20) $ loops' rt
 	)
 
@@ -294,7 +318,7 @@ drawInf depD depR q = whenPrgOrPrgA (
 			return ()
 		Right r		-> do
 			iputStrLn $ "Query " ++ q ++ " loaded."
-			eitherM (liftIO . displayDerTree depD depR . (derToUnc depD . dt)) (liftIO . displayDerTree depD depR . (derToUnc depD . dt')) prog 
+			eitherM (liftIO . displayDerTree depD depR . (derToUnc depD . dt)) (liftIO . displayDerTree depD depR . (derToUnc depD . dt')) prog
 			where dt  = flip der r
                               dt' = flip der (toClauseA r)
                         --iputStrLn . show . (head 20) $ loops' rt
@@ -319,7 +343,7 @@ printSig ident = maybe (iputStrLn "No program loaded") (
 			\sig' -> case lookupType sig' ident of
 				SInd	-> iputStrLn $ "inductive : " ++ ident
 				SCoInd	-> iputStrLn $ "coinductive : " ++ ident
-			) =<< signature <$> get 
+			) =<< signature <$> get
 
 
 whenProgram :: (Program1 -> Signature1 -> CoALP ()) -> CoALP ()

@@ -9,10 +9,10 @@ data Command
 	| Reload
 	| Print
 	| Quit
-        | Transform
-        | Annotate
-        | Convert
-        | AntiUnify String
+  | Transform
+  | Annotate
+  | Convert
+  | AntiUnify String
 	| GC1
 	| GC2 String
 	| GC3
@@ -30,5 +30,3 @@ data Command
 	| Next
 	| Sig String
 	deriving Show
-
-

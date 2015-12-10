@@ -30,10 +30,10 @@ annotateProgA :: ProgramA -> [(Int, Int)] -> ProgramA
 annotateProgA prgA [] = prgA
 annotateProgA prgA (l:ls) = annotateProgA (map snd (helper annotateTermA idxPrg l)) ls
   where idxPrg = zip [0..] prgA
-        
+
 helper :: (Term a b c -> Term a b c) -> [(Int, Clause a b c)] -> (Int, Int) -> [(Int, Clause a b c)]
 helper _ [] _ = []
-helper annoF (c@(cid, c1):cs) l@(cid', tid) 
+helper annoF (c@(cid, c1):cs) l@(cid', tid)
   | cid == cid' = [(cid, annotateClause annoF c1 tid)] ++ cs
   | otherwise = [c] ++ helper annoF cs l
 
@@ -47,7 +47,7 @@ annotateClause annoF  (Clause (Fun idx ts) b) n = Clause (Fun idx (init ts ++ [n
 
 -- | Annotate n-th term
 annotateNth :: (Term a b c -> Term a b c) -> [Term a b c] -> Int -> [Term a b c]
-annotateNth annoF xs i 
+annotateNth annoF xs i
   | i < length xs && i >= 0 = frnt ++ [annoF y] ++ ys -- Annotate the nth term
   | otherwise               = xs
        where (frnt, (y:ys)) = splitAt i xs
@@ -57,14 +57,14 @@ annotateNth annoF xs i
 annotateTerm1 :: Term1 -> Term1
 annotateTerm1 f@(Fun _ []) = f
 -- If it's a function it is from the body so last term is the transformation variable to annotate
-annotateTerm1 (Fun idx ts) = Fun idx (init ts ++ [annotateTerm1 (last ts)]) 
+annotateTerm1 (Fun idx ts) = Fun idx (init ts ++ [annotateTerm1 (last ts)])
 annotateTerm1 (Var v) = Var (negate ( abs v))
 
 -- | Re-annotate termA
 annotateTermA :: TermA -> TermA
 annotateTermA f@(Fun _ [])  = f
 -- If it's a function it is from the body so last term is the transformation variable to annotate
-annotateTermA (Fun idx ts)  = Fun idx (init ts ++ [annotateTermA (last ts)]) 
+annotateTermA (Fun idx ts)  = Fun idx (init ts ++ [annotateTermA (last ts)])
 annotateTermA (Var (Ind v)) = Var (CoInd v)
 annotateTermA vr@(Var _)    = vr
 
@@ -74,7 +74,7 @@ annotateTermA vr@(Var _)    = vr
 -- | Transform a program
 -- prgWithCount - pair with the program to transform and the next fresh variable
 transformProg :: (Program1, Integer) -> (Program1, Integer)
-transformProg prgWithCount =  transformProgAux prgWithCount transFuncs
+transformProg (prg, c) =  transformProgAux (prg, c + 1) transFuncs
   where transFuncs = map (\x -> Fun ("transform-func-" ++ show x) []) [(1::Int)..]
 
 transformProgAux :: (Program1, Integer) -> [Term1] -> (Program1, Integer)
@@ -89,7 +89,7 @@ transformProgAux ((x@(Clause _ b):xs), count) (tf:tfs) = ([transformed] ++ rest,
 -- | Transform an annotated program
 --
 transformProgA :: (ProgramA, Integer) -> (ProgramA, Integer)
-transformProgA prgWithCount = transformProgAAux prgWithCount transFuncs
+transformProgA (prg, c) = transformProgAAux (prg, c + 1) transFuncs
   where transFuncs = map (\x -> Fun ("transform-func-" ++ show x) []) [(1::Int)..]
 
 transformProgAAux :: (ProgramA, Integer) -> [TermA] -> (ProgramA, Integer)
@@ -105,7 +105,7 @@ transformProgAAux ((x@(Clause _ b):xs), count) (tf:tfs) = ([transformed] ++ rest
 --
 transformClause :: Term a b c -> Clause a b c -> Clause a b c
 transformClause nf@(Fun _ ts) (Clause h b) = Clause (addTerm h nf) (zipWith addTerm b ts)
-transformClause (Var _) c = c 
+transformClause (Var _) c = c
 
 -- | Adds a Term to the end of a function term
 -- term - term to add
@@ -120,4 +120,3 @@ toClauseA c = fmap (Ind) c
 -- | Annotate program
 toProgramA :: Program1 -> ProgramA
 toProgramA p = map (fmap Ind) p
-
