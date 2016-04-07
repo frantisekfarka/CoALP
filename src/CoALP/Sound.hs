@@ -88,7 +88,7 @@ separateTrs sig trs = foldr f ([], []) trs
 
 -- TODO make into traversal over the tree
 indRes RTEmpty = []
-indRes (RT c _ ands) = if any hasSuccTreeAnd ands then [IndS c] else []
+indRes (RT c _ ands) = if all hasSuccTreeAnd ands then [IndS c] else []
 
 	-- concatMap (indResAnds c) ands
 	where
