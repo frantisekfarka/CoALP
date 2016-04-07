@@ -1,3 +1,6 @@
+inductive : nat
 nat(0).
 nat(s(N)) :- nat(N).
 stream(scons(H,T)) :- nat(H), stream(T). 
+
+
