@@ -15,7 +15,7 @@ cabal.config
 *.prof
 *.aux
 *.hp
-
+*~
 #vim 
 *.sw?
 

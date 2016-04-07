@@ -18,9 +18,74 @@ first(pair(K,V),cons(pair(K1,V1),Xs)) :- first(pair(K,V), Xs).
 eq(X,X).
 
 %%
-%% Type checking:
+%% Type checking (\x.x)
 %%
 %% res :- type(nil,nil, lam(x,var(x)), arr(A, A)).
 %%
 %% > True
 %% >        observed inductively: res :- type(nil, nil, lam(x, var(x)), arr(V_5, V_5)).
+
+%%
+%% Type infering (\x.x), which not worng bug does not infer most general type.
+%%
+%%
+%% $> res :- type(nil, nil, lam(x,var(x)), T).
+%% True
+%%        observed co-inductively: res :- type(nil, nil, lam(x, var(x)), arr(arr(var(V_111), arr(var(V_447), V_479)), arr(var(V_111), arr(var(V_447), V_479)))).
+%%
+
+%%
+%% Type chekcing (\x.x) with KC as variable.
+%% This is more close to what I want, or at least corresponds more closly to
+%% to what I did in my FLOPS 2016 submission.
+%% These queries can be done with Prolog too.
+%%
+%% $> :- type(KC, nil, lam(x,var(x)), arr(A,A)).
+%% True
+%%         observed inductively: res :- type(cons(pair(V_631, o), V_267), nil, lam(x, var(x)), arr(var(V_631), var(V_631))).
+%%
+%% $> res :- type(KC, nil, lam(x,var(x)), T).
+%% True
+%%         observed inductively: res :- type(cons(pair(V_2527, o), V_1071), nil, lam(x, var(x)), arr(var(V_2527), var(V_2527))).
+%%
+
+
+%% Type checking (\x.x)(\x.x) can be done in Prolog
+%% but type infering (\x.x)(\x.x) loops in Prolog.
+%% I experimented with coinductive library but does not work because it seems
+%% that %% coinductive library in Prolog is only about infinite structures not
+%% that much different in control flow. (Or maybe I am not using coninductivet
+%% correctly.)
+%%
+%% In CoALP type checking behaves the same as Prolog as expected. However, 
+%% Type inference result is strange to me ... is it because of freshness?
+%%
+%%
+%%$> res :- type(KC, nil, app(lam(x,var(x)),lam(x,var(x))), arr(A,A)).
+%%True
+%%        observed inductively: res :- type(cons(pair(V_1263, o), V_535), nil, app(lam(x, var(x)), lam(x, var(x))), arr(var(V_1263), var(V_1263))).
+%%
+%%
+%% $> res :- type(KC, nil, app(lam(x,var(x)),lam(x,var(x))), T).
+%%
+%% True
+%%         observed co-inductively: res :- type(cons(pair(V_80895, o), cons(pair(V_80895, o), cons(pair(V_80895, o), V_34303))), nil, app(lam(x, var(x)), lam(x, var(x))), var(V_80895)).
+%%           GC: ( 6, cons(pair(V_31, V_32), V_33), [0,1]),
+%%
+%%
+
+%%
+%% With nil as KC, type checking (\x.x)(\x.x) not most general.
+%% just as type inference for (\x.x) was not most general.
+%% Type inference is again strange.
+%%
+%% $> res :- type(nil, nil, app(lam(x,var(x)),lam(x,var(x))), app(A,A)).
+%% True
+%%         observed co-inductively: res :- type(nil, nil, app(lam(x, var(x)), lam(x, var(x))), app(app(var(V_55), arr(var(V_223), arr(var(V_895), V_959))), app(var(V_55), arr(var(V_223), arr(var(V_895), V_959))))).
+%%           GC: ( 1, arr(V_6, V_7), [0,1]),
+%% $> res :- type(nil, nil, app(lam(x,var(x)),lam(x,var(x))), T).
+%% True
+%%         observed co-inductively: res :- type(nil, nil, app(lam(x, var(x)), lam(x, var(x))), arr(var(V_55), arr(var(V_223), V_239))).
+%%           GC: ( 1, arr(V_6, V_7), [0,1]),
+%% $> 
+
