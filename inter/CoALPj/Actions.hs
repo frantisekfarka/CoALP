@@ -20,6 +20,7 @@ module CoALPj.Actions (
         , transform
         , antiUnify
 	, printSig
+	, printSigs
 	) where
 
 import Control.Arrow
@@ -29,6 +30,7 @@ import Control.Monad.Trans.Except (throwE)
 import Control.Monad.Trans.State (get, put)
 
 import Data.Functor ((<$>))
+import Data.Map.Strict (foldrWithKey)
 
 import System.IO.Error (tryIOError)
 
@@ -320,6 +322,14 @@ printSig ident = maybe (iputStrLn "No program loaded") (
 				SInd	-> iputStrLn $ "inductive : " ++ ident
 				SCoInd	-> iputStrLn $ "coinductive : " ++ ident
 			) =<< signature <$> get 
+
+
+printSigs :: CoALP ()
+printSigs = maybe (iputStrLn "No program loaded") (
+                        \sig' -> iputStrLn $ foldrWithKey f  "" sig'
+			) =<< signature <$> get 
+        where
+            f ident ic str = show ident ++ ": " ++ show ic ++ "\n" ++ str
 
 
 whenProgram :: (Program1 -> Signature1 -> CoALP ()) -> CoALP ()

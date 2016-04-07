@@ -172,6 +172,10 @@ mapSubst f s = map (f *** (fmap f)) s
 -- 
 data Type = SInd | SCoInd
 
+instance Show Type where
+    show SInd   = "inductive"
+    show SCoInd = "coinductive"
+
 -- | A program consisting of clauses
 --
 -- Notation:

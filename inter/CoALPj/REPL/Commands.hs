@@ -29,6 +29,7 @@ data Command
 	| Resolve String
 	| Next
 	| Sig String
+        | Sigs
 	deriving Show
 
 
