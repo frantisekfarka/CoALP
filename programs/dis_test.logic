@@ -1,0 +1,13 @@
+
+inductive : s
+inductive : t
+coinductive : u
+coinductive : v
+
+s(0).
+t(1).
+
+u(m(X)) :- u(X).
+v(n(Y)) :- v(Y).
+
+uv(m(X), n(Y)) :- uv(X, Y).
