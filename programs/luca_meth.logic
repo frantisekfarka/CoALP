@@ -1,0 +1,10 @@
+
+% original program:
+type(next(X)) :- type(X).
+meth(A, or(A, R)) :- meth(next(A), R).
+
+% The query goes like this:
+% $> res :- type(X), meth(null, X).
+
+ 
+meth_type(A, or(A, R), next(X)) :- meth_type(next(A), R, X).
